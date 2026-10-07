@@ -1,0 +1,108 @@
+export const STATIONS = [
+  {
+    id: "idea",
+    stepNumber: 0,
+    title: "Calibrador de Alcance",
+    subtitle: "Define tu idea y el propósito del desarrollo",
+    skippable: false,
+    defaultMood: "idle",
+    defaultDialogue: "Cuéntame qué quieres armar y calibramos el camino.",
+  },
+  {
+    id: "naming",
+    stepNumber: 1,
+    title: "Naming del Proyecto",
+    subtitle: "Propuestas de nombre comercial y técnico",
+    skippable: true,
+    defaultMood: "thinking",
+    defaultDialogue:
+      "Un buen nombre ahorra explicaciones. Elige uno o salta este paso.",
+  },
+  {
+    id: "stack",
+    stepNumber: 2,
+    title: "Stack Tecnológico Dinámico",
+    subtitle: "Combinaciones balanceadas adaptadas a tu alcance",
+    skippable: false,
+    defaultMood: "curious",
+    defaultDialogue:
+      "Elige según lo que dominas o mide tus tiempos si pruebas algo nuevo.",
+  },
+  {
+    id: "architecture",
+    stepNumber: 3,
+    title: "Arquitectura Técnica",
+    subtitle: "Patrón estructural de tu software",
+    skippable: false,
+    defaultMood: "thinking",
+    defaultDialogue:
+      "No metas microservicios para matar una mosca. Vamos por lo sensato.",
+  },
+  {
+    id: "methodology",
+    stepNumber: 4,
+    title: "Metodología de Trabajo",
+    subtitle: "Cadencia de sprints o flujo continuo",
+    skippable: true,
+    defaultMood: "working",
+    defaultDialogue: "¿Trabajas con equipo o en solitario? Ajustemos el ritmo.",
+  },
+  {
+    id: "diagrams",
+    stepNumber: 5,
+    title: "Diagramas Dinámicos IA",
+    subtitle: "Paquetes adaptativos sugeridos según el stack y la arquitectura",
+    skippable: false,
+    defaultMood: "curious",
+    defaultDialogue:
+      "La IA calcula qué diagramas son técnicamente necesarios aquí.",
+  },
+  {
+    id: "morphism",
+    stepNumber: 6,
+    title: "Lenguaje Visual / Morphism",
+    subtitle: "Estilo cosmético y sensaciones de interfaz",
+    skippable: false,
+    defaultMood: "playful",
+    defaultDialogue:
+      "Elegir el estilo visual desde el inicio evita rediseñar tres veces.",
+  },
+  {
+    id: "layout",
+    stepNumber: 7,
+    title: "Maquetación / Layout Pattern",
+    subtitle: "Distribución espacial del producto",
+    skippable: false,
+    defaultMood: "thinking",
+    defaultDialogue:
+      "Un buen layout resuelve el 80% de la experiencia de usuario.",
+  },
+  {
+    id: "deploy",
+    stepNumber: 8,
+    title: "Infraestructura & Deploy",
+    subtitle: "Hosting costo cero y respaldo en GitHub",
+    skippable: false,
+    defaultMood: "proud",
+    defaultDialogue:
+      "Hosting listo. Y recuerda: código que no está en GitHub, no existe.",
+  },
+  {
+    id: "ai-ecosystem",
+    stepNumber: 9,
+    title: "Ecosistema de IA",
+    subtitle: "Modelos para el producto y copilots para programar",
+    skippable: false,
+    defaultMood: "celebrate",
+    defaultDialogue: "El kit de aceleración listo para construir sin fricción.",
+  },
+  {
+    id: "workspace",
+    stepNumber: 10,
+    title: "¡A Trabajar!",
+    subtitle: "Blueprint final, estructura de archivos y AGENTS.md",
+    skippable: false,
+    defaultMood: "celebrate",
+    defaultDialogue: "¡Plano terminado! Copia tu contexto y ponte a construir.",
+  },
+];
