@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/assets/logo-devidea.svg" alt="Dev.Idea logo" width="96" height="96" />
+<img src="public/assets/dev-idea-lockup.svg" alt="Dev.Idea logo" width="96" height="96" />
 
 # Dev.Idea
 
