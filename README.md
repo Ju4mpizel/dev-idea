@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/assets/dev-idea-logo.png" alt="Dev.Idea logo" width="96" height="96" />
+<img src="public/assets/dev-idea-logo.png" alt="Dev.Idea logo" width="140" height="140" />
 
 # Dev.Idea
 
@@ -18,11 +18,11 @@ Transforma una idea difusa en un _blueprint_ técnico ejecutable, paso a paso y 
 
 <br />
 
-[Características](#-qué-es-devidea) ·
-[Estaciones](#️-mapa-de-estaciones) ·
-[Stack](#️-stack-tecnológico) ·
-[Estructura](#-estructura-del-proyecto) ·
-[Inicio rápido](#-inicio-rápido)
+[Propósito](#-qué-es-devidea) ·
+[Funcionalidades Clave](#-funcionalidades-clave) ·
+[Mapa de Estaciones](#-mapa-de-estaciones) ·
+[Stack Tecnológico](#-stack-tecnológico) ·
+[Inicio Rápido](#-inicio-rápido)
 
 </div>
 
@@ -30,28 +30,33 @@ Transforma una idea difusa en un _blueprint_ técnico ejecutable, paso a paso y 
 
 ## 🎯 ¿Qué es Dev.Idea?
 
-Dev.Idea sustituye las hojas en blanco y los chats desordenados con IA por un **mapa de 10 estaciones encadenadas**. Cada elección técnica condiciona el contexto que analiza **Google Gemini Flash** mediante **salidas estructuradas estrictas (JSON Schema)**, acompañado por **Strobi**, un copiloto visual reactivo con expresiones procedurales.
+Muchos proyectos de software se estancan antes de su primera línea de código debido a la **fatiga de decisión** y a chats desordenados con IA.
 
-> **Del "tengo una idea" al `AGENTS.md` listo para tu IDE, sin perderte en el camino.**
+**Dev.Idea** replantea este proceso mediante un **mapa secuencial de 10 estaciones encadenadas (*Chain-of-Context*)**:
 
-### ✨ Puntos clave
-
-|     | Característica            | Descripción                                                                     |
-| --- | ------------------------- | ------------------------------------------------------------------------------- |
-| 🧭  | **Flujo guiado**          | 10 estaciones encadenadas: cada decisión alimenta la siguiente.                 |
-| 🧠  | **IA con contexto**       | Gemini Flash razona sobre tus elecciones previas usando JSON Schema estricto.   |
-| 🤖  | **Strobi, tu copiloto**   | Avatar reactivo con expresiones procedurales que acompaña cada paso.            |
-| 📐  | **Diagramas adaptativos** | Paquetes Básico, Medio o Completo (incluye ERD y modelo físico) según tu stack. |
-| 💾  | **Progreso persistente**  | Estado guardado en LocalStorage con Zustand; retoma donde lo dejaste.           |
-| 📦  | **Blueprint exportable**  | Árbol de carpetas, esquema de base de datos y `AGENTS.md` listos para copiar.   |
+- Cada elección técnica condiciona el contexto que analiza **Google Gemini Flash**, mediante salidas estrictamente estructuradas (**JSON Schema**).
+- El recorrido está acompañado por **Strobi**, un copiloto visual reactivo con expresiones procedurales y criterio de *Tech Lead* pragmático para evitar la sobreingeniería.
+- Culmina entregando un resumen ejecutivo visual (*Bento Grid*), esquemas de arquitectura y un archivo `AGENTS.md` listo para configurar agentes de IA en tu editor de código.
 
 ---
 
-## 🗺️ Mapa de Estaciones
+## ⚡ Funcionalidades Clave
+
+- **Encadenamiento contextual real (*Chain-of-Context*):** cada respuesta se calcula sobre las elecciones de las estaciones previas, evitando alucinaciones o stacks incompatibles.
+- **Clasificación por complejidad y trade-offs:** stacks y arquitecturas categorizados con etiquetas claras de pros, contras y niveles (*Simple*, *Medium*, *Advanced*).
+- **Copiloto reactivo (Strobi):** avatar procedural integrado que evalúa el avance, reacciona a los estados de carga y emite recomendaciones directas.
+- **Mini-mapa interactivo y navegación no lineal:** visualizador de ruta para saltar entre estaciones previas completadas sin perder el contexto.
+- **Persistencia local segura:** guarda el avance de tu blueprint en `localStorage` con Zustand; reanuda tu sesión al instante o inicia un mapa limpio con un solo clic.
+- **Cancelación de peticiones en tiempo real:** control mediante `AbortController` para interrumpir llamadas a la IA si decides cambiar de rumbo sobre la marcha.
+- **Exportación de artefactos de producción:** genera el árbol sugerido de directorios, el esquema de datos y el archivo `AGENTS.md`, listo para copiar en Cursor, Claude Code o GitHub Copilot.
+
+---
+
+## 🧭 Mapa de Estaciones
 
 ```mermaid
 flowchart LR
-    A["0 · Idea & Contexto"] --> B["1 · Naming<br/><i>opcional</i>"]
+    A["0 · Idea & Alcance"] --> B["1 · Naming<br/><i>opcional</i>"]
     B --> C["2 · Stack Tecnológico"]
     C --> D["3 · Arquitectura"]
     D --> E["4 · Metodología<br/><i>opcional</i>"]
@@ -65,71 +70,33 @@ flowchart LR
     style K fill:#8E75B2,stroke:#5b4a7a,color:#fff
 ```
 
-<details open>
-<summary><b>📍 Detalle de cada estación</b></summary>
-
-<br />
-
-|   #   | Estación                | Qué decides                                                                                                                      | Notas                        |
-| :---: | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| **0** | **Idea & Alcance**      | Descripción de tu proyecto + contexto: _Académico_, _Startup / Trabajo_ o _Personal / MVP_.                                      | Punto de partida             |
-| **1** | **Naming**              | Nombres comerciales o técnicos propuestos por la IA.                                                                             | ⏭️ Omitible                  |
-| **2** | **Stack Tecnológico**   | Opciones balanceadas con íconos oficiales: React, Next.js, FastAPI, Laragon/PHP, Supabase, etc.                                  |                              |
-| **3** | **Arquitectura**        | Monolito modular, Clean Architecture, BaaS Serverless o Event-Driven.                                                            |                              |
-| **4** | **Metodología**         | Scrum ágil, Kanban continuo o Cascada.                                                                                           | ⏭️ Omitible si trabajas solo |
-| **5** | **Diagramas Dinámicos** | Paquetes **Básico**, **Medio** o **Completo** (con ERD y Físico), formulados por la IA según tu stack.                           | 🤖 Generado por IA           |
-| **6** | **Morphism & Estilo**   | Glassmorphism, Claymorphism 3D suave, Neumorphism o Minimalismo Plano SaaS.                                                      |                              |
-| **7** | **Layout**              | Bento Grid, App Shell con Sidebar fija, Canvas Inmersivo, Feed Vertical o Split-Screen.                                          |                              |
-| **8** | **Deploy & GitHub**     | Hosting gratuito recomendado + alerta contextual para inicializar el repositorio.                                                |                              |
-| **9** | **Ecosistema IA**       | Modelos para tu app (DeepSeek, Gemini Flash) + herramientas copilot (Cursor, Claude Code, v0).                                   | Doble bloque                 |
-|  ⭐   | **¡A Trabajar!**        | Tarjetas Bento con el blueprint, árbol de carpetas para el IDE, esquema físico de base de datos y `AGENTS.md` listo para copiar. | 🎁 Resultado final           |
-
-</details>
+| # | Estación | Flujo funcional y decisiones | Modalidad |
+|:-:|----------|------------------------------|-----------|
+| 0 | **Idea & Alcance** | Captura de la idea principal y calibración del contexto (Académico, Startup / Trabajo, Personal). | Entrada inicial |
+| 1 | **Naming** | Generación de nombres comerciales, técnicos o minimalistas con su respectiva justificación. | ⏭️ Omitible |
+| 2 | **Stack Tecnológico** | Comparativa de frameworks, bases de datos y selectores dinámicos de lenguaje/sabor técnico. | Selección con trade-offs |
+| 3 | **Arquitectura** | Patrones estructurales (Monolito Modular, 3 Capas, Clean Architecture, BaaS Serverless o Event-Driven). | Clasificado por dificultad |
+| 4 | **Metodología** | Ritmo de trabajo adaptado al equipo o desarrollo individual (Kanban con WIP, Sprints o Modo Sniper). | ⏭️ Omitible |
+| 5 | **Diagramas Dinámicos** | Paquetes técnicos adaptados a la base de datos y complejidad (Básico, Medio o Completo con ERD). | 🤖 Generación contextual |
+| 6 | **Morphism & Estilo** | Definición del lenguaje de interfaz (Minimalismo SaaS, Dark Glassmorphism, Claymorphism 3D suave). | Sistema de diseño |
+| 7 | **Layout** | Maquetación espacial de pantalla (Bento Grid, App Shell con Sidebar fija, Canvas Inmersivo). | Experiencia de usuario |
+| 8 | **Deploy & GitHub** | Recomendación de hosting de costo $0 + modal de alerta contextual para versionar y respaldar en GitHub. | Infraestructura |
+| 9 | **Ecosistema IA** | Doble bloque: LLMs idóneos para integrar en tu producto + herramientas aceleradoras para tu IDE. | Kit de desarrollo |
+| ⭐ | **¡A Trabajar!** | Entrega del Showcase Bento, árbol de directorios, esquema físico y bloque de copia rápida de `AGENTS.md`. | 🎁 Blueprint final |
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🧰 Stack Tecnológico
 
-| Capa                | Tecnología                                                                   | Detalle                                              |
-| ------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------- |
-| **Frontend**        | [Next.js](https://nextjs.org) (App Router)                                   | JavaScript puro (`.jsx` / `.js`)                     |
-| **Estilos**         | [Tailwind CSS](https://tailwindcss.com)                                      | Soporte para `backdrop-blur` y tarjetas translúcidas |
-| **Iconos**          | [Lucide Icons](https://lucide.dev) + [Simple Icons](https://simpleicons.org) | SVGs oficiales de tecnologías                        |
-| **Copiloto visual** | [`@bible-strong/avatar-web`](https://avatars.bible-strong.app)               | Montado mediante `ref` reactivo                      |
-| **Animaciones**     | [Framer Motion](https://www.framer.com/motion/)                              | Transiciones fluidas entre estaciones                |
-| **Cerebro IA**      | [Google Gemini Flash](https://ai.google.dev)                                 | Vía `@google/genai` con _Structured Outputs_         |
-| **Estado local**    | [Zustand](https://github.com/pmndrs/zustand)                                 | Middleware `persist` (LocalStorage)                  |
-
----
-
-## 📁 Estructura del Proyecto
-
-```text
-dev-idea/
-├── public/
-│   ├── favicon.ico
-│   └── assets/logo-devidea.svg
-├── src/
-│   ├── app/
-│   │   ├── api/generate-step/route.js    # Endpoint de inferencia de Gemini
-│   │   ├── globals.css                   # Tailwind utilities
-│   │   ├── layout.jsx
-│   │   └── page.jsx                      # Lienzo interactivo principal
-│   ├── components/
-│   │   ├── companion/                    # Avatar Strobi y diálogo reactivo
-│   │   ├── map/                          # Nodos, canvas y tarjetas de selección
-│   │   ├── modals/                       # Alerta de respaldo en GitHub
-│   │   └── workspace/                    # Showcase Bento y visor de AGENTS.md
-│   ├── config/stations.config.js         # Configuración del flujo de estaciones
-│   ├── data/avatar.avatar.json           # Definición procedural del avatar
-│   ├── hooks/useDecisionStore.js         # Estado global con Zustand
-│   └── lib/
-│       ├── gemini.js                     # Cliente inicializado del SDK
-│       └── prompts.js                    # Schemas JSON encadenados
-├── .env.local                            # GEMINI_API_KEY
-├── jsconfig.json                         # Alias @/*
-└── package.json
-```
+| Capa | Tecnología | Detalle y rol |
+|------|------------|---------------|
+| **Framework base** | Next.js 15 (App Router) | Arquitectura full-stack monolítica moderna en JavaScript estándar (`.jsx` / `.js`). |
+| **Estilos & UI** | Tailwind CSS | Diseño responsivo con soporte para `backdrop-blur` y tarjetas translúcidas. |
+| **Iconografía** | Lucide + Simple Icons | SVGs y logotipos oficiales de tecnologías y herramientas. |
+| **Copiloto visual** | `@bible-strong/avatar-web` | Avatar procedural interactivo renderizado directamente en el DOM mediante `ref`. |
+| **Lienzo & animaciones** | Framer Motion | Transiciones fluidas entre estaciones y modales contextuales. |
+| **Inferencia IA** | Google Gemini Flash | Generación estructurada garantizada mediante el SDK `@google/genai` con esquemas JSON. |
+| **Gestión de estado** | Zustand | Estado global reactivo con middleware `persist` (`localStorage`) y soporte para `AbortController`. |
 
 ---
 
@@ -138,16 +105,18 @@ dev-idea/
 ### Requisitos previos
 
 - [Node.js](https://nodejs.org) 18.18 o superior
-- [pnpm](https://pnpm.io)
+- [pnpm](https://pnpm.io) (recomendado)
 - Una API key de [Google AI Studio](https://aistudio.google.com/apikey)
 
-### 1️⃣ Instalar dependencias
+### 1️⃣ Clonar e instalar dependencias
 
 ```bash
+git clone https://github.com/tu-usuario/dev-idea.git
+cd dev-idea
 pnpm install
 ```
 
-### 2️⃣ Configurar credenciales
+### 2️⃣ Configurar variables de entorno
 
 Crea un archivo `.env.local` en la raíz del proyecto:
 
@@ -155,45 +124,32 @@ Crea un archivo `.env.local` en la raíz del proyecto:
 GEMINI_API_KEY=tu_api_key_de_gemini
 ```
 
-> ⚠️ **Nunca subas `.env.local` a GitHub.** Asegúrate de que esté incluido en tu `.gitignore`.
+### 3️⃣ Archivo de definición del avatar
 
-### 3️⃣ Definir el avatar
+Asegúrate de contar con el archivo de definición procedural en la siguiente ruta:
 
-Verifica que el archivo `avatar.avatar.json` exista en `src/data/`.
+```text
+src/data/avatar.avatar.json
+```
 
-### 4️⃣ Ejecutar en desarrollo
+### 4️⃣ Iniciar en entorno local
 
 ```bash
 pnpm dev
 ```
 
-Abre **[http://localhost:3000](http://localhost:3000)** en tu navegador y comienza a dar forma a tu idea. 🎉
-
----
-
-## 🤝 Contribuir
-
-¡Las contribuciones son bienvenidas! Si tienes una idea o encontraste un error:
-
-1. Haz un _fork_ del repositorio.
-2. Crea una rama: `git checkout -b feature/mi-mejora`
-3. Haz commit de tus cambios: `git commit -m "feat: agrega mi mejora"`
-4. Sube la rama: `git push origin feature/mi-mejora`
-5. Abre un _Pull Request_.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador y comienza a trazar la arquitectura de tu siguiente software. 🎉
 
 ---
 
 ## 📄 Licencia
 
-Distribuido bajo la licencia **MIT**. Consulta el archivo `LICENSE` para más información.
+Distribuido bajo la licencia **MIT**. Consulta el archivo [`LICENSE`](LICENSE) para más información.
 
 <div align="center">
 
-<br />
-
 **MIT © 2026 Dev.Idea**
 
-Hecho con 💜 para desarrolladores que prefieren decidir con claridad.
-Ju4mpizel
+<sub>Hecho para desarrolladores que prefieren decidir con claridad antes de construir.</sub>
 
 </div>
