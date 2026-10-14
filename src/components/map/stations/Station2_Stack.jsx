@@ -13,6 +13,7 @@ export function Station2_Stack({ data, onNext }) {
   const setCompanion = useDecisionStore((state) => state.setCompanion);
   const isLoading = useDecisionStore((state) => state.isLoading);
   const generatedOptions = useDecisionStore((state) => state.generatedOptions);
+  const currentStep = useDecisionStore((state) => state.currentStep);
   const goToStep = useDecisionStore((state) => state.goToStep);
   const truncateWorkflowFrom = useDecisionStore(
     (state) => state.truncateWorkflowFrom,
@@ -20,17 +21,22 @@ export function Station2_Stack({ data, onNext }) {
 
   const [confirmRewriteOpen, setConfirmRewriteOpen] = useState(false);
 
-  // Fase máxima alcanzada en el proyecto
+  // Consideramos las opciones numéricas y si hay arquitectura o pasos posteriores en el blueprint
   const highestStep = Math.max(
     ...Object.keys(generatedOptions)
       .map(Number)
       .filter((n) => !isNaN(n)),
+    currentStep,
+    blueprint.selectedArchitecture ? 3 : 2,
     2,
   );
 
-  // Si ya se generó la estación 3 en adelante, estamos en modo seguro/consulta
+  // Si ya estamos más adelante del paso 2 o ya existe arquitectura guardada
   const isLockedHistory = Boolean(
-    generatedOptions[3] || generatedOptions["architecture"],
+    highestStep > 2 ||
+    generatedOptions[3] ||
+    generatedOptions["architecture"] ||
+    blueprint.selectedArchitecture,
   );
 
   const stacks = data?.stacks || [];
@@ -320,7 +326,8 @@ export function Station2_Stack({ data, onNext }) {
       {/* Zona de Botones Inferior */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
         <div>
-          {isLockedHistory && (
+          {/* El botón de reescribir se muestra si estamos en modo consulta O si ya hay un stack elegido */}
+          {(isLockedHistory || Boolean(blueprint.selectedStack)) && (
             <button
               type="button"
               onClick={() => setConfirmRewriteOpen(true)}

@@ -34,11 +34,11 @@ export function DecisionCanvas() {
     blueprintPayload,
     forceNew = false,
   ) => {
-    // Si ya existe en memoria, navegamos al instante
     const existingData =
       generatedOptions[targetStep] || generatedOptions[`step_${targetStep}`];
 
-    if (!forceNew && existingData) {
+    // Si ya existe en memoria, navegamos al instante sin gastar IA
+    if (!forceNew && existingData && Object.keys(existingData).length > 0) {
       if (existingData?.dialogue || existingData?.companionComment) {
         setCompanion(
           existingData.mood || existingData.companionMood || "idle",
@@ -51,8 +51,6 @@ export function DecisionCanvas() {
 
     setLoading(true);
     clearApiError();
-
-    // Movemos la vista a la estación destino para que muestre su skeleton de carga inmediatamente
     goToStep(targetStep);
 
     const controller = new AbortController();
@@ -89,7 +87,6 @@ export function DecisionCanvas() {
 
       const data = json.data;
 
-      // Persistimos bajo clave numérica e ID de string
       setStepOptions(targetStep, data);
       setStepOptions(stepId, data);
 
@@ -126,8 +123,14 @@ export function DecisionCanvas() {
     requestStepAndNavigate(1, freshBlueprint, true);
   };
 
-  const handleResumeSaved = () => {
-    goToStep(1);
+  const handleResumeSaved = (targetStep) => {
+    const stepToOpen =
+      targetStep && targetStep > 0
+        ? targetStep
+        : currentStep && currentStep > 0
+          ? currentStep
+          : 1;
+    goToStep(stepToOpen);
   };
 
   // Pantalla de Error con Reintento
