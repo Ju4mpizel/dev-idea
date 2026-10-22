@@ -14,6 +14,7 @@ export function Station3_Architecture({ data, onNext }) {
   const setCompanion = useDecisionStore((state) => state.setCompanion);
   const isLoading = useDecisionStore((state) => state.isLoading);
   const generatedOptions = useDecisionStore((state) => state.generatedOptions);
+  const currentStep = useDecisionStore((state) => state.currentStep);
   const goToStep = useDecisionStore((state) => state.goToStep);
   const truncateWorkflowFrom = useDecisionStore(
     (state) => state.truncateWorkflowFrom,
@@ -26,12 +27,17 @@ export function Station3_Architecture({ data, onNext }) {
     ...Object.keys(generatedOptions)
       .map(Number)
       .filter((n) => !isNaN(n)),
+    currentStep,
+    blueprint.selectedMethodology ? 4 : 3,
     3,
   );
 
-  // Si ya existe la estación 4 en adelante, estamos en modo seguro/consulta
+  // Modo consulta si ya estamos en un paso posterior o si ya hay metodología guardada
   const isLockedHistory = Boolean(
-    generatedOptions[4] || generatedOptions["methodology"],
+    highestStep > 3 ||
+    generatedOptions[4] ||
+    generatedOptions["methodology"] ||
+    blueprint.selectedMethodology,
   );
 
   const options = data?.options || data?.architectures || data?.patterns || [];
@@ -69,7 +75,8 @@ export function Station3_Architecture({ data, onNext }) {
     }
 
     if (!selectedOption) return;
-    onNext();
+    updateBlueprint({ selectedArchitecture: selectedOption });
+    onNext({ selectedArchitecture: selectedOption });
   };
 
   const handleRewriteConfirm = () => {
@@ -185,7 +192,7 @@ export function Station3_Architecture({ data, onNext }) {
       {/* Zona de Botones Inferior */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
         <div>
-          {isLockedHistory && (
+          {(isLockedHistory || Boolean(blueprint.selectedArchitecture)) && (
             <button
               type="button"
               onClick={() => setConfirmRewriteOpen(true)}

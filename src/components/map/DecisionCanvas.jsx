@@ -8,6 +8,7 @@ import { Station0_Idea } from "./stations/Station0_Idea";
 import { Station1_Naming } from "./stations/Station1_Naming";
 import { Station2_Stack } from "./stations/Station2_Stack";
 import { Station3_Architecture } from "./stations/Station3_Architecture";
+import { Station4_Methodology } from "./stations/Station4_Methodology";
 import { StationNode } from "./stations/StationNode";
 import { BlueprintShowcase } from "../workspace/BlueprintShowcase";
 
@@ -37,7 +38,7 @@ export function DecisionCanvas() {
     const existingData =
       generatedOptions[targetStep] || generatedOptions[`step_${targetStep}`];
 
-    // Si ya existe en memoria, navegamos al instante sin gastar IA
+    // Si ya existe en memoria y no forzamos nueva generación, navegamos al instante
     if (!forceNew && existingData && Object.keys(existingData).length > 0) {
       if (existingData?.dialogue || existingData?.companionComment) {
         setCompanion(
@@ -196,7 +197,14 @@ export function DecisionCanvas() {
         />
       )}
 
-      {currentStep >= 4 && currentStep <= 9 && (
+      {currentStep === 4 && (
+        <Station4_Methodology
+          data={generatedOptions[4] || generatedOptions["methodology"]}
+          onNext={() => requestStepAndNavigate(5, blueprint)}
+        />
+      )}
+
+      {currentStep >= 5 && currentStep <= 9 && (
         <StationNode
           station={STATIONS.find((s) => s.stepNumber === currentStep)}
           data={

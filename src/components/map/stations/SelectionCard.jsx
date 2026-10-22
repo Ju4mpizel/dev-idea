@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 
 export function SelectionCard({
+  icon = null,
   title,
   subtitle,
   tag,
@@ -75,8 +76,9 @@ export function SelectionCard({
           </div>
         </div>
 
-        <h3 className="font-bold text-white text-base tracking-tight mb-1">
-          {title}
+        <h3 className="font-bold text-white text-base tracking-tight mb-1 flex items-center gap-2">
+          {icon && <span className="shrink-0">{icon}</span>}
+          <span>{title}</span>
         </h3>
         {subtitle && (
           <p className="text-xs text-neutral-400 leading-relaxed mb-3">
@@ -84,7 +86,7 @@ export function SelectionCard({
           </p>
         )}
 
-        {/* Chips de tecnologías */}
+        {/* Chips de tecnologías / prácticas */}
         {techs.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {techs.map((tech) => (

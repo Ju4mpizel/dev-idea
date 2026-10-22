@@ -1,5 +1,5 @@
 /**
- * Generador de prompts estructurados para el flujo completo de 11 estaciones en Dev.Idea.
+ * Generador de prompts estructurados para el flujo completo de estaciones en Dev.Idea.
  */
 export function buildStepPrompt(stepId, blueprint = {}) {
   const {
@@ -7,9 +7,11 @@ export function buildStepPrompt(stepId, blueprint = {}) {
     context = "startup",
     selectedName = "",
     selectedStack = null,
+    selectedArchitecture = null,
   } = blueprint;
 
   const stackTitle = selectedStack?.title || "Stack Estándar Moderno";
+  const archTitle = selectedArchitecture?.title || "Arquitectura Estándar";
 
   // ========================================================
   // ESTACIÓN 1: NAMING & CONCEPTO
@@ -37,7 +39,7 @@ Devuelve ÚNICAMENTE un JSON con:
   }
 
   // ========================================================
-  // ESTACIÓN 2: STACK TECNOLÓGICO DINÁMICO (CON NIVELES DE DIFICULTAD)
+  // ESTACIÓN 2: STACK TECNOLÓGICO DINÁMICO
   // ========================================================
   if (stepId === 2 || stepId === "stack") {
     return `
@@ -46,9 +48,9 @@ IDEA: "${idea}" | CONTEXTO: "${context}" | NOMBRE: "${selectedName || "App"}".
 
 Genera entre 4 y 5 opciones de STACK tecnológico diversas, clasificadas por nivel de curva y complejidad técnica mediante el campo "level" ("simple", "medium", "advanced"):
 
-- simple (Azul / Ágil): Mínimo setup y despliegue instantáneo (ej. Next.js Jamstack, Laravel/Django clásico, o herramientas Local-First/Client-side si la idea no requiere backend relacional complejo).
+- simple (Azul / Ágil): Mínimo setup y despliegue instantáneo (ej. Next.js Jamstack, Laravel/Django clásico, o herramientas Local-First/Client-side).
 - medium (Amarillo / Pragmático): Balance para proyectos en crecimiento (ej. React + Node/FastAPI/Go, bases de datos relacionales estándar Postgres/MySQL).
-- advanced (Rojo / Enterprise o Alto Rendimiento): Ecosistemas con tipado robusto y tipados estrictos (ej. C# / .NET con ASP.NET Core Web API o Blazor, Java/Spring Boot, Rust).
+- advanced (Rojo / Enterprise o Alto Rendimiento): Ecosistemas con tipado robusto y tipados estrictos (ej. C# / .NET con ASP.NET Core, Java/Spring Boot, Rust).
 
 Devuelve ÚNICAMENTE un JSON con:
 {
@@ -59,23 +61,12 @@ Devuelve ÚNICAMENTE un JSON con:
       "id": "stack-1",
       "level": "simple",
       "badge": "ÁGIL / VELOZ",
-      "title": "The Rapid Jamstack",
-      "tags": ["Next.js", "Tailwind CSS", "Supabase", "PostgreSQL"],
+      "title": "Nombre del Stack",
+      "tags": ["Framework", "Backend", "DB", "CSS"],
       "defaultLanguage": "TypeScript",
       "availableLanguages": ["TypeScript", "JavaScript"],
-      "pro": "Despliegue ultra rápido con autenticación y APIs listas sin gestionar infraestructura.",
-      "con": "Mayor acoplamiento al ecosistema gestionado."
-    },
-    {
-      "id": "stack-2",
-      "level": "advanced",
-      "badge": "ENTERPRISE ROBUSTO",
-      "title": "ASP.NET Core Web Platform",
-      "tags": ["ASP.NET Core", "C#", "SQL Server / Postgres", "React"],
-      "defaultLanguage": "C#",
-      "availableLanguages": ["C#", "F#"],
-      "pro": "Rendimiento extremo de cómputo en backend, contratos tipados y soporte enterprise maduro.",
-      "con": "Requiere mayor configuración de contenedores Docker y curva de despliegue."
+      "pro": "Ventaja técnica principal.",
+      "con": "Desventaja o trade-off a considerar."
     }
   ]
 }
@@ -83,94 +74,46 @@ Devuelve ÚNICAMENTE un JSON con:
   }
 
   // ========================================================
-  // ESTACIÓN 3: ARQUITECTURA TÉCNICA (EXACTAMENTE 6 OPCIONES: 2 SIMPLE, 2 MEDIUM, 2 ADVANCED)
+  // ESTACIÓN 3: ARQUITECTURA TÉCNICA (DINÁMICA Y PERSONALIZADA AL STACK)
+  // ========================================================
+  // ========================================================
+  // ESTACIÓN 3: ARQUITECTURA TÉCNICA (6 OPCIONES BALANCEADAS AL STACK)
   // ========================================================
   if (stepId === 3 || stepId === "architecture") {
     return `
 Eres el arquitecto de sistemas de Dev.Idea.
-IDEA: "${idea}" | CONTEXTO: "${context}" | STACK: "${stackTitle}".
+IDEA: "${idea}" | CONTEXTO: "${context}" | STACK SELECCIONADO: "${stackTitle}".
 
-Genera EXACTAMENTE 6 opciones de patrones arquitectónicos técnicos divididas estrictamente en 3 niveles de complejidad (2 simples, 2 intermedias y 2 avanzadas) con su campo "level":
+Genera EXACTAMENTE 6 opciones de patrones arquitectónicos técnicos adaptados y aterrizados ESPECÍFICAMENTE al stack tecnológico elegido ("${stackTitle}"), distribuidos estrictamente en 3 niveles de complejidad (2 simples, 2 intermedias, 2 avanzadas) mediante el campo "level" ("simple", "medium", "advanced"):
 
-1. NIVEL SIMPLE (level: "simple", tag: "Rápido / Directo"):
-   - Es OBLIGATORIO incluir patrones consagrados, directos y sin sobreingeniería:
-     * MVC Tradicional (Model-View-Controller clásico con vistas servidas por backend o componentes directos).
-     * Arquitectura en 3 Capas Directa (Presentación -> Lógica de Negocio -> Repositorio CRUD/DB) o API Minimalista.
+1. 2 OPCIONES "simple" (Rápido / Directo / Sin Sobreingeniería):
+   - Adapta patrones directos consagrados a las convenciones de este stack (ej. MVC/MVT Tradicional con vistas y controladores directos, Arquitectura en 3 Capas Clásica Presentación-Servicio-Datos, o API CRUD Monolítica directa).
+   - "level": "simple", "tag": "Rápido / Directo" o "Estructurado Simple".
 
-2. NIVEL INTERMEDIO (level: "medium", tag: "Pragmático / Modular"):
-   - Patrones para proyectos que necesitan modularidad sin llegar al extremo:
-     * Monolito Modular delimitado por dominios de negocio.
-     * Clean API Desacoplada (Backend REST/RPC aislado consumido por frontend independiente).
+2. 2 OPCIONES "medium" (Pragmático / Modular):
+   - Adapta patrones desacoplados y limpios (ej. Monolito Modular delimitado por dominios, Clean API Desacoplada Backend/Frontend con contratos DTO, o Vertical Slice Architecture orientada a características).
+   - "level": "medium", "tag": "Pragmático / Modular" o "Independiente".
 
-3. NIVEL AVANZADO (level: "advanced", tag: "Escalable / Robusto"):
-   - Patrones de alta ingeniería para proyectos de grado corporativo o alta concurrencia:
-     * Arquitectura Hexagonal (Puertos y Adaptadores / Onion Architecture).
-     * Event-Driven / CQRS ligero con sincronización de estado.
+3. 2 OPCIONES "advanced" (Escalable / Robusto):
+   - Adapta patrones de alta ingeniería para proyectos de alta concurrencia o aislamiento extremo (ej. Arquitectura Hexagonal con Puertos y Adaptadores adaptada a las librerías del stack, CQRS Ligero con Eventos de dominio, o Arquitectura Orientada a Eventos / Colas).
+   - "level": "advanced", "tag": "Aislamiento Total" o "Alto Desempeño".
+
+IMPORTANTE: Los nombres, "techs", "pros" y "cons" deben mencionar explícitamente herramientas, componentes o conceptos que tengan sentido con "${stackTitle}" y la idea "${idea}".
 
 Devuelve ÚNICAMENTE un JSON con:
 {
   "companionMood": "thinking",
-  "companionComment": "Comentario técnico de Strobi sobre el peligro de la sobreingeniería y cómo elegir el nivel adecuado.",
+  "companionComment": "Comentario técnico de Strobi sobre el balance arquitectónico adecuado para este stack sin caer en sobreingeniería.",
   "options": [
     {
-      "id": "arch-mvc",
+      "id": "arch-1",
       "level": "simple",
-      "title": "MVC Tradicional (Model-View-Controller)",
+      "title": "Nombre del Patrón Aterrizado",
       "tag": "Rápido / Directo",
-      "summary": "Controladores gestionando flujos, modelos mapeando datos y vistas renderizadas con enlace directo.",
-      "pros": "Cero fricción de red interna, estándar universitario indiscutible y desarrollo a máxima velocidad.",
-      "cons": "Menor desacoplamiento si en el futuro se quiere servir a múltiples clientes cliente/móvil.",
-      "techs": ["Controllers", "Model Bindings", "Views/Templates", "DbContext/ORM"]
-    },
-    {
-      "id": "arch-layers",
-      "level": "simple",
-      "title": "Arquitectura en 3 Capas Clásica",
-      "tag": "Estructurado Simple",
-      "summary": "Capa de Presentación que delega en Servicios de Negocio y estos en Repositorios de datos.",
-      "pros": "Estructura mental clara y directa; ideal para CRUDs sin complejidades innecesarias.",
-      "cons": "Fácil tentación de filtrar lógica de negocio directamente en los controladores.",
-      "techs": ["Presentation API", "Service Layer", "Data Access", "SQL Engine"]
-    },
-    {
-      "id": "arch-modular",
-      "level": "medium",
-      "title": "Monolito Modular por Dominios",
-      "tag": "Pragmático / Modular",
-      "summary": "Módulos de negocio delimitados con fronteras de paquetes dentro de una sola unidad de despliegue.",
-      "pros": "Despliegue atómico en 1 servidor pero con código ordenado que evita el código espagueti.",
-      "cons": "Exige disciplina del equipo para no importar módulos prohibidos entre sí.",
-      "techs": ["Domain Modules", "Single DB Schema", "In-Process Communication"]
-    },
-    {
-      "id": "arch-clean-api",
-      "level": "medium",
-      "title": "Clean API Desacoplada",
-      "tag": "Independiente",
-      "summary": "Backend REST/RPC consumido por frontend independiente con contratos DTO estrictos.",
-      "pros": "Independencia total del frontend; permite sumar clientes móviles o bots fácilmente.",
-      "cons": "Manejo de CORS, serialización JSON y gestión de dos ciclos de despliegue.",
-      "techs": ["REST Contracts", "DTOs", "Auth Middleware", "CORS Isolation"]
-    },
-    {
-      "id": "arch-hexagonal",
-      "level": "advanced",
-      "title": "Arquitectura Hexagonal (Puertos & Adaptadores)",
-      "tag": "Aislamiento Total",
-      "summary": "El núcleo del negocio no conoce bases de datos ni frameworks; todo entra y sale por puertos.",
-      "pros": "Testabilidad del 100% de la lógica sin tocar bases de datos; desacoplamiento de librerías.",
-      "cons": "Sobrecarga notable de código boilerplate, interfaces, adaptadores y mappers.",
-      "techs": ["Domain Core", "Inbound Ports", "Outbound Adapters", "Dependency Inversion"]
-    },
-    {
-      "id": "arch-cqrs",
-      "level": "advanced",
-      "title": "CQRS Ligero con Eventos",
-      "tag": "Alto Desempeño",
-      "summary": "Separación formal entre comandos que mutan datos y queries de consulta de alto rendimiento.",
-      "pros": "Optimización extrema de lecturas pesadas y trazabilidad de cambios por eventos.",
-      "cons": "Complejidad conceptual elevada para reglas simples de negocio.",
-      "techs": ["Command Handlers", "Query Handlers", "Domain Events", "Read/Write Separation"]
+      "summary": "Resumen conciso de cómo fluyen los datos y peticiones usando las piezas del stack.",
+      "pros": "Ventaja clara de desarrollo o mantenimiento.",
+      "cons": "Límite o trade-off a considerar.",
+      "techs": ["Componente/Capa 1", "Componente/Capa 2", "Componente/Capa 3", "Componente/Capa 4"]
     }
   ]
 }
@@ -178,44 +121,33 @@ Devuelve ÚNICAMENTE un JSON con:
   }
 
   // ========================================================
-  // ESTACIÓN 4: METODOLOGÍA DE TRABAJO
+  // ESTACIÓN 4: METODOLOGÍA DE TRABAJO (CADENCIA & FLUJO ÁGIL)
   // ========================================================
   if (stepId === 4 || stepId === "methodology") {
     return `
-Eres el gestor de ingeniería de Dev.Idea.
-IDEA: "${idea}" | CONTEXTO: "${context}".
-Propón 3 flujos de gestión de trabajo (ej. Kanban Continuo, Scrum en Sprints de 1 semana, o Modo Sniper / Shape Up).
+Eres el Lead Agile Coach y Gestor de Ingeniería de Dev.Idea.
+IDEA: "${idea}" | CONTEXTO: "${context}" | STACK: "${stackTitle}" | ARQUITECTURA: "${archTitle}".
+
+Genera 4 opciones de metodología y gestión de desarrollo ágil adaptadas a la envergadura del proyecto y al equipo esperado, clasificadas por complejidad ("level": "simple", "medium", "advanced"):
+
+- 1 opción "simple": Flujos de fricción cero ideales para desarrolladores solos o MVPs ultrarrápidos (ej. Kanban Continuo con límite WIP estricto, Personal Kanban).
+- 2 opciones "medium": Enfoques iterativos para equipos pequeños o desarrollo por objetivos (ej. Micro-Sprints de 1 semana con entregables testeables, o Shape Up / Ciclos de Enfoque con apetito fijo).
+- 1 opción "advanced": Enfoques estructurados para defensa académica o trabajo riguroso en equipo (ej. Scrum Formal con ceremonias completas y métricas, o XP / Extreme Programming con TDD continuo).
+
 Devuelve ÚNICAMENTE un JSON con:
 {
   "companionMood": "working",
-  "companionComment": "Si trabajas en solitario, el exceso de burocracia te mata el foco.",
+  "companionComment": "Comentario astuto de Strobi sobre no ahogarse en reuniones y elegir un ritmo que se pueda sostener.",
   "options": [
     {
       "id": "meth-1",
-      "title": "Kanban Continuo (WIP Estricto)",
-      "tag": "Ideal Solo Dev",
-      "summary": "Flujo de tareas sin fechas artificiales, limitando a 2 tareas en progreso.",
-      "pros": "Cero fricción de ceremonias, foco total en terminar antes de empezar otra.",
-      "cons": "Requiere mucha disciplina para no dejar acumular tareas en el backlog.",
-      "techs": ["Límites WIP", "Cycle Time", "Tablero Visual"]
-    },
-    {
-      "id": "meth-2",
-      "title": "Micro-Sprints de 1 Semana",
-      "tag": "Para Equipos / Entregas",
-      "summary": "Metas cerradas cada 7 días con un entregable visible y testeable.",
-      "pros": "Obliga a recortar alcance semanalmente para nunca quedarse a medias.",
-      "cons": "La estimación errada al inicio de semana genera frustración.",
-      "techs": ["Sprint Review", "Demo Semanal", "Scope Boxing"]
-    },
-    {
-      "id": "meth-3",
-      "title": "Modo Sniper (Ciclos de 2 Semanas)",
-      "tag": "Enfoque Feature-Driven",
-      "summary": "Un solo objetivo grande atacado hasta completarse al 100%.",
-      "pros": "Profundidad técnica sin interrupciones ni cambios de contexto.",
-      "cons": "Poco margen de cambio de rumbo si la feature era inviable.",
-      "techs": ["Deep Work", "Milestone Based", "Bug Quota"]
+      "level": "simple",
+      "title": "Nombre de la Metodología",
+      "tag": "Etiqueta Corta",
+      "summary": "Descripción de la cadencia de trabajo y cómo se gestionan los requerimientos.",
+      "pros": "Mayor beneficio para la velocidad o claridad del equipo.",
+      "cons": "Riesgo o compromiso que exige esta metodología.",
+      "techs": ["Práctica o Herramienta 1", "Práctica 2", "Práctica 3"]
     }
   ]
 }
@@ -228,7 +160,7 @@ Devuelve ÚNICAMENTE un JSON con:
   if (stepId === 5 || stepId === "diagrams") {
     return `
 Eres el arquitecto visual de Dev.Idea.
-IDEA: "${idea}" | STACK: "${stackTitle}".
+IDEA: "${idea}" | STACK: "${stackTitle}" | ARQUITECTURA: "${archTitle}".
 Genera 3 paquetes de diagramación según la profundidad que el usuario necesita defender o entender.
 Devuelve ÚNICAMENTE un JSON con:
 {
@@ -419,10 +351,10 @@ Devuelve ÚNICAMENTE un JSON con:
       "id": "ai-1",
       "title": "Kit Flash + Cursor IDE",
       "tag": "Velocidad & Precisión",
-      "summary": "Inferencia con Gemini 3.8 Flash para la app + Cursor Composer con Claude Sonnet en el editor.",
-      "pros": "Costo de tokens prácticamente $0 en producción y generación de código veloz en tu IDE.",
+      "summary": "Inferencia con Gemini Flash para la app + Cursor Composer en el editor.",
+      "pros": "Costo de tokens ultra bajo en producción y generación de código veloz en tu IDE.",
       "cons": "Requiere cuenta activa de Cursor y gestionar API keys separadas.",
-      "techs": ["Gemini 3.8 Flash API", "Cursor Composer", "Rules for AI"]
+      "techs": ["Gemini Flash API", "Cursor Composer", "Rules for AI"]
     },
     {
       "id": "ai-2",
@@ -448,12 +380,12 @@ Devuelve ÚNICAMENTE un JSON con:
   }
 
   // ========================================================
-  // ESTACIÓN 10 (⭐): ¡A TRABAJAR!
+  // ESTACIÓN 10 (⭐): BLUEPRINT FINAL
   // ========================================================
   return `
 Eres el Lead Architect de Dev.Idea.
-El usuario ha completado todas las estaciones para: "${idea}".
-Genera el blueprint de cierre con el árbol de directorios y el archivo AGENTS.md.
+El usuario ha completado todas las decisiones para: "${idea}".
+Genera el blueprint de cierre con el resumen técnico y los primeros comandos para inicializar el proyecto.
 Devuelve ÚNICAMENTE un JSON con:
 {
   "companionMood": "celebrate",
