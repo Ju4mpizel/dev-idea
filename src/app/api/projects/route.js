@@ -16,7 +16,7 @@ function getSupabaseServer(req) {
   );
 }
 
-// GET: Obtiene proyectos del usuario autenticado
+// GET: Obtiene proyectos del usuario autenticado (con soporte de búsqueda Ficha D)
 export async function GET(req) {
   try {
     const supabase = getSupabaseServer(req);
@@ -32,10 +32,22 @@ export async function GET(req) {
       );
     }
 
-    const { data: projects, error } = await supabase
+    // FICHA D: Extracción del parámetro de búsqueda opcional
+    const { searchParams } = new URL(req.url);
+    const buscar = searchParams.get("buscar");
+
+    let query = supabase
       .from("projects")
       .select("*, blueprints (*)")
       .order("updated_at", { ascending: false });
+
+    // FICHA D: Búsqueda insensible a mayúsculas sin concatenación directa
+    if (buscar && buscar.trim() !== "") {
+      const termino = `%${buscar.trim()}%`;
+      query = query.ilike("title", termino);
+    }
+
+    const { data: projects, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -50,7 +62,7 @@ export async function GET(req) {
   }
 }
 
-// POST: Crea un nuevo proyecto con su blueprint
+// POST: Crea un nuevo proyecto con su blueprint (con validación de activo Ficha F)
 export async function POST(req) {
   try {
     const supabase = getSupabaseServer(req);
@@ -67,7 +79,7 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { blueprint, currentStep = 0, isCompleted = false } = body;
+    const { blueprint, currentStep = 0, isCompleted = false, activo } = body;
 
     if (!blueprint) {
       return NextResponse.json(
@@ -76,12 +88,27 @@ export async function POST(req) {
       );
     }
 
+    // FICHA F: Validación estricta del campo booleano
+    let estadoActivo = true;
+    if (activo !== undefined) {
+      if (typeof activo !== "boolean") {
+        return NextResponse.json(
+          {
+            error:
+              "El campo 'activo' debe ser un valor booleano JSON (true o false).",
+          },
+          { status: 400 },
+        );
+      }
+      estadoActivo = activo;
+    }
+
     const title =
       blueprint.selectedName ||
       (blueprint.idea ? blueprint.idea.slice(0, 30) : "Proyecto sin nombre");
     const status = isCompleted ? "COMPLETED" : "DRAFT";
 
-    // 1. Insertar en projects
+    // 1. Insertar en projects (incluyendo campo activo persistido)
     const { data: project, error: pError } = await supabase
       .from("projects")
       .insert([
@@ -90,9 +117,10 @@ export async function POST(req) {
           title,
           status,
           current_step: currentStep,
+          activo: estadoActivo,
         },
       ])
-      .select("id")
+      .select("id, title, status, activo, current_step")
       .single();
 
     if (pError) {
@@ -124,7 +152,11 @@ export async function POST(req) {
     }
 
     return NextResponse.json(
-      { message: "Proyecto creado con éxito", projectId: project.id },
+      {
+        message: "Proyecto creado con éxito",
+        projectId: project.id,
+        datos: project,
+      },
       { status: 201 },
     );
   } catch (err) {

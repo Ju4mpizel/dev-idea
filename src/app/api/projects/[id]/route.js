@@ -16,7 +16,7 @@ function getSupabaseServer(req) {
   );
 }
 
-// PUT: Actualiza el proyecto y su blueprint
+// PUT: Actualiza el proyecto y su blueprint (soporta actualización de 'activo' de Ficha F)
 export async function PUT(req, { params }) {
   try {
     const { id } = await params;
@@ -38,25 +38,46 @@ export async function PUT(req, { params }) {
     }
 
     const body = await req.json();
-    const { blueprint, currentStep = 0, isCompleted = false } = body;
+    const { blueprint, currentStep = 0, isCompleted = false, activo } = body;
 
-    const title =
-      blueprint?.selectedName ||
-      (blueprint?.idea ? blueprint.idea.slice(0, 30) : "Proyecto sin nombre");
-    const status = isCompleted ? "COMPLETED" : "DRAFT";
+    // FICHA F: Validación estricta del tipo booleano en actualización
+    const projectUpdates = {
+      current_step: currentStep,
+      status: isCompleted ? "COMPLETED" : "DRAFT",
+    };
+
+    if (blueprint) {
+      projectUpdates.title =
+        blueprint.selectedName ||
+        (blueprint.idea ? blueprint.idea.slice(0, 30) : "Proyecto sin nombre");
+    }
+
+    if (activo !== undefined) {
+      if (typeof activo !== "boolean") {
+        return NextResponse.json(
+          {
+            error:
+              "El campo 'activo' debe ser un booleano JSON (true o false).",
+          },
+          { status: 400 },
+        );
+      }
+      projectUpdates.activo = activo;
+    }
 
     // 1. Actualizar projects
-    const { error: pError } = await supabase
+    const { data: updatedProject, error: pError } = await supabase
       .from("projects")
-      .update({
-        title,
-        status,
-        current_step: currentStep,
-      })
-      .eq("id", id);
+      .update(projectUpdates)
+      .eq("id", id)
+      .select("id, title, status, activo, current_step")
+      .single();
 
-    if (pError) {
-      return NextResponse.json({ error: pError.message }, { status: 500 });
+    if (pError || !updatedProject) {
+      return NextResponse.json(
+        { error: pError ? pError.message : "Proyecto no encontrado" },
+        { status: pError ? 500 : 404 },
+      );
     }
 
     // 2. Actualizar blueprints (upsert)
@@ -86,7 +107,11 @@ export async function PUT(req, { params }) {
     }
 
     return NextResponse.json(
-      { message: "Proyecto actualizado con éxito", projectId: id },
+      {
+        message: "Proyecto actualizado con éxito",
+        projectId: id,
+        datos: updatedProject,
+      },
       { status: 200 },
     );
   } catch (err) {
