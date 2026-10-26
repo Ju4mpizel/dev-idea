@@ -1,0 +1,12 @@
+services:
+  dev-idea:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dev-idea-app:latest
+    container_name: dev-idea-container
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
