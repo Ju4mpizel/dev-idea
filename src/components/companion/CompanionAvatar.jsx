@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { createAvatar } from "@bible-strong/avatar-web";
 import baseAvatarDefinition from "@/data/avatar.avatar.json";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
@@ -15,7 +16,7 @@ const STROBI_COLORS = [
   { id: "dark", label: "Obsidian Tech", hex: "#3f3f46" },
 ];
 
-export function CompanionAvatar({ size = 130, className = "" }) {
+export function CompanionAvatar({ size = 110, className = "" }) {
   const containerRef = useRef(null);
   const avatarInstance = useRef(null);
   const resetTimerRef = useRef(null);
@@ -29,7 +30,11 @@ export function CompanionAvatar({ size = 130, className = "" }) {
   const [currentColor, setCurrentColor] = useState(STROBI_COLORS[0].hex);
   const previousStateRef = useRef({ mood, dialogue });
 
-  // 1. Definición procedural reactiva al color
+  const currentMoodRef = useRef(mood);
+  useEffect(() => {
+    currentMoodRef.current = mood;
+  }, [mood]);
+
   const dynamicDefinition = useMemo(() => {
     return {
       ...baseAvatarDefinition,
@@ -40,7 +45,6 @@ export function CompanionAvatar({ size = 130, className = "" }) {
     };
   }, [currentColor]);
 
-  // 2. Montaje y actualización limpia de la instancia del avatar
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -68,6 +72,27 @@ export function CompanionAvatar({ size = 130, className = "" }) {
   }, [dynamicDefinition]);
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!avatarInstance.current) return;
+
+      if (document.hidden) {
+        if (avatarInstance.current.stop) {
+          avatarInstance.current.stop();
+        }
+      } else {
+        if (avatarInstance.current.play) {
+          avatarInstance.current.play(currentMoodRef.current || "idle");
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (resetTimerRef.current) {
         clearTimeout(resetTimerRef.current);
@@ -75,13 +100,12 @@ export function CompanionAvatar({ size = 130, className = "" }) {
     };
   }, []);
 
-  // 3. Reaccionar a cambios en el Store (estaciones)
   useEffect(() => {
     if (!avatarInstance.current || !mood) return;
     try {
       avatarInstance.current.play(mood);
     } catch {
-      // Ignorar si el mood no es una animación nativa directa
+      // Ignorar fallback
     }
   }, [mood]);
 
@@ -89,7 +113,6 @@ export function CompanionAvatar({ size = 130, className = "" }) {
     setCurrentColor(hex);
   };
 
-  // 4. Interacción de clics sobre Strobi
   const handleAvatarClick = () => {
     if (isLoading) return;
 
@@ -111,7 +134,6 @@ export function CompanionAvatar({ size = 130, className = "" }) {
 
     setCompanion(randomItem.animation || mood, randomItem.quote);
 
-    // Retorno suave al diálogo original
     resetTimerRef.current = setTimeout(() => {
       setIsShaking(false);
       if (avatarInstance.current?.play) {
@@ -127,10 +149,10 @@ export function CompanionAvatar({ size = 130, className = "" }) {
 
   return (
     <div
-      className={`w-full max-w-2xl flex items-center justify-center gap-5 sm:gap-7 select-none ${className}`}
+      className={`w-full max-w-2xl flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 select-none px-2 ${className}`}
     >
-      {/* Avatar interactivo */}
-      <div className="w-[140px] shrink-0 flex flex-col items-center justify-center">
+      {/* Columna Strobi: tamaño estricto para evitar saltos horizontales */}
+      <div className="w-[120px] sm:w-[130px] shrink-0 flex flex-col items-center justify-center">
         <div
           onClick={handleAvatarClick}
           title="Haz clic para un consejo técnico de Strobi"
@@ -146,14 +168,14 @@ export function CompanionAvatar({ size = 130, className = "" }) {
         </div>
 
         {/* Paleta de colores */}
-        <div className="flex items-center gap-2 mt-2 bg-neutral-900/70 border border-neutral-800 px-2.5 py-1 rounded-full shadow-sm backdrop-blur-sm">
+        <div className="flex items-center gap-1.5 mt-1 sm:mt-2 bg-neutral-900/80 border border-neutral-800 px-2 py-0.5 sm:py-1 rounded-full shadow-sm backdrop-blur-sm">
           {STROBI_COLORS.map((c) => (
             <button
               key={c.id}
               type="button"
               onClick={() => handleColorChange(c.hex)}
               title={c.label}
-              className={`w-3 h-3 rounded-full transition-transform cursor-pointer ${
+              className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-transform cursor-pointer ${
                 currentColor === c.hex
                   ? "scale-125 ring-2 ring-white/90"
                   : "opacity-60 hover:opacity-100"
@@ -164,10 +186,14 @@ export function CompanionAvatar({ size = 130, className = "" }) {
         </div>
       </div>
 
-      {/* Burbuja de diálogo */}
-      <div className="w-[360px] sm:w-[440px] shrink-0 min-h-[88px] flex items-center">
+      {/* Columna Burbuja: Ancho fijo en escritorio para fijar la posición de Strobi */}
+      <motion.div
+        layout
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full sm:w-[460px] md:w-[480px] shrink-0 min-h-[64px] sm:min-h-[82px] flex items-center"
+      >
         <CompanionBubble message={dialogue} isThinking={isLoading} />
-      </div>
+      </motion.div>
     </div>
   );
 }

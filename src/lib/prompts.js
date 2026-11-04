@@ -158,41 +158,63 @@ Devuelve ÚNICAMENTE un JSON con:
   // ESTACIÓN 5: DIAGRAMAS DINÁMICOS IA
   // ========================================================
   if (stepId === 5 || stepId === "diagrams") {
+    // Detección heurística de persistencia según el stack y la arquitectura
+    const stackLower =
+      `${stackTitle} ${(selectedStack?.tags || []).join(" ")}`.toLowerCase();
+    const isStaticOrLanding =
+      stackLower.includes("landing") ||
+      stackLower.includes("html") ||
+      stackLower.includes("astro") ||
+      idea.toLowerCase().includes("landing");
+
+    const hasDatabase =
+      !isStaticOrLanding &&
+      (stackLower.includes("postgres") ||
+        stackLower.includes("supabase") ||
+        stackLower.includes("sql") ||
+        stackLower.includes("mongo") ||
+        stackLower.includes("prisma") ||
+        stackLower.includes("backend") ||
+        stackLower.includes("api"));
+
     return `
-Eres el arquitecto visual de Dev.Idea.
-IDEA: "${idea}" | STACK: "${stackTitle}" | ARQUITECTURA: "${archTitle}".
-Genera 3 paquetes de diagramación según la profundidad que el usuario necesita defender o entender.
+Eres el arquitecto visual de sistemas de Dev.Idea.
+IDEA: "${idea}" | CONTEXTO: "${context}" | STACK: "${stackTitle}" | ARQUITECTURA: "${archTitle}".
+REQUIERE BASE DE DATOS: ${hasDatabase ? "SÍ (relacional/documental)" : "NO (sitio estático/frontend sin persistencia compleja)"}.
+
+Genera EXACTAMENTE 3 paquetes de diagramas técnicos clasificados por profundidad ("level": "simple", "medium", "advanced"):
+
+REGLAS ESTRICTAS DE CONTEXTO:
+1. SI NO REQUIERE BASE DE DATOS: QUEDA PROHIBIDO sugerir "Diagrama Entidad-Relación (ERD)". En su lugar sugiere diagramas de "Casos de Uso con Actores", "Wireflow de Navegación", "Árbol de Componentes" o "Embudo de Conversión".
+2. SI EL CONTEXTO ES ACADÉMICO ("academic"): Es OBLIGATORIO incluir diagramas formales UML de defensa (Diagrama de Casos de Uso con Actores, Diagrama de Clases o Diagrama de Secuencia).
+3. SI REQUIERE BASE DE DATOS: Incluye en el nivel medio el Diagrama ERD con entidades clave y relaciones.
+
+Para cada paquete define una lista de diagramas concretos en "diagrams" especificando su tipo exacto ("type") entre:
+- "use-case" (Casos de uso / actores)
+- "components" (Arquitectura de módulos / carpetas)
+- "erd" (Entidad-relación / BD)
+- "sequence" (Secuencia temporal / auth / APIs)
+- "cloud" (Despliegue / infraestructura)
+- "flowchart" (Flujo general de usuario)
+
 Devuelve ÚNICAMENTE un JSON con:
 {
   "companionMood": "curious",
-  "companionComment": "Los diagramas justos para no perder medio día dibujando cajas.",
+  "companionComment": "Comentario astuto de Strobi sobre no perder tiempo dibujando cajas innecesarias y enfocarse en los diagramas que realmente aportan valor.",
   "options": [
     {
       "id": "diag-1",
-      "title": "Paquete Esencial",
-      "tag": "Recomendado",
-      "summary": "Arquitectura de componentes y flujo de usuario principal en Mermaid.",
-      "pros": "Suficiente para entender la interacción básica entre cliente y servidor.",
-      "cons": "No detalla el modelo de tablas ni el flujo de excepciones.",
-      "techs": ["Diagrama Arquitectura", "User Flow Básico"]
-    },
-    {
-      "id": "diag-2",
-      "title": "Paquete Técnico Completo",
-      "tag": "Para Defender Proyecto",
-      "summary": "Arquitectura + Modelo Entidad-Relación (ERD) detallado con llaves foráneas.",
-      "pros": "Deja la base de datos lista para tirar el schema de Prisma o SQL.",
-      "cons": "Requiere validar bien los tipos de datos de entrada.",
-      "techs": ["Arquitectura C4 Nivel 2", "Diagrama ERD BD", "Secuencia Auth"]
-    },
-    {
-      "id": "diag-3",
-      "title": "Paquete de Infraestructura & Cloud",
-      "tag": "Enfoque DevOps",
-      "summary": "Mapeo de servicios cloud, buckets, CDNs y pipeline CI/CD.",
-      "pros": "Muestra con claridad la ruta de despliegue a producción y los límites de costos.",
-      "cons": "Puede ser excesivo si solo quieres un MVP local.",
-      "techs": ["Cloud Map", "Pipeline GitHub Actions", "Edge Network"]
+      "level": "simple",
+      "title": "Nombre del Paquete",
+      "tag": "Esencial / MVP",
+      "summary": "Resumen claro de lo que documenta este paquete.",
+      "pros": "Ventaja en claridad y rapidez.",
+      "cons": "Trade-off o qué diagramas omite.",
+      "diagrams": [
+        { "name": "Casos de Uso Principales", "type": "use-case", "description": "Actores y metas principales del usuario." },
+        { "name": "Flujo de Pantallas", "type": "flowchart", "description": "Recorrido desde el inicio hasta la acción clave." }
+      ],
+      "sampleMermaid": "graph TD\\n  User([Usuario]) --> Home[Landing Page]\\n  Home --> CTA[Formulario Lead]"
     }
   ]
 }

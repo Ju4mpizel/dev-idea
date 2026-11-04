@@ -9,6 +9,7 @@ import { Station1_Naming } from "./stations/Station1_Naming";
 import { Station2_Stack } from "./stations/Station2_Stack";
 import { Station3_Architecture } from "./stations/Station3_Architecture";
 import { Station4_Methodology } from "./stations/Station4_Methodology";
+import { Station5_Diagrams } from "./stations/Station5_Diagrams";
 import { StationNode } from "./stations/StationNode";
 import { BlueprintShowcase } from "../workspace/BlueprintShowcase";
 
@@ -38,7 +39,6 @@ export function DecisionCanvas() {
     const existingData =
       generatedOptions[targetStep] || generatedOptions[`step_${targetStep}`];
 
-    // Si ya existe en memoria y no forzamos nueva generación, navegamos al instante
     if (!forceNew && existingData && Object.keys(existingData).length > 0) {
       if (existingData?.dialogue || existingData?.companionComment) {
         setCompanion(
@@ -134,31 +134,30 @@ export function DecisionCanvas() {
     goToStep(stepToOpen);
   };
 
-  // Pantalla de Error con Reintento
   if (apiError) {
     return (
-      <div className="w-full max-w-lg p-6 rounded-2xl bg-neutral-900/80 border border-red-900/50 backdrop-blur-md flex flex-col items-center text-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-red-950/60 border border-red-800 flex items-center justify-center text-red-400 font-bold text-sm">
+      <div className="w-full max-w-md mx-auto p-4 sm:p-5 rounded-2xl bg-neutral-900/80 border border-red-900/50 backdrop-blur-md flex flex-col items-center text-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-red-950/60 border border-red-800 flex items-center justify-center text-red-400 font-bold text-sm">
           !
         </div>
         <div>
           <h3 className="text-sm font-semibold text-neutral-200">
             Respuesta interrumpida
           </h3>
-          <p className="text-xs text-neutral-400 mt-1 max-w-sm">{apiError}</p>
+          <p className="text-xs text-neutral-400 mt-1 max-w-xs">{apiError}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap justify-center">
           <button
             type="button"
             onClick={previousStep}
-            className="px-3.5 py-1.5 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-300 hover:bg-neutral-800 text-xs font-mono transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-300 hover:bg-neutral-800 text-xs font-mono transition-colors cursor-pointer"
           >
             ← Volver
           </button>
           <button
             type="button"
             onClick={() => requestStepAndNavigate(currentStep, blueprint, true)}
-            className="px-4 py-1.5 rounded-lg bg-white text-neutral-950 hover:bg-neutral-200 text-xs font-medium transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 rounded-lg bg-white text-neutral-950 hover:bg-neutral-200 text-xs font-medium transition-colors cursor-pointer"
           >
             Reintentar llamada
           </button>
@@ -168,7 +167,7 @@ export function DecisionCanvas() {
   }
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full max-w-5xl flex flex-col gap-4 sm:gap-6">
       {currentStep === 0 && (
         <Station0_Idea
           onStartNew={handleStartNew}
@@ -204,7 +203,14 @@ export function DecisionCanvas() {
         />
       )}
 
-      {currentStep >= 5 && currentStep <= 9 && (
+      {currentStep === 5 && (
+        <Station5_Diagrams
+          data={generatedOptions[5] || generatedOptions["diagrams"]}
+          onNext={() => requestStepAndNavigate(6, blueprint)}
+        />
+      )}
+
+      {currentStep >= 6 && currentStep <= 9 && (
         <StationNode
           station={STATIONS.find((s) => s.stepNumber === currentStep)}
           data={

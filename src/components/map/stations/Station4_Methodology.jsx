@@ -6,6 +6,7 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { SelectionCard } from "./SelectionCard";
 import { TopBarControls } from "@/components/navigation/TopBarControls";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
+import { SkeletonGrid } from "@/components/ui/SkeletonCard";
 import {
   Lock,
   RotateCcw,
@@ -20,7 +21,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-// Función auxiliar para seleccionar el icono adecuado según la metodología
 function getMethodologyIcon(title = "", summary = "") {
   const text = `${title} ${summary}`.toLowerCase();
 
@@ -144,34 +144,34 @@ export function Station4_Methodology({ data, onNext }) {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.08 },
+      transition: { staggerChildren: 0.06 },
     },
   };
 
   return (
-    <div className="w-full flex flex-col gap-6">
-      {/* Cabecera con Toolbar */}
+    <div className="w-full flex flex-col gap-4 sm:gap-6">
+      {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
             <span>Estación 4 · Metodología de Trabajo</span>
             {isLockedHistory && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
+              <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
                 <Lock className="w-2.5 h-2.5" /> Modo Consulta
               </span>
             )}
           </span>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-0.5">
+          <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight mt-0.5">
             Cadencia de sprints y flujo de desarrollo
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {!isLockedHistory && (
             <button
               type="button"
               onClick={onNext}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 text-xs font-mono text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 text-xs font-mono text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0"
             >
               <SkipForward className="w-3.5 h-3.5" />
               <span>Omitir</span>
@@ -181,51 +181,36 @@ export function Station4_Methodology({ data, onNext }) {
         </div>
       </div>
 
-      {/* Leyenda de Carga Operativa */}
-      <div className="flex items-center gap-4 px-3 py-2 rounded-xl bg-neutral-900/40 border border-neutral-800/80 text-[11px] font-mono">
+      {/* Leyenda responsiva */}
+      <div className="flex items-center gap-3 sm:gap-4 px-3 py-2 rounded-xl bg-neutral-900/40 border border-neutral-800/80 text-[10px] sm:text-[11px] font-mono flex-wrap">
         <span className="text-neutral-500">Carga Operativa:</span>
         <div className="flex items-center gap-1.5 text-sky-400">
-          <span className="w-2 h-2 rounded-full bg-sky-400" />
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-sky-400" />
           <span>Ágil / Cero Fricción</span>
         </div>
         <div className="flex items-center gap-1.5 text-amber-400">
-          <span className="w-2 h-2 rounded-full bg-amber-400" />
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400" />
           <span>Iterativo / Semanal</span>
         </div>
         <div className="flex items-center gap-1.5 text-rose-400">
-          <span className="w-2 h-2 rounded-full bg-rose-400" />
-          <span>Estructurado / Formal</span>
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-400" />
+          <span>Estructurado</span>
         </div>
       </div>
 
-      {/* Skeletons de Carga */}
+      {/* Skeletons Shimmer durante carga */}
       {isLoading && options.length === 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((n) => (
-            <div
-              key={n}
-              className="h-[260px] p-5 rounded-2xl border border-neutral-800 bg-neutral-900/30 backdrop-blur-md flex flex-col justify-between animate-pulse"
-            >
-              <div>
-                <div className="h-4 w-28 bg-neutral-800 rounded mb-3" />
-                <div className="h-5 w-44 bg-neutral-800 rounded mb-2" />
-                <div className="h-3 w-full bg-neutral-800/60 rounded mb-1" />
-                <div className="h-3 w-4/5 bg-neutral-800/60 rounded" />
-              </div>
-              <div className="pt-3 border-t border-neutral-900 flex gap-2">
-                <div className="h-4 w-16 bg-neutral-800/80 rounded" />
-                <div className="h-4 w-20 bg-neutral-800/80 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <SkeletonGrid
+          count={4}
+          columns="grid-cols-1 md:grid-cols-2"
+          height="h-[250px]"
+        />
       ) : (
-        /* Grid de Metodologías con Iconos */
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4"
         >
           {options.map((opt) => {
             const isSelected = selectedOption?.id === opt.id;
@@ -235,7 +220,7 @@ export function Station4_Methodology({ data, onNext }) {
             return (
               <div
                 key={opt.id}
-                className={`transition-opacity duration-300 ${
+                className={`transition-opacity duration-300 w-full flex ${
                   isDimmed
                     ? "opacity-35 grayscale pointer-events-none"
                     : "opacity-100"
@@ -243,7 +228,7 @@ export function Station4_Methodology({ data, onNext }) {
               >
                 <SelectionCard
                   icon={
-                    <IconComponent className="w-4 h-4 mr-1.5 text-neutral-300" />
+                    <IconComponent className="w-4 h-4 mr-1.5 text-neutral-300 shrink-0" />
                   }
                   title={opt.title || opt.name}
                   subtitle={opt.summary || opt.description}
@@ -261,14 +246,14 @@ export function Station4_Methodology({ data, onNext }) {
         </motion.div>
       )}
 
-      {/* Zona de Botones Inferior */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-        <div>
+      {/* Botones Inferiores Responsivos */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 pt-1">
+        <div className="w-full sm:w-auto">
           {(isLockedHistory || Boolean(blueprint.selectedMethodology)) && (
             <button
               type="button"
               onClick={() => setConfirmRewriteOpen(true)}
-              className="px-4 py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+              className="w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reescribir desde aquí</span>
@@ -276,16 +261,16 @@ export function Station4_Methodology({ data, onNext }) {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="w-full sm:w-auto flex items-center gap-2">
           <button
             type="button"
             disabled={!selectedOption || isLoading}
             onClick={handleConfirm}
-            className="px-6 py-2.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95"
+            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95"
           >
             {isLockedHistory ? (
               <>
-                <span>Volver al Flujo Actual (Fase {highestStep})</span>
+                <span>Volver al Flujo (Fase {highestStep})</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             ) : (

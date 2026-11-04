@@ -24,7 +24,6 @@ export default function HomePage() {
 
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Escuchar sesión de Supabase
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUser(user || null);
@@ -54,14 +53,16 @@ export default function HomePage() {
     }
   };
 
-  const shouldOffset = isRouteMapOpen && currentStep > 0;
+  const isDesktop =
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true;
+  const shouldOffset = isRouteMapOpen && currentStep > 0 && isDesktop;
 
   return (
-    <main className="min-h-screen flex flex-col bg-neutral-950 text-neutral-100 relative overflow-x-hidden font-sans selection:bg-neutral-800 selection:text-white">
-      {/* Resplandor ambiental de fondo */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-neutral-800/15 blur-[160px] pointer-events-none rounded-full" />
+    <main className="min-h-[100dvh] w-full flex flex-col bg-neutral-950 text-neutral-100 relative overflow-x-hidden font-sans selection:bg-neutral-800 selection:text-white">
+      {/* Resplandor ambiental */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[90vw] sm:w-[600px] lg:w-[800px] h-[200px] sm:h-[300px] bg-neutral-800/15 blur-[120px] pointer-events-none rounded-full" />
 
-      {/* Toast Notificación Flotante */}
+      {/* Toast Flotante */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
@@ -69,41 +70,41 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-2xl bg-neutral-900/90 border border-neutral-800 text-neutral-200 text-xs font-mono shadow-2xl backdrop-blur-xl"
+            className="fixed top-14 sm:top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 sm:px-4 py-2 rounded-2xl bg-neutral-900/90 border border-neutral-800 text-neutral-200 text-[11px] sm:text-xs font-mono shadow-2xl backdrop-blur-xl w-[90%] max-w-sm justify-center"
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>{toastMessage}</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="truncate">{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Header oficial */}
-      <header className="w-full border-b border-neutral-900 bg-neutral-950/70 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      {/* Header Fijo */}
+      <header className="w-full shrink-0 border-b border-neutral-900 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">
-            <DevIdeaLogo height={28} className="text-white" />
+            <DevIdeaLogo height={24} className="text-white sm:h-[26px]" />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <AnimatePresence>
               {cloudProjectId && (
                 <motion.span
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/80 text-emerald-400"
+                  className="flex items-center gap-1.5 text-[10px] font-mono px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-950/60 border border-emerald-800/80 text-emerald-400"
                 >
-                  <Cloud className="w-3 h-3" />
-                  <span>Nube activa</span>
+                  <Cloud className="w-3 h-3 shrink-0" />
+                  <span className="hidden xs:inline">Nube activa</span>
                 </motion.span>
               )}
             </AnimatePresence>
 
-            <span className="hidden md:inline text-[11px] px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono">
+            <span className="hidden lg:inline text-[11px] px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono">
               Inferencia Gemini 3.8 Flash
             </span>
 
-            {/* Transición animada de estado de autenticación */}
+            {/* Auth Button / User Profile */}
             <AnimatePresence mode="wait">
               {currentUser ? (
                 <motion.div
@@ -112,7 +113,7 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 6 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center gap-2 p-1 pl-2 rounded-xl bg-neutral-900 border border-neutral-800"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 pl-1.5 sm:pl-2 rounded-xl bg-neutral-900 border border-neutral-800"
                 >
                   {currentUser.user_metadata?.avatar_url ||
                   currentUser.user_metadata?.picture ? (
@@ -137,7 +138,7 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  <span className="text-xs font-mono text-neutral-300 max-w-[110px] truncate hidden sm:inline">
+                  <span className="text-xs font-mono text-neutral-300 max-w-[85px] sm:max-w-[120px] truncate hidden xs:inline">
                     {currentUser.user_metadata?.full_name ||
                       currentUser.user_metadata?.name ||
                       currentUser.email}
@@ -146,7 +147,7 @@ export default function HomePage() {
                     type="button"
                     onClick={handleSignOut}
                     title="Cerrar sesión"
-                    className="p-1.5 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
+                    className="p-1 sm:p-1.5 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
@@ -160,10 +161,11 @@ export default function HomePage() {
                   transition={{ duration: 0.2 }}
                   type="button"
                   onClick={signInWithGoogle}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 text-xs font-medium transition-all shadow-md active:scale-95 cursor-pointer"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 text-xs font-medium transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Iniciar con Google</span>
+                  <LogIn className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden xs:inline">Iniciar con Google</span>
+                  <span className="xs:hidden">Entrar</span>
                 </motion.button>
               )}
             </AnimatePresence>
@@ -171,27 +173,31 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Tarjeta de mapa lateral */}
+      {/* Mapa lateral modal/panel */}
       <StationBreadcrumb />
 
-      {/* Contenedor Principal */}
+      {/* Contenedor Central Fluido */}
       <motion.div
         animate={{
-          x: shouldOffset ? -160 : 0,
+          x: shouldOffset ? -140 : 0,
         }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="flex-1 max-w-4xl w-full mx-auto px-6 py-8 flex flex-col items-center"
+        className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col items-center justify-start gap-4 sm:gap-6"
       >
-        <section className="mb-4 flex flex-col items-center">
-          <CompanionAvatar size={150} />
+        {/* Mascota Strobi con altura contenida y escala fluida */}
+        <section className="shrink-0 flex flex-col items-center">
+          <div className="scale-80 sm:scale-90 lg:scale-100 origin-center">
+            <CompanionAvatar size={105} />
+          </div>
         </section>
 
-        <section className="w-full flex justify-center">
+        {/* Lienzo de Decisiones Fluido */}
+        <section className="w-full flex justify-center pb-6">
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="w-full flex justify-center"
           >
             <DecisionCanvas />
@@ -199,7 +205,8 @@ export default function HomePage() {
         </section>
       </motion.div>
 
-      <footer className="w-full border-t border-neutral-900 py-6 text-center text-xs text-neutral-600 font-mono">
+      {/* Footer Fluido */}
+      <footer className="w-full shrink-0 border-t border-neutral-900/80 py-3 sm:py-4 text-center text-[10px] sm:text-xs text-neutral-600 font-mono px-4 mt-auto">
         Dev.Idea © 2026 · Lienzo de Arquitectura y Decisiones Técnicas
       </footer>
     </main>

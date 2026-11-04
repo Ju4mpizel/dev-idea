@@ -25,8 +25,8 @@ export function ConfirmModal({
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        {/* Fondo con desenfoque sin alterar la barra de scroll del body */}
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
+        {/* Fondo con desenfoque */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -35,17 +35,17 @@ export function ConfirmModal({
           className="fixed inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
         />
 
-        {/* Modal centrado */}
+        {/* Modal responsivo */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.94, y: 12 }}
+          initial={{ opacity: 0, scale: 0.94, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94, y: 12 }}
+          exit={{ opacity: 0, scale: 0.94, y: 10 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md rounded-3xl bg-neutral-950/95 border border-neutral-800/80 p-6 sm:p-7 shadow-[0_0_50px_rgba(0,0,0,0.85)] ring-1 ring-white/10 flex flex-col gap-5 z-10"
+          className="relative w-full max-w-sm sm:max-w-md rounded-3xl bg-neutral-950/95 border border-neutral-800/90 p-5 sm:p-7 shadow-[0_0_50px_rgba(0,0,0,0.85)] ring-1 ring-white/10 flex flex-col gap-4 sm:gap-5 z-10 select-none"
         >
           <div className="flex items-start justify-between">
-            <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-400">
+            <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 sm:py-1 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-400">
               {tag}
             </span>
 
@@ -59,19 +59,19 @@ export function ConfirmModal({
           </div>
 
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+            <h3 className="text-sm sm:text-lg font-bold text-white tracking-tight">
               {title}
             </h3>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-2 leading-relaxed font-sans">
+            <p className="text-[11px] sm:text-xs text-neutral-400 mt-1.5 sm:mt-2 leading-relaxed font-sans">
               {description}
             </p>
           </div>
 
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-neutral-900">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-900">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-mono text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors cursor-pointer"
             >
               {cancelText}
             </button>
@@ -82,7 +82,7 @@ export function ConfirmModal({
                 onConfirm();
                 onClose();
               }}
-              className={`px-5 py-2.5 rounded-xl text-xs font-semibold font-sans transition-all cursor-pointer shadow-lg active:scale-95 ${
+              className={`px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs font-semibold font-sans transition-all cursor-pointer shadow-lg active:scale-95 ${
                 variant === "danger"
                   ? "bg-red-950 border border-red-800 text-red-200 hover:bg-red-900"
                   : "bg-white text-neutral-950 hover:bg-neutral-200"

@@ -42,7 +42,6 @@ export function TopBarControls() {
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [justSynced, setJustSynced] = useState(false);
 
-  // Calcular la fase máxima alcanzada
   const maxStepReached = Math.max(
     ...Object.keys(generatedOptions)
       .map(Number)
@@ -59,7 +58,6 @@ export function TopBarControls() {
     currentStep,
   );
 
-  // Se puede avanzar si no estamos en el paso final (10) y no estamos en la última fase alcanzada
   const canGoNext =
     currentStep > 0 && currentStep < maxStepReached && currentStep < 10;
 
@@ -93,7 +91,7 @@ export function TopBarControls() {
 
   return (
     <>
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-neutral-900/80 border border-neutral-800/90 backdrop-blur-md select-none shadow-lg">
+      <div className="flex items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-neutral-900/80 border border-neutral-800/90 backdrop-blur-md select-none shadow-lg max-w-full overflow-x-auto no-scrollbar">
         {/* Indicador de Carga */}
         <AnimatePresence>
           {isLoading && (
@@ -101,20 +99,20 @@ export function TopBarControls() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-neutral-950 border border-emerald-500/40 text-emerald-400 shrink-0"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-neutral-950 border border-emerald-500/40 text-emerald-400 shrink-0"
             >
               <RefreshCw className="w-3 h-3 animate-spin shrink-0 text-emerald-400" />
-              <span className="text-[11px] font-mono whitespace-nowrap">
+              <span className="text-[10px] sm:text-[11px] font-mono whitespace-nowrap">
                 Generando...
               </span>
               <button
                 type="button"
                 onClick={cancelRequest}
                 title="Pausar generación"
-                className="flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-md bg-neutral-800 hover:bg-red-950 text-neutral-300 hover:text-red-400 transition-colors cursor-pointer text-[10px] font-mono"
+                className="flex items-center gap-1 ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 rounded-md bg-neutral-800 hover:bg-red-950 text-neutral-300 hover:text-red-400 transition-colors cursor-pointer text-[9px] sm:text-[10px] font-mono"
               >
                 <Pause className="w-2.5 h-2.5 fill-current" />
-                <span>Pausar</span>
+                <span className="hidden xs:inline">Pausar</span>
               </button>
             </motion.div>
           )}
@@ -127,7 +125,7 @@ export function TopBarControls() {
             onClick={handleCloudSync}
             disabled={isSyncingCloud}
             title={justSynced ? "Guardado en Supabase" : "Guardar en la nube"}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-mono transition-all cursor-pointer ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-mono transition-all cursor-pointer shrink-0 ${
               justSynced
                 ? "bg-emerald-950/80 border border-emerald-700 text-emerald-300"
                 : "hover:bg-neutral-800/80 text-neutral-300 hover:text-white"
@@ -149,7 +147,7 @@ export function TopBarControls() {
         )}
 
         {currentUser && currentStep > 0 && (
-          <div className="w-[1px] h-4 bg-neutral-800 mx-0.5" />
+          <div className="w-[1px] h-3.5 sm:h-4 bg-neutral-800 mx-0.5 shrink-0" />
         )}
 
         {/* Ver / Ocultar Mapa */}
@@ -157,19 +155,20 @@ export function TopBarControls() {
           <button
             type="button"
             onClick={toggleRouteMap}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all cursor-pointer ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-mono transition-all cursor-pointer shrink-0 ${
               isRouteMapOpen
                 ? "bg-white text-neutral-950 font-semibold shadow-[0_0_15px_rgba(255,255,255,0.25)]"
                 : "hover:bg-neutral-800/80 text-neutral-300 hover:text-white"
             }`}
           >
-            <Map className="w-3.5 h-3.5" />
-            <span>{isRouteMapOpen ? "Ocultar Mapa" : "Ver Mapa"}</span>
+            <span className="text-[11px] sm:text-xs">
+              {isRouteMapOpen ? "Ocultar" : "Mapa"}
+            </span>
           </button>
         )}
 
         {currentStep > 0 && (
-          <div className="w-[1px] h-4 bg-neutral-800 mx-0.5" />
+          <div className="w-[1px] h-3.5 sm:h-4 bg-neutral-800 mx-0.5 shrink-0" />
         )}
 
         {/* Botón: Paso anterior */}
@@ -178,28 +177,28 @@ export function TopBarControls() {
             type="button"
             onClick={previousStep}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-neutral-800/80 text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-mono transition-colors cursor-pointer"
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl hover:bg-neutral-800/80 text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-mono transition-colors cursor-pointer shrink-0"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Anterior</span>
+            <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden md:inline">Anterior</span>
           </button>
         )}
 
-        {/* Botón: Paso siguiente (NUEVO) */}
+        {/* Botón: Paso siguiente */}
         {canGoNext && (
           <button
             type="button"
             onClick={() => goToStep(currentStep + 1)}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-neutral-800/80 text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-mono transition-colors cursor-pointer"
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl hover:bg-neutral-800/80 text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-mono transition-colors cursor-pointer shrink-0"
           >
-            <span className="hidden sm:inline">Siguiente</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Siguiente</span>
+            <ArrowRight className="w-3.5 h-3.5 shrink-0" />
           </button>
         )}
 
         {currentStep > 0 && (
-          <div className="w-[1px] h-4 bg-neutral-800 mx-0.5" />
+          <div className="w-[1px] h-3.5 sm:h-4 bg-neutral-800 mx-0.5 shrink-0" />
         )}
 
         {/* Botón: Purgar Memoria */}
@@ -207,10 +206,10 @@ export function TopBarControls() {
           type="button"
           onClick={() => setConfirmClearOpen(true)}
           title="Purgar memoria"
-          className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl hover:bg-neutral-800/80 text-neutral-500 hover:text-red-400 text-xs font-mono transition-colors cursor-pointer flex items-center gap-1.5"
+          className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl hover:bg-neutral-800/80 text-neutral-500 hover:text-red-400 text-xs font-mono transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Purgar</span>
+          <span className="hidden lg:inline">Purgar</span>
         </button>
       </div>
 

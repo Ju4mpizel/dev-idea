@@ -6,6 +6,7 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { SelectionCard } from "./SelectionCard";
 import { TopBarControls } from "@/components/navigation/TopBarControls";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
+import { SkeletonGrid } from "@/components/ui/SkeletonCard";
 import { Lock, RotateCcw, ArrowRight } from "lucide-react";
 
 export function Station3_Architecture({ data, onNext }) {
@@ -22,7 +23,6 @@ export function Station3_Architecture({ data, onNext }) {
 
   const [confirmRewriteOpen, setConfirmRewriteOpen] = useState(false);
 
-  // Fase máxima alcanzada en el proyecto
   const highestStep = Math.max(
     ...Object.keys(generatedOptions)
       .map(Number)
@@ -32,7 +32,6 @@ export function Station3_Architecture({ data, onNext }) {
     3,
   );
 
-  // Modo consulta si ya estamos en un paso posterior o si ya hay metodología guardada
   const isLockedHistory = Boolean(
     highestStep > 3 ||
     generatedOptions[4] ||
@@ -88,24 +87,24 @@ export function Station3_Architecture({ data, onNext }) {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.06 },
+      transition: { staggerChildren: 0.05 },
     },
   };
 
   return (
-    <div className="w-full flex flex-col gap-6">
-      {/* Cabecera con Toolbar */}
+    <div className="w-full flex flex-col gap-4 sm:gap-6">
+      {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
             <span>Estación 3 · Arquitectura Técnica</span>
             {isLockedHistory && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
+              <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
                 <Lock className="w-2.5 h-2.5" /> Modo Consulta
               </span>
             )}
           </span>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-0.5">
+          <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight mt-0.5">
             Patrón estructural de tu software
           </h2>
         </div>
@@ -113,51 +112,36 @@ export function Station3_Architecture({ data, onNext }) {
         <TopBarControls />
       </div>
 
-      {/* Leyenda de Complejidad por Colores */}
-      <div className="flex items-center gap-4 px-3 py-2 rounded-xl bg-neutral-900/40 border border-neutral-800/80 text-[11px] font-mono">
+      {/* Leyenda de Complejidad */}
+      <div className="flex items-center gap-3 sm:gap-4 px-3 py-2 rounded-xl bg-neutral-900/40 border border-neutral-800/80 text-[10px] sm:text-[11px] font-mono flex-wrap">
         <span className="text-neutral-500">Complejidad:</span>
         <div className="flex items-center gap-1.5 text-sky-400">
-          <span className="w-2 h-2 rounded-full bg-sky-400" />
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-sky-400" />
           <span>Simple / Rápido</span>
         </div>
         <div className="flex items-center gap-1.5 text-amber-400">
-          <span className="w-2 h-2 rounded-full bg-amber-400" />
-          <span>Pragmático / Modular</span>
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400" />
+          <span>Pragmático</span>
         </div>
         <div className="flex items-center gap-1.5 text-rose-400">
-          <span className="w-2 h-2 rounded-full bg-rose-400" />
-          <span>Avanzado / Robusto</span>
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-400" />
+          <span>Avanzado</span>
         </div>
       </div>
 
-      {/* Skeletons horizontales durante la carga */}
+      {/* Skeletons Shimmer de 6 Opciones */}
       {isLoading && options.length === 0 ? (
-        <div className="flex gap-4 overflow-x-hidden pb-4 pt-1">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div
-              key={n}
-              className="w-[300px] sm:w-[330px] shrink-0 h-[280px] p-5 rounded-2xl border border-neutral-800 bg-neutral-900/30 backdrop-blur-md flex flex-col justify-between animate-pulse"
-            >
-              <div>
-                <div className="h-4 w-20 bg-neutral-800 rounded mb-3" />
-                <div className="h-5 w-40 bg-neutral-800 rounded mb-2" />
-                <div className="h-3 w-full bg-neutral-800/60 rounded mb-1" />
-                <div className="h-3 w-4/5 bg-neutral-800/60 rounded" />
-              </div>
-              <div className="pt-3 border-t border-neutral-900 flex gap-2">
-                <div className="h-4 w-14 bg-neutral-800/80 rounded" />
-                <div className="h-4 w-16 bg-neutral-800/80 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <SkeletonGrid
+          count={6}
+          columns="grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          height="h-[270px]"
+        />
       ) : (
-        /* Carrusel Deslizante Horizontal (Slide de 6 Opciones) */
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x scrollbar-thin scrollbar-track-neutral-950 scrollbar-thumb-neutral-800"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
         >
           {options.map((opt) => {
             const isSelected = selectedOption?.id === opt.id;
@@ -166,7 +150,7 @@ export function Station3_Architecture({ data, onNext }) {
             return (
               <div
                 key={opt.id}
-                className={`w-[300px] sm:w-[330px] shrink-0 snap-start flex transition-opacity duration-300 ${
+                className={`transition-opacity duration-300 ${
                   isDimmed
                     ? "opacity-35 grayscale pointer-events-none"
                     : "opacity-100"
@@ -189,14 +173,14 @@ export function Station3_Architecture({ data, onNext }) {
         </motion.div>
       )}
 
-      {/* Zona de Botones Inferior */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-        <div>
+      {/* Botones Inferiores Responsivos */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 pt-1">
+        <div className="w-full sm:w-auto">
           {(isLockedHistory || Boolean(blueprint.selectedArchitecture)) && (
             <button
               type="button"
               onClick={() => setConfirmRewriteOpen(true)}
-              className="px-4 py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+              className="w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reescribir desde aquí</span>
@@ -204,16 +188,16 @@ export function Station3_Architecture({ data, onNext }) {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="w-full sm:w-auto flex items-center gap-2">
           <button
             type="button"
             disabled={!selectedOption || isLoading}
             onClick={handleConfirm}
-            className="px-6 py-2.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95"
+            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95"
           >
             {isLockedHistory ? (
               <>
-                <span>Volver al Flujo Actual (Fase {highestStep})</span>
+                <span>Volver al Flujo (Fase {highestStep})</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             ) : (

@@ -11,6 +11,7 @@ import {
   fetchUserProjects,
   deleteProjectFromCloud,
 } from "@/services/projectService";
+import { SkeletonFormStation0 } from "@/components/ui/SkeletonCard";
 import { Cloud, HardDrive, Trash2 } from "lucide-react";
 
 export function Station0_Idea({ onStartNew, onResumeSaved }) {
@@ -87,7 +88,6 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
     setCompanion(randomDiscard.mood, randomDiscard.quote);
   };
 
-  // Corrección clave: Usa el targetStep calculado por el store, no el valor crudo de la BD
   const handleLoadCloudProject = (project) => {
     const stepToResume = loadProjectFromCloud(project);
     onResumeSaved(stepToResume);
@@ -113,32 +113,36 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
     }
   };
 
+  if (isLoading) {
+    return <SkeletonFormStation0 />;
+  }
+
   const showSidebar =
     hasSavedBlueprint || (currentUser && cloudProjects.length > 0);
 
   return (
-    <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+    <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-start">
       {/* Formulario Principal */}
       <div
         className={`${
           showSidebar ? "md:col-span-2" : "md:col-span-3 max-w-xl mx-auto"
-        } w-full p-6 sm:p-8 rounded-3xl bg-neutral-900/40 border border-neutral-800/80 backdrop-blur-xl shadow-2xl flex flex-col gap-6 transition-all duration-300`}
+        } w-full p-4 sm:p-7 rounded-3xl bg-neutral-900/40 border border-neutral-800/80 backdrop-blur-xl shadow-2xl flex flex-col gap-4 sm:gap-6 transition-all duration-300`}
       >
         <div>
-          <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500">
+          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500">
             Estación 0 · Entrada & Contexto
           </span>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-1">
+          <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight mt-0.5 sm:mt-1">
             ¿Qué software tienes en mente?
           </h2>
-          <p className="text-xs text-neutral-400 mt-1">
+          <p className="text-[11px] sm:text-xs text-neutral-400 mt-1">
             Escribe una descripción corta para calibrar los requerimientos
             técnicos.
           </p>
         </div>
 
-        <input
-          type="text"
+        <textarea
+          rows={2}
           value={currentIdeaDraft}
           onChange={(e) => {
             setCurrentIdeaDraft(e.target.value);
@@ -151,20 +155,20 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
             }
           }}
           placeholder="Ej. Sistema de reservas para una pesquería local con pagos QR..."
-          className="w-full px-4 py-3.5 rounded-xl bg-neutral-950 border border-neutral-800 text-neutral-100 placeholder-neutral-600 text-sm outline-none focus:border-neutral-600 transition-colors font-sans"
+          className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3.5 rounded-xl bg-neutral-950 border border-neutral-800 text-neutral-100 placeholder-neutral-600 text-xs sm:text-sm outline-none focus:border-neutral-600 transition-colors font-sans resize-none"
         />
 
         {/* Selector de Contexto */}
         <div>
-          <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 block mb-2">
+          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 block mb-2">
             Propósito del proyecto
           </span>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {[
               {
                 id: "academic",
                 title: "Académico / U",
-                desc: "Fácil de defender y estructurado",
+                desc: "Estructurado y fácil de defender",
               },
               {
                 id: "startup",
@@ -181,16 +185,16 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
                 key={ctx.id}
                 type="button"
                 onClick={() => updateBlueprint({ context: ctx.id })}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   blueprint.context === ctx.id
                     ? "bg-neutral-800/90 border-neutral-500 text-white"
                     : "bg-neutral-950/60 border-neutral-900 hover:border-neutral-800 text-neutral-400"
                 }`}
               >
-                <div className="font-medium text-xs text-neutral-200">
+                <div className="font-medium text-[11px] sm:text-xs text-neutral-200">
                   {ctx.title}
                 </div>
-                <div className="text-[10px] text-neutral-500 mt-0.5">
+                <div className="text-[9px] sm:text-[10px] text-neutral-500 mt-0.5">
                   {ctx.desc}
                 </div>
               </button>
@@ -198,14 +202,14 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
           </div>
         </div>
 
-        <div className="flex justify-end pt-2">
+        <div className="flex justify-end pt-1">
           <button
             type="button"
             disabled={
               isLoading || (!isMapCardActive && !currentIdeaDraft.trim())
             }
             onClick={handleSubmit}
-            className={`px-6 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95 ${
+            className={`w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95 ${
               isMapCardActive && hasSavedBlueprint
                 ? "bg-emerald-400 text-neutral-950 hover:bg-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.3)]"
                 : "bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -222,24 +226,19 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
         </div>
       </div>
 
-      {/* Tarjeta Lateral de Memoria (Local & Nube) */}
+      {/* Tarjeta Lateral de Proyectos */}
       <AnimatePresence>
         {showSidebar && (
           <motion.aside
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 12 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.25 }}
-            className="w-full flex flex-col gap-3"
+            className="w-full flex flex-col gap-2.5 sm:gap-3"
           >
             <AnimatePresence>
               {currentUser && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-1 p-1 bg-neutral-900/60 border border-neutral-800/80 rounded-xl text-xs font-mono overflow-hidden"
-                >
+                <div className="flex items-center gap-1 p-1 bg-neutral-900/60 border border-neutral-800/80 rounded-xl text-xs font-mono">
                   <button
                     type="button"
                     onClick={() => setActiveTab("local")}
@@ -249,7 +248,7 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
                         : "text-neutral-400 hover:text-neutral-200"
                     }`}
                   >
-                    <HardDrive className="w-3 h-3" />
+                    <HardDrive className="w-3 h-3 shrink-0" />
                     <span>Local</span>
                   </button>
                   <button
@@ -261,122 +260,108 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
                         : "text-neutral-400 hover:text-neutral-200"
                     }`}
                   >
-                    <Cloud className="w-3 h-3" />
+                    <Cloud className="w-3 h-3 shrink-0" />
                     <span>Nube ({cloudProjects.length})</span>
                   </button>
-                </motion.div>
+                </div>
               )}
             </AnimatePresence>
 
-            {/* Contenido según pestaña */}
-            <AnimatePresence mode="wait">
-              {activeTab === "local" && hasSavedBlueprint && (
-                <motion.div
-                  key="tab-local"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.2 }}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={handleToggleCard}
-                  className={`p-5 rounded-2xl border transition-all duration-300 cursor-pointer select-none backdrop-blur-md flex flex-col justify-between ${
-                    isMapCardActive
-                      ? "bg-neutral-900/90 border-emerald-400/80 shadow-[0_0_25px_rgba(52,211,153,0.15)] ring-1 ring-emerald-400/50"
-                      : "bg-neutral-950/70 border-neutral-800 hover:border-neutral-700 opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-neutral-800 text-neutral-300">
-                        {blueprint.selectedName || "Borrador"}
-                      </span>
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
-                          isMapCardActive
-                            ? "border-emerald-400 bg-emerald-400"
-                            : "border-neutral-700"
-                        }`}
-                      >
-                        {isMapCardActive && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-neutral-950" />
-                        )}
-                      </div>
-                    </div>
-
-                    <h4 className="text-sm font-semibold text-neutral-100 line-clamp-2">
-                      "{blueprint.idea}"
-                    </h4>
-                    <p className="text-[11px] text-neutral-400 mt-2 font-mono">
-                      Stack: {blueprint.selectedStack?.title || "Pendiente"}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] font-mono">
-                    <span
-                      className={
-                        isMapCardActive
-                          ? "text-emerald-400 font-medium"
-                          : "text-neutral-500"
-                      }
-                    >
-                      {isMapCardActive ? "● Activado" : "○ Click para activar"}
+            {/* Pestaña Local */}
+            {activeTab === "local" && hasSavedBlueprint && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                onClick={handleToggleCard}
+                className={`p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer select-none backdrop-blur-md flex flex-col justify-between ${
+                  isMapCardActive
+                    ? "bg-neutral-900/90 border-emerald-400/80 shadow-[0_0_25px_rgba(52,211,153,0.15)] ring-1 ring-emerald-400/50"
+                    : "bg-neutral-950/70 border-neutral-800 hover:border-neutral-700 opacity-70 hover:opacity-100"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-neutral-800 text-neutral-300">
+                      {blueprint.selectedName || "Borrador"}
                     </span>
-                    <button
-                      type="button"
-                      onClick={handleDiscardLocal}
-                      className="text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
+                    <div
+                      className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${
+                        isMapCardActive
+                          ? "border-emerald-400 bg-emerald-400"
+                          : "border-neutral-700"
+                      }`}
                     >
-                      Descartar
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === "cloud" && (
-                <motion.div
-                  key="tab-cloud"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1"
-                >
-                  {cloudProjects.length === 0 ? (
-                    <div className="p-4 rounded-2xl border border-neutral-900 bg-neutral-950/40 text-center text-xs text-neutral-500 font-mono">
-                      No tienes proyectos guardados en la nube aún.
+                      {isMapCardActive && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-neutral-950" />
+                      )}
                     </div>
-                  ) : (
-                    cloudProjects.map((proj) => (
-                      <div
-                        key={proj.id}
-                        onClick={() => handleLoadCloudProject(proj)}
-                        className="p-4 rounded-2xl border border-neutral-800/80 hover:border-neutral-700 bg-neutral-900/60 hover:bg-neutral-900/90 transition-all cursor-pointer select-none flex flex-col justify-between"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-bold text-neutral-200 truncate">
-                            {proj.title}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) =>
-                              handleDeleteCloudProject(e, proj.id)
-                            }
-                            className="text-neutral-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
-                            title="Eliminar de la nube"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <span className="text-[10px] text-neutral-400 font-mono">
-                          Fase {proj.current_step} ·{" "}
-                          {new Date(proj.updated_at).toLocaleDateString()}
+                  </div>
+
+                  <h4 className="text-xs sm:text-sm font-semibold text-neutral-100 line-clamp-2">
+                    "{blueprint.idea}"
+                  </h4>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-400 mt-1 font-mono">
+                    Stack: {blueprint.selectedStack?.title || "Pendiente"}
+                  </p>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-neutral-800/80 flex items-center justify-between text-[10px] sm:text-[11px] font-mono">
+                  <span
+                    className={
+                      isMapCardActive
+                        ? "text-emerald-400 font-medium"
+                        : "text-neutral-500"
+                    }
+                  >
+                    {isMapCardActive ? "● Activado" : "○ Click para activar"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleDiscardLocal}
+                    className="text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
+                  >
+                    Descartar
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Pestaña Nube */}
+            {activeTab === "cloud" && (
+              <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
+                {cloudProjects.length === 0 ? (
+                  <div className="p-4 rounded-2xl border border-neutral-900 bg-neutral-950/40 text-center text-[11px] text-neutral-500 font-mono">
+                    No tienes proyectos guardados en la nube aún.
+                  </div>
+                ) : (
+                  cloudProjects.map((proj) => (
+                    <div
+                      key={proj.id}
+                      onClick={() => handleLoadCloudProject(proj)}
+                      className="p-3 sm:p-4 rounded-xl border border-neutral-800/80 hover:border-neutral-700 bg-neutral-900/60 hover:bg-neutral-900/90 transition-all cursor-pointer select-none flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold text-neutral-200 truncate pr-2">
+                          {proj.title}
                         </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteCloudProject(e, proj.id)}
+                          className="text-neutral-500 hover:text-red-400 transition-colors p-0.5 cursor-pointer shrink-0"
+                          title="Eliminar de la nube"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    ))
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      <span className="text-[9px] sm:text-[10px] text-neutral-400 font-mono">
+                        Fase {proj.current_step} ·{" "}
+                        {new Date(proj.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </motion.aside>
         )}
       </AnimatePresence>

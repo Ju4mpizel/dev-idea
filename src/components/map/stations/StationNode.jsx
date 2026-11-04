@@ -20,7 +20,6 @@ export function StationNode({ station, data, onAdvance }) {
 
   const [confirmRewriteOpen, setConfirmRewriteOpen] = useState(false);
 
-  // Fase máxima alcanzada en el proyecto
   const highestStep = Math.max(
     ...Object.keys(generatedOptions)
       .map(Number)
@@ -28,7 +27,6 @@ export function StationNode({ station, data, onAdvance }) {
     station.stepNumber,
   );
 
-  // Modo seguro si ya se generó la fase siguiente
   const isLockedHistory = Boolean(generatedOptions[station.stepNumber + 1]);
 
   const options = data?.options || [];
@@ -60,41 +58,41 @@ export function StationNode({ station, data, onAdvance }) {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.08 },
+      transition: { staggerChildren: 0.06 },
     },
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -14 }}
-      className="w-full flex flex-col gap-6"
+      exit={{ opacity: 0, y: -10 }}
+      className="w-full flex flex-col gap-4 sm:gap-6"
     >
-      {/* Cabecera con Toolbar Contextual */}
+      {/* Cabecera con Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
             <span>
               Estación {station.stepNumber} · {station.title}
             </span>
             {isLockedHistory && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
+              <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
                 <Lock className="w-2.5 h-2.5" /> Modo Consulta
               </span>
             )}
           </span>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-0.5">
+          <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight mt-0.5">
             {station.subtitle}
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {station.skippable && !isLockedHistory && (
             <button
               type="button"
               onClick={onAdvance}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 text-xs font-mono text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-neutral-800 bg-neutral-900/60 hover:bg-neutral-800 text-xs font-mono text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0"
             >
               <SkipForward className="w-3.5 h-3.5" />
               <span>Omitir</span>
@@ -104,12 +102,12 @@ export function StationNode({ station, data, onAdvance }) {
         </div>
       </div>
 
-      {/* Grid de opciones con SelectionCard */}
+      {/* Grilla Adaptativa */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
       >
         {options.map((opt) => {
           const isSelected = selectedOption?.id === opt.id;
@@ -118,7 +116,7 @@ export function StationNode({ station, data, onAdvance }) {
           return (
             <div
               key={opt.id}
-              className={`transition-opacity duration-300 ${
+              className={`transition-opacity duration-300 w-full flex ${
                 isDimmed
                   ? "opacity-35 grayscale pointer-events-none"
                   : "opacity-100"
@@ -139,14 +137,14 @@ export function StationNode({ station, data, onAdvance }) {
         })}
       </motion.div>
 
-      {/* Botones de acción */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-        <div>
+      {/* Botones de Acción Inferiores */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 pt-1">
+        <div className="w-full sm:w-auto">
           {isLockedHistory && (
             <button
               type="button"
               onClick={() => setConfirmRewriteOpen(true)}
-              className="px-4 py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+              className="w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reescribir desde aquí</span>
@@ -154,16 +152,16 @@ export function StationNode({ station, data, onAdvance }) {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="w-full sm:w-auto flex items-center gap-2">
           <button
             type="button"
             disabled={!selectedOption && !station.skippable}
             onClick={handleConfirm}
-            className="px-6 py-2.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95"
+            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95"
           >
             {isLockedHistory ? (
               <>
-                <span>Volver al Flujo Actual (Fase {highestStep})</span>
+                <span>Volver al Flujo (Fase {highestStep})</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             ) : (
@@ -183,7 +181,7 @@ export function StationNode({ station, data, onAdvance }) {
         variant="danger"
         tag="Reescritura de Flujo"
         title={`¿Reescribir desde la Estación ${station.stepNumber}?`}
-        description="Se desbloquearán las opciones de esta estación. Ten en cuenta que todas las estaciones generadas posteriormente se descartarán."
+        description="Se desbloquearán las opciones de esta estación. Todas las estaciones generadas posteriormente se descartarán."
         confirmText="Sí, desbloquear y reescribir"
         cancelText="Conservar como está"
       />
