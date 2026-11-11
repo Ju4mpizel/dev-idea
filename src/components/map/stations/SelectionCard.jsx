@@ -2,7 +2,14 @@
 
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
+import { getLevelStyle } from "./levelStyles";
 
+/**
+ * Tarjeta de opción común a las estaciones.
+ * - `children`: contenido extra entre las tecnologías y los trade-offs.
+ * - `footer`:   contenido al final de la tarjeta.
+ * - `isDimmed`: opción no elegida en Modo Consulta (no interactiva).
+ */
 export function SelectionCard({
   icon = null,
   title,
@@ -12,61 +19,42 @@ export function SelectionCard({
   cons,
   techs = [],
   isSelected = false,
+  isDimmed = false,
   level = "medium",
   onClick,
+  children = null,
+  footer = null,
 }) {
-  const levelStyles = {
-    simple: {
-      badge: "bg-sky-950/80 border-sky-800 text-sky-400",
-      borderSelected:
-        "border-sky-400 ring-1 ring-sky-400/80 shadow-[0_0_20px_rgba(56,189,248,0.15)]",
-      checkSelected: "bg-sky-400 border-sky-400 text-neutral-950",
-      accentDot: "bg-sky-400",
-    },
-    medium: {
-      badge: "bg-amber-950/80 border-amber-800 text-amber-400",
-      borderSelected:
-        "border-amber-400 ring-1 ring-amber-400/80 shadow-[0_0_20px_rgba(251,191,36,0.15)]",
-      checkSelected: "bg-amber-400 border-amber-400 text-neutral-950",
-      accentDot: "bg-amber-400",
-    },
-    advanced: {
-      badge: "bg-rose-950/80 border-rose-800 text-rose-400",
-      borderSelected:
-        "border-rose-400 ring-1 ring-rose-400/80 shadow-[0_0_20px_rgba(244,63,94,0.15)]",
-      checkSelected: "bg-rose-400 border-rose-400 text-neutral-950",
-      accentDot: "bg-rose-400",
-    },
-  };
-
-  const style = levelStyles[level] || levelStyles.medium;
+  const style = getLevelStyle(level);
+  const isInteractive = !isDimmed;
 
   return (
     <motion.div
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.99 }}
-      onClick={onClick}
-      className={`relative p-3.5 sm:p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between w-full select-none ${
+      whileHover={isInteractive ? { y: -2 } : undefined}
+      whileTap={isInteractive ? { scale: 0.99 } : undefined}
+      onClick={isInteractive ? onClick : undefined}
+      aria-disabled={isDimmed || undefined}
+      className={`relative h-full p-3.5 sm:p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between w-full select-none ${
         isSelected
           ? `bg-neutral-900/90 ${style.borderSelected}`
           : "bg-neutral-950/60 border-neutral-900 hover:border-neutral-800 hover:bg-neutral-900/40"
+      } ${
+        isDimmed ? "opacity-35 grayscale pointer-events-none" : "cursor-pointer"
       }`}
     >
       <div>
         {/* Cabecera */}
         <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-2.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md border flex items-center gap-1.5 ${style.badge}`}
+          >
             <span
-              className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md border flex items-center gap-1.5 ${style.badge}`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.accentDot}`}
-              />
-              <span className="truncate max-w-[140px] sm:max-w-none">
-                {tag || level.toUpperCase()}
-              </span>
+              className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.accentDot}`}
+            />
+            <span className="truncate max-w-[140px] sm:max-w-none">
+              {tag || level.toUpperCase()}
             </span>
-          </div>
+          </span>
 
           <div
             className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
@@ -103,29 +91,35 @@ export function SelectionCard({
             ))}
           </div>
         )}
+
+        {children}
       </div>
 
-      {/* Trade-offs */}
-      {(pros || cons) && (
-        <div className="pt-2 sm:pt-2.5 border-t border-neutral-900/80 text-[10px] sm:text-[11px] space-y-1 mt-1">
-          {pros && (
-            <div className="text-emerald-400/90 flex items-baseline gap-1.5">
-              <span className="font-mono text-emerald-500 font-bold shrink-0">
-                +
-              </span>
-              <span className="leading-snug">{pros}</span>
-            </div>
-          )}
-          {cons && (
-            <div className="text-neutral-400 flex items-baseline gap-1.5">
-              <span className="font-mono text-neutral-500 font-bold shrink-0">
-                -
-              </span>
-              <span className="leading-snug">{cons}</span>
-            </div>
-          )}
-        </div>
-      )}
+      <div>
+        {/* Trade-offs */}
+        {(pros || cons) && (
+          <div className="pt-2 sm:pt-2.5 border-t border-neutral-900/80 text-[10px] sm:text-[11px] space-y-1 mt-1">
+            {pros && (
+              <div className="text-emerald-400/90 flex items-baseline gap-1.5">
+                <span className="font-mono text-emerald-500 font-bold shrink-0">
+                  +
+                </span>
+                <span className="leading-snug">{pros}</span>
+              </div>
+            )}
+            {cons && (
+              <div className="text-neutral-400 flex items-baseline gap-1.5">
+                <span className="font-mono text-neutral-500 font-bold shrink-0">
+                  -
+                </span>
+                <span className="leading-snug">{cons}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {footer && <div className="mt-2.5 sm:mt-3">{footer}</div>}
+      </div>
     </motion.div>
   );
 }

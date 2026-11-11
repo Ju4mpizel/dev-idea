@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { blueprintToDbRow } from "@/config/stations.config";
 
 function getSupabaseServer(req) {
   const authHeader = req.headers.get("authorization");
@@ -102,17 +103,7 @@ export async function POST(req) {
     // 2. Insertar en blueprints
     const blueprintPayload = {
       project_id: project.id,
-      idea: blueprint.idea || "",
-      context: blueprint.context || "startup",
-      selected_name: blueprint.selectedName || "",
-      selected_stack: blueprint.selectedStack || null,
-      selected_architecture: blueprint.selectedArchitecture || null,
-      selected_methodology: blueprint.selectedMethodology || null,
-      selected_diagrams: blueprint.selectedDiagrams || [],
-      selected_style: blueprint.selectedStyle || null,
-      selected_layout: blueprint.selectedLayout || null,
-      selected_deploy: blueprint.selectedDeploy || null,
-      selected_ai_ecosystem: blueprint.selectedAiEcosystem || null,
+      ...blueprintToDbRow(blueprint),
     };
 
     const { error: bError } = await supabase
@@ -120,6 +111,14 @@ export async function POST(req) {
       .insert([blueprintPayload]);
 
     if (bError) {
+      // Rollback: evitamos dejar un proyecto huérfano sin blueprint
+      const { error: rollbackError } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", project.id);
+      if (rollbackError) {
+        console.error("[API projects] Rollback fallido:", rollbackError);
+      }
       return NextResponse.json({ error: bError.message }, { status: 500 });
     }
 

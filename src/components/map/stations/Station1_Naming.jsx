@@ -1,58 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { TopBarControls } from "@/components/navigation/TopBarControls";
-import { ConfirmModal } from "@/components/modals/ConfirmModal";
+import { isStepLocked } from "@/hooks/useStationNavigation";
 import { SkeletonGrid } from "@/components/ui/SkeletonCard";
-import { Lock, RotateCcw, ArrowRight, PenTool } from "lucide-react";
+import { StationShell, staggerContainer } from "./StationShell";
+import { PenTool } from "lucide-react";
+
+const STEP = 1;
 
 export function Station1_Naming({ data, onNext }) {
   const blueprint = useDecisionStore((state) => state.blueprint);
   const updateBlueprint = useDecisionStore((state) => state.updateBlueprint);
   const setCompanion = useDecisionStore((state) => state.setCompanion);
   const isLoading = useDecisionStore((state) => state.isLoading);
-  const generatedOptions = useDecisionStore((state) => state.generatedOptions);
-  const goToStep = useDecisionStore((state) => state.goToStep);
-  const truncateWorkflowFrom = useDecisionStore(
-    (state) => state.truncateWorkflowFrom,
-  );
-
-  const [confirmRewriteOpen, setConfirmRewriteOpen] = useState(false);
-
-  const highestStep = Math.max(
-    ...Object.keys(generatedOptions)
-      .map(Number)
-      .filter((n) => !isNaN(n)),
-    1,
-  );
-
-  const isLockedHistory = Boolean(
-    generatedOptions[2] || generatedOptions["stack"],
-  );
+  const isLockedHistory = useDecisionStore((s) => isStepLocked(s, STEP));
 
   const names = data?.names || [];
+  const savedName = blueprint.selectedName || "";
+  const savedIsCustom =
+    Boolean(savedName) && !names.some((n) => n.name === savedName);
 
-  const [selectedName, setSelectedName] = useState(
-    blueprint.selectedName || names[0]?.name || "",
-  );
+  // `null` = el usuario aún no tocó nada; el valor efectivo se deriva en cada render
+  const [pickedName, setPickedName] = useState(null);
+  const [customDraft, setCustomDraft] = useState(null);
 
-  const [customName, setCustomName] = useState(() => {
-    const isFromAI = names.some((n) => n.name === blueprint.selectedName);
-    return !isFromAI && blueprint.selectedName ? blueprint.selectedName : "";
-  });
-
-  useEffect(() => {
-    if (!selectedName && names.length > 0 && !customName) {
-      setSelectedName(blueprint.selectedName || names[0]?.name);
-    }
-  }, [names, blueprint.selectedName, selectedName, customName]);
+  const customName = customDraft ?? (savedIsCustom ? savedName : "");
+  const isCustomActive = Boolean(customName.trim());
+  const selectedName = pickedName ?? (savedIsCustom ? "" : savedName) ?? "";
+  const effectiveSelected = selectedName || names[0]?.name || "";
 
   const handleSelectCard = (item) => {
     if (isLockedHistory) return;
-    setCustomName("");
-    setSelectedName(item.name);
+    setCustomDraft("");
+    setPickedName(item.name);
     setCompanion(
       "thinking",
       `"${item.name}" tiene buen golpe. Veamos qué arquitectura le damos.`,
@@ -61,8 +43,7 @@ export function Station1_Naming({ data, onNext }) {
 
   const handleCustomNameChange = (val) => {
     if (isLockedHistory) return;
-    setCustomName(val);
-    setSelectedName(val);
+    setCustomDraft(val);
     if (val.trim()) {
       setCompanion(
         "proud",
@@ -71,55 +52,25 @@ export function Station1_Naming({ data, onNext }) {
     }
   };
 
+  const finalName = (customName.trim() || effectiveSelected).trim();
+
   const handleConfirm = () => {
-    if (isLockedHistory) {
-      goToStep(highestStep);
-      return;
-    }
-
-    const finalName = customName.trim() || selectedName.trim();
     if (!finalName) return;
-
     updateBlueprint({ selectedName: finalName });
-    onNext();
+    onNext({ selectedName: finalName });
   };
-
-  const handleRewriteConfirm = () => {
-    truncateWorkflowFrom(1);
-    setConfirmRewriteOpen(false);
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.08 },
-    },
-  };
-
-  const isCustomActive = Boolean(customName.trim());
 
   return (
-    <div className="w-full flex flex-col gap-4 sm:gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-            <span>Estación 1 · Identidad & Concepto</span>
-            {isLockedHistory && (
-              <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
-                <Lock className="w-2.5 h-2.5" /> Modo Consulta
-              </span>
-            )}
-          </span>
-          <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight mt-0.5">
-            Bautiza tu proyecto de software
-          </h2>
-        </div>
-
-        <TopBarControls />
-      </div>
-
-      {/* Grid con Skeleton Shimmer durante carga */}
+    <StationShell
+      stepNumber={STEP}
+      eyebrow="Identidad & Concepto"
+      title="Bautiza tu proyecto de software"
+      confirmLabel={isCustomActive ? "Usar este Nombre" : "Confirmar Nombre"}
+      onConfirm={handleConfirm}
+      confirmDisabled={!finalName}
+      rewriteTitle="¿Cambiar el nombre del proyecto?"
+      rewriteDescription="Se desbloquearán todas las opciones de nombre. El stack, la arquitectura y los pasos calculados posteriormente se descartarán."
+    >
       {isLoading && names.length === 0 ? (
         <SkeletonGrid
           count={4}
@@ -128,13 +79,14 @@ export function Station1_Naming({ data, onNext }) {
         />
       ) : (
         <motion.div
-          variants={containerVariants}
+          variants={staggerContainer(0.08)}
           initial="hidden"
           animate="show"
           className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
         >
           {names.map((item) => {
-            const isSelected = !isCustomActive && selectedName === item.name;
+            const isSelected =
+              !isCustomActive && effectiveSelected === item.name;
             const isDimmed = isLockedHistory && !isSelected;
 
             return (
@@ -234,57 +186,6 @@ export function Station1_Naming({ data, onNext }) {
           />
         </div>
       </div>
-
-      {/* Botones de Navegación */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 pt-1">
-        <div className="w-full sm:w-auto">
-          {isLockedHistory && (
-            <button
-              type="button"
-              onClick={() => setConfirmRewriteOpen(true)}
-              className="w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reescribir desde aquí</span>
-            </button>
-          )}
-        </div>
-
-        <div className="w-full sm:w-auto flex items-center gap-2">
-          <button
-            type="button"
-            disabled={(!selectedName && !customName.trim()) || isLoading}
-            onClick={handleConfirm}
-            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95"
-          >
-            {isLockedHistory ? (
-              <>
-                <span>Volver al Flujo (Fase {highestStep})</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            ) : (
-              <>
-                <span>
-                  {isCustomActive ? "Usar este Nombre" : "Confirmar Nombre"}
-                </span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      <ConfirmModal
-        isOpen={confirmRewriteOpen}
-        onClose={() => setConfirmRewriteOpen(false)}
-        onConfirm={handleRewriteConfirm}
-        variant="danger"
-        tag="Reescritura de Flujo"
-        title="¿Cambiar el nombre del proyecto?"
-        description="Se desbloquearán todas las opciones de nombre. El stack, la arquitectura y los pasos calculados posteriormente se descartarán."
-        confirmText="Sí, desbloquear y reescribir"
-        cancelText="Conservar como está"
-      />
-    </div>
+    </StationShell>
   );
 }

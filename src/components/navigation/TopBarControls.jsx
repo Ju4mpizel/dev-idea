@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { syncProjectToCloud } from "@/services/projectService";
+import { selectHighestStep } from "@/hooks/useStationNavigation";
 import {
   Map,
   ArrowLeft,
@@ -22,7 +23,6 @@ export function TopBarControls() {
   const currentStep = useDecisionStore((state) => state.currentStep);
   const previousStep = useDecisionStore((state) => state.previousStep);
   const goToStep = useDecisionStore((state) => state.goToStep);
-  const generatedOptions = useDecisionStore((state) => state.generatedOptions);
 
   const currentUser = useDecisionStore((state) => state.currentUser);
   const cloudProjectId = useDecisionStore((state) => state.cloudProjectId);
@@ -42,21 +42,7 @@ export function TopBarControls() {
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [justSynced, setJustSynced] = useState(false);
 
-  const maxStepReached = Math.max(
-    ...Object.keys(generatedOptions)
-      .map(Number)
-      .filter((n) => !isNaN(n)),
-    blueprint.selectedName ? 1 : 0,
-    blueprint.selectedStack ? 2 : 0,
-    blueprint.selectedArchitecture ? 3 : 0,
-    blueprint.selectedMethodology ? 4 : 0,
-    blueprint.selectedDiagrams?.length > 0 ? 5 : 0,
-    blueprint.selectedStyle ? 6 : 0,
-    blueprint.selectedLayout ? 7 : 0,
-    blueprint.selectedDeploy ? 8 : 0,
-    blueprint.selectedAiEcosystem ? 9 : 0,
-    currentStep,
-  );
+  const maxStepReached = useDecisionStore(selectHighestStep);
 
   const canGoNext =
     currentStep > 0 && currentStep < maxStepReached && currentStep < 10;

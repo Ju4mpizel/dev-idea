@@ -32,6 +32,10 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
   const loadProjectFromCloud = useDecisionStore(
     (state) => state.loadProjectFromCloud,
   );
+  const cloudProjectId = useDecisionStore((state) => state.cloudProjectId);
+  const setCloudProjectId = useDecisionStore(
+    (state) => state.setCloudProjectId,
+  );
 
   const [cloudProjects, setCloudProjects] = useState([]);
   const [activeTab, setActiveTab] = useState("local");
@@ -40,15 +44,21 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
     blueprint?.idea && (blueprint?.selectedName || generatedOptions[1]),
   );
 
+  // Sin sesión se fuerza la vista local (derivado, sin setState en el efecto)
+  const visibleTab = currentUser ? activeTab : "local";
+  const visibleCloudProjects = currentUser ? cloudProjects : [];
+
   useEffect(() => {
-    if (!currentUser) {
-      setActiveTab("local");
-      setCloudProjects([]);
-    } else {
-      fetchUserProjects()
-        .then((projects) => setCloudProjects(projects))
-        .catch(console.error);
-    }
+    if (!currentUser) return;
+    let cancelled = false;
+    fetchUserProjects()
+      .then((projects) => {
+        if (!cancelled) setCloudProjects(projects);
+      })
+      .catch(console.error);
+    return () => {
+      cancelled = true;
+    };
   }, [currentUser]);
 
   useEffect(() => {
@@ -98,6 +108,8 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
     try {
       await deleteProjectFromCloud(projectId);
       setCloudProjects((prev) => prev.filter((p) => p.id !== projectId));
+      // Si era el proyecto activo, desvinculamos para que el próximo guardado cree uno nuevo
+      if (projectId === cloudProjectId) setCloudProjectId(null);
       setCompanion("celebrate", "¡Proyecto eliminado de Supabase!");
     } catch (err) {
       console.error(err);
@@ -118,7 +130,7 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
   }
 
   const showSidebar =
-    hasSavedBlueprint || (currentUser && cloudProjects.length > 0);
+    hasSavedBlueprint || (currentUser && visibleCloudProjects.length > 0);
 
   return (
     <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-start">
@@ -243,7 +255,7 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
                     type="button"
                     onClick={() => setActiveTab("local")}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                      activeTab === "local"
+                      visibleTab === "local"
                         ? "bg-neutral-800 text-white font-medium"
                         : "text-neutral-400 hover:text-neutral-200"
                     }`}
@@ -255,20 +267,20 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
                     type="button"
                     onClick={() => setActiveTab("cloud")}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                      activeTab === "cloud"
+                      visibleTab === "cloud"
                         ? "bg-neutral-800 text-white font-medium"
                         : "text-neutral-400 hover:text-neutral-200"
                     }`}
                   >
                     <Cloud className="w-3 h-3 shrink-0" />
-                    <span>Nube ({cloudProjects.length})</span>
+                    <span>Nube ({visibleCloudProjects.length})</span>
                   </button>
                 </div>
               )}
             </AnimatePresence>
 
             {/* Pestaña Local */}
-            {activeTab === "local" && hasSavedBlueprint && (
+            {visibleTab === "local" && hasSavedBlueprint && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -298,7 +310,7 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
                   </div>
 
                   <h4 className="text-xs sm:text-sm font-semibold text-neutral-100 line-clamp-2">
-                    "{blueprint.idea}"
+                    &ldquo;{blueprint.idea}&rdquo;
                   </h4>
                   <p className="text-[10px] sm:text-[11px] text-neutral-400 mt-1 font-mono">
                     Stack: {blueprint.selectedStack?.title || "Pendiente"}
@@ -327,14 +339,14 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
             )}
 
             {/* Pestaña Nube */}
-            {activeTab === "cloud" && (
+            {visibleTab === "cloud" && (
               <div className="flex flex-col gap-2 max-h-[260px] overflow-y-auto pr-1">
-                {cloudProjects.length === 0 ? (
+                {visibleCloudProjects.length === 0 ? (
                   <div className="p-4 rounded-2xl border border-neutral-900 bg-neutral-950/40 text-center text-[11px] text-neutral-500 font-mono">
                     No tienes proyectos guardados en la nube aún.
                   </div>
                 ) : (
-                  cloudProjects.map((proj) => (
+                  visibleCloudProjects.map((proj) => (
                     <div
                       key={proj.id}
                       onClick={() => handleLoadCloudProject(proj)}

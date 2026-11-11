@@ -1,7 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { STATIONS } from "@/config/stations.config";
+import { getStation } from "@/config/stations.config";
 
 // Estaciones Modulares
 import { Station0_Idea } from "./stations/Station0_Idea";
@@ -10,6 +11,7 @@ import { Station2_Stack } from "./stations/Station2_Stack";
 import { Station3_Architecture } from "./stations/Station3_Architecture";
 import { Station4_Methodology } from "./stations/Station4_Methodology";
 import { Station5_Diagrams } from "./stations/Station5_Diagrams";
+import { Station6_Morphism } from "./stations/Station6_Morphism";
 import { StationNode } from "./stations/StationNode";
 import { BlueprintShowcase } from "../workspace/BlueprintShowcase";
 
@@ -30,42 +32,51 @@ export function DecisionCanvas() {
   const registerAbortController = useDecisionStore(
     (state) => state.registerAbortController,
   );
+  const releaseAbortController = useDecisionStore(
+    (state) => state.releaseAbortController,
+  );
 
+  // Identificador incremental: permite ignorar aborts de peticiones ya reemplazadas
+  const requestSeqRef = useRef(0);
+
+  /**
+   * Navega a `targetStep` y, si no hay opciones en caché (o `forceNew`), las pide a Gemini.
+   * El blueprint se lee del store en el momento exacto de la llamada y se combina con
+   * los `extraFields` explícitos de la estación, evitando closures desactualizados.
+   */
   const requestStepAndNavigate = async (
     targetStep,
-    blueprintPayload,
+    extraFields = {},
     forceNew = false,
   ) => {
-    const existingData =
-      generatedOptions[targetStep] || generatedOptions[`step_${targetStep}`];
+    const { generatedOptions: cachedOptions } = useDecisionStore.getState();
+    const existingData = cachedOptions[targetStep];
 
     if (!forceNew && existingData && Object.keys(existingData).length > 0) {
-      if (existingData?.dialogue || existingData?.companionComment) {
+      if (existingData.companionComment) {
         setCompanion(
-          existingData.mood || existingData.companionMood || "idle",
-          existingData.dialogue || existingData.companionComment,
+          existingData.companionMood || "idle",
+          existingData.companionComment,
         );
       }
       goToStep(targetStep);
       return;
     }
 
+    const requestId = ++requestSeqRef.current;
+    const controller = new AbortController();
+    registerAbortController(controller);
+
     setLoading(true);
     clearApiError();
     goToStep(targetStep);
 
-    const controller = new AbortController();
-    registerAbortController(controller);
+    const station = getStation(targetStep);
 
     try {
-      const currentStationConfig = STATIONS.find(
-        (s) => s.stepNumber === Number(targetStep),
-      );
-      const stepId = currentStationConfig?.id || targetStep;
-
       const fullBlueprint = {
-        ...blueprint,
-        ...(blueprintPayload || {}),
+        ...useDecisionStore.getState().blueprint,
+        ...(extraFields || {}),
       };
 
       const res = await fetch("/api/generate-step", {
@@ -73,7 +84,7 @@ export function DecisionCanvas() {
         signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          stepId,
+          stepId: station?.id || targetStep,
           blueprint: fullBlueprint,
         }),
       });
@@ -87,41 +98,30 @@ export function DecisionCanvas() {
       }
 
       const data = json.data;
-
       setStepOptions(targetStep, data);
-      setStepOptions(stepId, data);
 
-      const dialogue =
-        data.dialogue ||
-        data.companionComment ||
-        currentStationConfig?.defaultDialogue;
-      const mood =
-        data.mood ||
-        data.companionMood ||
-        currentStationConfig?.defaultMood ||
-        "thinking";
-
-      setCompanion(mood, dialogue);
+      // La API ya normaliza el contrato (src/lib/stepContracts.js)
+      setCompanion(data.companionMood, data.companionComment);
     } catch (err) {
-      if (err.name === "AbortError") return;
+      if (err.name === "AbortError") {
+        // Solo retrocedemos si el usuario canceló ESTA petición y sigue en su estación
+        // (no si fue reemplazada por otra o si el mapa se reinició).
+        const isLatest = requestId === requestSeqRef.current;
+        const stillHere =
+          useDecisionStore.getState().currentStep === targetStep;
+        if (isLatest && stillHere) previousStep();
+        return;
+      }
       setApiError(err.message);
     } finally {
-      setLoading(false);
+      releaseAbortController(controller);
+      if (requestId === requestSeqRef.current) setLoading(false);
     }
   };
 
   const handleStartNew = (newIdea, context) => {
     startNewMap(newIdea, context);
-    const freshBlueprint = {
-      idea: newIdea,
-      context,
-      selectedName: "",
-      selectedStack: null,
-      selectedArchitecture: null,
-      selectedDiagrams: [],
-      architectureNotes: "",
-    };
-    requestStepAndNavigate(1, freshBlueprint, true);
+    requestStepAndNavigate(1, undefined, true);
   };
 
   const handleResumeSaved = (targetStep) => {
@@ -156,7 +156,7 @@ export function DecisionCanvas() {
           </button>
           <button
             type="button"
-            onClick={() => requestStepAndNavigate(currentStep, blueprint, true)}
+            onClick={() => requestStepAndNavigate(currentStep, undefined, true)}
             className="px-3.5 py-1.5 rounded-lg bg-white text-neutral-950 hover:bg-neutral-200 text-xs font-medium transition-colors cursor-pointer"
           >
             Reintentar llamada
@@ -177,57 +177,58 @@ export function DecisionCanvas() {
 
       {currentStep === 1 && (
         <Station1_Naming
-          data={generatedOptions[1] || generatedOptions["naming"]}
-          onNext={() => requestStepAndNavigate(2, blueprint)}
+          data={generatedOptions[1]}
+          onNext={(extraFields) => requestStepAndNavigate(2, extraFields)}
         />
       )}
 
       {currentStep === 2 && (
         <Station2_Stack
-          data={generatedOptions[2] || generatedOptions["stack"]}
+          data={generatedOptions[2]}
           onNext={(extraFields) => requestStepAndNavigate(3, extraFields)}
         />
       )}
 
       {currentStep === 3 && (
         <Station3_Architecture
-          data={generatedOptions[3] || generatedOptions["architecture"]}
-          onNext={() => requestStepAndNavigate(4, blueprint)}
+          data={generatedOptions[3]}
+          onNext={(extraFields) => requestStepAndNavigate(4, extraFields)}
         />
       )}
 
       {currentStep === 4 && (
         <Station4_Methodology
-          data={generatedOptions[4] || generatedOptions["methodology"]}
-          onNext={() => requestStepAndNavigate(5, blueprint)}
+          data={generatedOptions[4]}
+          onNext={(extraFields) => requestStepAndNavigate(5, extraFields)}
         />
       )}
 
       {currentStep === 5 && (
         <Station5_Diagrams
-          data={generatedOptions[5] || generatedOptions["diagrams"]}
-          onNext={() => requestStepAndNavigate(6, blueprint)}
+          data={generatedOptions[5]}
+          onNext={(extraFields) => requestStepAndNavigate(6, extraFields)}
         />
       )}
 
-      {currentStep >= 6 && currentStep <= 9 && (
+      {currentStep === 6 && (
+        <Station6_Morphism
+          data={generatedOptions[6]}
+          onNext={(extraFields) => requestStepAndNavigate(7, extraFields)}
+        />
+      )}
+
+      {currentStep >= 7 && currentStep <= 9 && (
         <StationNode
-          station={STATIONS.find((s) => s.stepNumber === currentStep)}
-          data={
-            generatedOptions[currentStep] ||
-            generatedOptions[
-              STATIONS.find((s) => s.stepNumber === currentStep)?.id
-            ]
+          station={getStation(currentStep)}
+          data={generatedOptions[currentStep]}
+          onAdvance={(extraFields) =>
+            requestStepAndNavigate(currentStep + 1, extraFields)
           }
-          onAdvance={() => requestStepAndNavigate(currentStep + 1, blueprint)}
         />
       )}
 
       {currentStep === 10 && (
-        <BlueprintShowcase
-          data={generatedOptions[10] || generatedOptions["workspace"]}
-          blueprint={blueprint}
-        />
+        <BlueprintShowcase data={generatedOptions[10]} blueprint={blueprint} />
       )}
     </div>
   );

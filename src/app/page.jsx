@@ -7,6 +7,7 @@ import { CompanionAvatar } from "@/components/companion/CompanionAvatar";
 import { DecisionCanvas } from "@/components/map/DecisionCanvas";
 import { StationBreadcrumb } from "@/components/navigation/StationBreadcrumb";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { supabase } from "@/lib/supabaseClient";
 import { signInWithGoogle, signOut } from "@/services/projectService";
 import { LogIn, LogOut, Cloud, CheckCircle2 } from "lucide-react";
@@ -53,9 +54,14 @@ export default function HomePage() {
     }
   };
 
-  const isDesktop =
-    typeof window !== "undefined" ? window.innerWidth >= 1024 : true;
+  // Reactivo al resize y seguro para hidratación (false en el servidor)
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
   const shouldOffset = isRouteMapOpen && currentStep > 0 && isDesktop;
+
+  // Al cambiar de estación, volvemos arriba para no aterrizar a media página
+  useEffect(() => {
+    if (window.scrollY > 0) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep]);
 
   return (
     <main className="min-h-[100dvh] w-full flex flex-col bg-neutral-950 text-neutral-100 relative overflow-x-hidden font-sans selection:bg-neutral-800 selection:text-white">

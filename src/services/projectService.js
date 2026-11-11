@@ -56,38 +56,45 @@ export async function syncProjectToCloud({
   if (!user) return null; // Modo local: sin sesión no escribe en la nube
 
   const headers = await getAuthHeaders();
-  const payload = { blueprint, currentStep, isCompleted };
+  const body = JSON.stringify({ blueprint, currentStep, isCompleted });
 
-  if (!projectId) {
-    // POST /api/projects
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Error al crear el proyecto en la nube");
-    }
-
-    const data = await res.json();
-    return data.projectId;
-  } else {
+  if (projectId) {
     // PUT /api/projects/[id]
     const res = await fetch(`/api/projects/${projectId}`, {
       method: "PUT",
       headers,
-      body: JSON.stringify(payload),
+      body,
     });
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Error al actualizar el proyecto");
+    if (res.ok) {
+      const data = await res.json();
+      return data.projectId;
     }
 
-    const data = await res.json();
-    return data.projectId;
+    // 404: el proyecto se borró en la nube -> lo recreamos con POST
+    if (res.status !== 404) {
+      const err = await readJsonSafe(res);
+      throw new Error(err.error || "Error al actualizar el proyecto");
+    }
+  }
+
+  // POST /api/projects
+  const res = await fetch("/api/projects", { method: "POST", headers, body });
+
+  if (!res.ok) {
+    const err = await readJsonSafe(res);
+    throw new Error(err.error || "Error al crear el proyecto en la nube");
+  }
+
+  const data = await res.json();
+  return data.projectId;
+}
+
+async function readJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return {};
   }
 }
 

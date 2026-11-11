@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { blueprintToDbRow } from "@/config/stations.config";
 
 function getSupabaseServer(req) {
   const authHeader = req.headers.get("authorization");
@@ -46,34 +47,36 @@ export async function PUT(req, { params }) {
     const status = isCompleted ? "COMPLETED" : "DRAFT";
 
     // 1. Actualizar projects
-    const { error: pError } = await supabase
+    const { data: updatedRows, error: pError } = await supabase
       .from("projects")
       .update({
         title,
         status,
         current_step: currentStep,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
 
     if (pError) {
       return NextResponse.json({ error: pError.message }, { status: 500 });
+    }
+
+    // 0 filas: el proyecto fue borrado o no pertenece al usuario (RLS)
+    if (!updatedRows || updatedRows.length === 0) {
+      return NextResponse.json(
+        {
+          error: "El proyecto ya no existe en la nube.",
+          code: "PROJECT_NOT_FOUND",
+        },
+        { status: 404 },
+      );
     }
 
     // 2. Actualizar blueprints (upsert)
     if (blueprint) {
       const blueprintPayload = {
         project_id: id,
-        idea: blueprint.idea || "",
-        context: blueprint.context || "startup",
-        selected_name: blueprint.selectedName || "",
-        selected_stack: blueprint.selectedStack || null,
-        selected_architecture: blueprint.selectedArchitecture || null,
-        selected_methodology: blueprint.selectedMethodology || null,
-        selected_diagrams: blueprint.selectedDiagrams || [],
-        selected_style: blueprint.selectedStyle || null,
-        selected_layout: blueprint.selectedLayout || null,
-        selected_deploy: blueprint.selectedDeploy || null,
-        selected_ai_ecosystem: blueprint.selectedAiEcosystem || null,
+        ...blueprintToDbRow(blueprint),
       };
 
       const { error: bError } = await supabase

@@ -1,21 +1,36 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { STATIONS } from "@/config/stations.config";
+import {
+  DECISION_STATIONS,
+  createInitialBlueprint,
+  dbRowToBlueprint,
+  getEmptyValue,
+  hasDecisionValue,
+} from "@/config/stations.config";
+import { normalizeStepResponse } from "@/lib/stepContracts";
 
-const INITIAL_BLUEPRINT = {
-  idea: "",
-  context: "startup",
-  selectedName: "",
-  selectedStack: null,
-  selectedArchitecture: null,
-  selectedMethodology: null,
-  selectedDiagrams: [],
-  selectedStyle: null,
-  selectedLayout: null,
-  selectedDeploy: null,
-  selectedAiEcosystem: null,
-  architectureNotes: "",
-};
+// Versión del esquema persistido en localStorage (ver `migrate` al final).
+const STORE_VERSION = 2;
+
+/** Normaliza todas las opciones cacheadas al contrato vigente. */
+function normalizeAllOptions(options = {}) {
+  return Object.fromEntries(
+    Object.entries(options).map(([step, data]) => [
+      step,
+      normalizeStepResponse(step, data).data,
+    ]),
+  );
+}
+
+/** Conserva solo las claves numéricas de generatedOptions que cumplan `keep`. */
+function filterNumericOptions(options = {}, keep = () => true) {
+  return Object.fromEntries(
+    Object.entries(options).filter(([key]) => {
+      const step = Number(key);
+      return key !== "" && Number.isInteger(step) && keep(step);
+    }),
+  );
+}
 
 let activeAbortController = null;
 
@@ -40,7 +55,7 @@ export const useDecisionStore = create(
       companionMood: "idle",
       companionDialogue: "Cuéntame qué quieres armar y calibramos el camino.",
 
-      blueprint: INITIAL_BLUEPRINT,
+      blueprint: createInitialBlueprint(),
       generatedOptions: {},
 
       // Control del mapa en memoria (Estación 0)
@@ -93,44 +108,25 @@ export const useDecisionStore = create(
           apiError: null,
         })),
 
-      // Trunca y purga en cascada desde un paso en adelante
+      // Trunca y purga en cascada todo lo posterior a `fromStep`
       truncateWorkflowFrom: (fromStep) =>
         set((state) => {
-          const newGeneratedOptions = { ...state.generatedOptions };
-          const newBlueprint = { ...state.blueprint };
-
-          // 1. Purgar opciones cacheadas posteriores
-          Object.keys(newGeneratedOptions).forEach((key) => {
-            const num = Number(key);
-            if (!isNaN(num) && num > fromStep) {
-              delete newGeneratedOptions[key];
-            }
-          });
-
-          // 2. Limpieza dinámica del blueprint usando la lista de estaciones
-          STATIONS.forEach((station) => {
+          const blueprint = { ...state.blueprint };
+          DECISION_STATIONS.forEach((station) => {
             if (station.stepNumber > fromStep) {
-              delete newGeneratedOptions[station.id];
-
-              if (station.stepNumber === 1) {
-                newBlueprint.selectedName = "";
-              } else if (station.stepNumber === 2) {
-                newBlueprint.selectedStack = null;
-              } else if (station.stepNumber === 3) {
-                newBlueprint.selectedArchitecture = null;
-              } else if (station.stepNumber === 4) {
-                newBlueprint.selectedMethodology = null;
-              } else if (station.stepNumber === 5) {
-                newBlueprint.selectedDiagrams = [];
-              } else {
-                newBlueprint[station.id] = null;
-              }
+              blueprint[station.blueprintKey] = getEmptyValue(
+                station.blueprintKey,
+              );
             }
           });
 
           return {
-            generatedOptions: newGeneratedOptions,
-            blueprint: newBlueprint,
+            currentStep: fromStep,
+            generatedOptions: filterNumericOptions(
+              state.generatedOptions,
+              (step) => step <= fromStep,
+            ),
+            blueprint,
             companionMood: "curious",
             companionDialogue:
               "Camino reiniciado desde este punto. Elige de nuevo y recalcularemos la ruta.",
@@ -149,114 +145,60 @@ export const useDecisionStore = create(
         });
       },
 
+      // Registra la petición activa; una petición nueva cancela la anterior
       registerAbortController: (controller) => {
+        if (activeAbortController && activeAbortController !== controller) {
+          activeAbortController.abort();
+        }
         activeAbortController = controller;
+      },
+
+      releaseAbortController: (controller) => {
+        if (activeAbortController === controller) {
+          activeAbortController = null;
+        }
       },
 
       // Carga dinámica de proyectos traídos desde Supabase
       loadProjectFromCloud: (project) => {
-        const bp = Array.isArray(project.blueprints)
+        const row = Array.isArray(project.blueprints)
           ? project.blueprints[0] || {}
           : project.blueprints || {};
 
-        const restoredBlueprint = {
-          ...INITIAL_BLUEPRINT,
-          idea: bp.idea || project.title || "",
-          context: bp.context || "startup",
-          selectedName: bp.selected_name || project.title || "",
-          selectedStack: bp.selected_stack || null,
-          selectedArchitecture: bp.selected_architecture || null,
-          selectedMethodology: bp.selected_methodology || null,
-          selectedDiagrams: bp.selected_diagrams || [],
-          selectedStyle: bp.selected_style || null,
-          selectedLayout: bp.selected_layout || null,
-          selectedDeploy: bp.selected_deploy || null,
-          selectedAiEcosystem: bp.selected_ai_ecosystem || null,
-          architectureNotes: bp.architecture_notes || "",
-        };
+        const restoredBlueprint = dbRowToBlueprint(row);
+        // `title` puede ser un fragmento de la idea: nunca se usa como nombre.
+        restoredBlueprint.idea = restoredBlueprint.idea || project.title || "";
 
+        // Reconstruye una opción por estación a partir de la decisión guardada
         const restoredOptions = {};
         let lastCompletedStep = 0;
 
-        // Construcción no hardcodeada basada en las decisiones que sí existen en el blueprint
-        if (restoredBlueprint.selectedName) {
-          restoredOptions[1] = {
-            names: [
-              {
-                name: restoredBlueprint.selectedName,
-                style: "Guardado",
-                tagline: "Elegido previamente",
-                rationale: "Nombre cargado desde la nube.",
-              },
-            ],
-          };
-          restoredOptions["naming"] = restoredOptions[1];
-          lastCompletedStep = 1;
-        }
+        DECISION_STATIONS.forEach(
+          ({ stepNumber, blueprintKey, optionsKey }) => {
+            const value = restoredBlueprint[blueprintKey];
+            if (!optionsKey || !hasDecisionValue(value)) return;
 
-        if (restoredBlueprint.selectedStack) {
-          restoredOptions[2] = {
-            stacks: [restoredBlueprint.selectedStack],
-          };
-          restoredOptions["stack"] = restoredOptions[2];
-          lastCompletedStep = 2;
-        }
+            const items =
+              stepNumber === 1
+                ? [
+                    {
+                      name: value,
+                      style: "Guardado",
+                      tagline: "Elegido previamente",
+                      rationale: "Nombre cargado desde la nube.",
+                    },
+                  ]
+                : Array.isArray(value)
+                  ? value
+                  : [value];
 
-        if (restoredBlueprint.selectedArchitecture) {
-          restoredOptions[3] = {
-            options: [restoredBlueprint.selectedArchitecture],
-          };
-          restoredOptions["architecture"] = restoredOptions[3];
-          lastCompletedStep = 3;
-        }
-
-        if (restoredBlueprint.selectedMethodology) {
-          restoredOptions[4] = {
-            options: [restoredBlueprint.selectedMethodology],
-          };
-          restoredOptions["methodology"] = restoredOptions[4];
-          lastCompletedStep = 4;
-        }
-
-        if (restoredBlueprint.selectedDiagrams?.length > 0) {
-          restoredOptions[5] = {
-            options: restoredBlueprint.selectedDiagrams,
-          };
-          restoredOptions["diagrams"] = restoredOptions[5];
-          lastCompletedStep = 5;
-        }
-
-        if (restoredBlueprint.selectedStyle) {
-          restoredOptions[6] = {
-            options: [restoredBlueprint.selectedStyle],
-          };
-          restoredOptions["style"] = restoredOptions[6];
-          lastCompletedStep = 6;
-        }
-
-        if (restoredBlueprint.selectedLayout) {
-          restoredOptions[7] = {
-            options: [restoredBlueprint.selectedLayout],
-          };
-          restoredOptions["layout"] = restoredOptions[7];
-          lastCompletedStep = 7;
-        }
-
-        if (restoredBlueprint.selectedDeploy) {
-          restoredOptions[8] = {
-            options: [restoredBlueprint.selectedDeploy],
-          };
-          restoredOptions["deploy"] = restoredOptions[8];
-          lastCompletedStep = 8;
-        }
-
-        if (restoredBlueprint.selectedAiEcosystem) {
-          restoredOptions[9] = {
-            options: [restoredBlueprint.selectedAiEcosystem],
-          };
-          restoredOptions["ai_ecosystem"] = restoredOptions[9];
-          lastCompletedStep = 9;
-        }
+            // Pasa por el contrato: datos antiguos (p. ej. `pro`/`con`) se normalizan
+            restoredOptions[stepNumber] = normalizeStepResponse(stepNumber, {
+              [optionsKey]: items,
+            }).data;
+            lastCompletedStep = Math.max(lastCompletedStep, stepNumber);
+          },
+        );
 
         // Posicionamos estrictamente en el último paso que tiene selección real
         const targetStep = lastCompletedStep > 0 ? lastCompletedStep : 1;
@@ -289,11 +231,7 @@ export const useDecisionStore = create(
           apiError: null,
           companionMood: "idle",
           companionDialogue: `Iniciando nuevo análisis para: "${newIdea}".`,
-          blueprint: {
-            ...INITIAL_BLUEPRINT,
-            idea: newIdea,
-            context: context,
-          },
+          blueprint: createInitialBlueprint({ idea: newIdea, context }),
           generatedOptions: {},
         });
       },
@@ -318,14 +256,50 @@ export const useDecisionStore = create(
           apiError: null,
           companionMood: "idle",
           companionDialogue: "Memoria vaciada por completo. Lienzo en blanco.",
-          blueprint: INITIAL_BLUEPRINT,
+          blueprint: createInitialBlueprint(),
           generatedOptions: {},
         });
       },
     }),
     {
       name: "dev-idea-blueprint-cache",
+      version: STORE_VERSION,
       storage: createJSONStorage(() => localStorage),
+      // v0 -> v1: elimina alias de texto/step_X en generatedOptions y mueve las
+      //           claves que StationNode escribía por error (layout, deploy, ai-ecosystem).
+      // v1 -> v2: normaliza las opciones cacheadas al contrato unificado
+      //           (companionMood/companionComment, pros/cons, ids únicos).
+      migrate: (persisted, version) => {
+        if (!persisted) return persisted;
+        if (version >= 1) {
+          return version >= 2
+            ? persisted
+            : {
+                ...persisted,
+                generatedOptions: normalizeAllOptions(
+                  persisted.generatedOptions,
+                ),
+              };
+        }
+        const legacy = { ...(persisted.blueprint || {}) };
+        const renames = {
+          layout: "selectedLayout",
+          deploy: "selectedDeploy",
+          "ai-ecosystem": "selectedAiEcosystem",
+        };
+        Object.entries(renames).forEach(([oldKey, newKey]) => {
+          if (legacy[oldKey] && !legacy[newKey])
+            legacy[newKey] = legacy[oldKey];
+          delete legacy[oldKey];
+        });
+        return {
+          ...persisted,
+          blueprint: createInitialBlueprint(legacy),
+          generatedOptions: normalizeAllOptions(
+            filterNumericOptions(persisted.generatedOptions),
+          ),
+        };
+      },
       partialize: (state) => ({
         blueprint: state.blueprint,
         generatedOptions: state.generatedOptions,

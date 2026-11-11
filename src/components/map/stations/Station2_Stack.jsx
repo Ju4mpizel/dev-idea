@@ -1,173 +1,84 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { TopBarControls } from "@/components/navigation/TopBarControls";
-import { ConfirmModal } from "@/components/modals/ConfirmModal";
+import { isStepLocked, useOptionSelection } from "@/hooks/useStationNavigation";
 import { SkeletonGrid } from "@/components/ui/SkeletonCard";
-import { Check, Lock, RotateCcw, ArrowRight } from "lucide-react";
+import { SelectionCard } from "./SelectionCard";
+import { StationShell, LevelLegend, staggerContainer } from "./StationShell";
+
+const STEP = 2;
 
 export function Station2_Stack({ data, onNext }) {
   const blueprint = useDecisionStore((state) => state.blueprint);
   const updateBlueprint = useDecisionStore((state) => state.updateBlueprint);
   const setCompanion = useDecisionStore((state) => state.setCompanion);
   const isLoading = useDecisionStore((state) => state.isLoading);
-  const generatedOptions = useDecisionStore((state) => state.generatedOptions);
-  const currentStep = useDecisionStore((state) => state.currentStep);
-  const goToStep = useDecisionStore((state) => state.goToStep);
-  const truncateWorkflowFrom = useDecisionStore(
-    (state) => state.truncateWorkflowFrom,
-  );
-
-  const [confirmRewriteOpen, setConfirmRewriteOpen] = useState(false);
-
-  const highestStep = Math.max(
-    ...Object.keys(generatedOptions)
-      .map(Number)
-      .filter((n) => !isNaN(n)),
-    currentStep,
-    blueprint.selectedArchitecture ? 3 : 2,
-    2,
-  );
-
-  const isLockedHistory = Boolean(
-    highestStep > 2 ||
-    generatedOptions[3] ||
-    generatedOptions["architecture"] ||
-    blueprint.selectedArchitecture,
-  );
+  const isLockedHistory = useDecisionStore((s) => isStepLocked(s, STEP));
 
   const stacks = data?.stacks || [];
-  const [selectedId, setSelectedId] = useState(
-    blueprint.selectedStack?.id || stacks[0]?.id || "",
+  const { selectedOption, selectOption } = useOptionSelection(
+    stacks,
+    blueprint.selectedStack,
   );
 
-  const [languageChoices, setLanguageChoices] = useState(() => {
-    const initial = {};
-    stacks.forEach((s) => {
-      initial[s.id] =
-        s.defaultLanguage || s.availableLanguages?.[0] || "TypeScript";
-    });
-    return initial;
-  });
+  // Solo guardamos los cambios del usuario; el valor efectivo se deriva en cada
+  // render, así no queda `undefined` cuando las opciones llegan tras montar.
+  const [languageOverrides, setLanguageOverrides] = useState({});
 
-  useEffect(() => {
-    if (!selectedId && stacks.length > 0) {
-      setSelectedId(blueprint.selectedStack?.id || stacks[0]?.id);
-    }
-  }, [stacks, blueprint.selectedStack, selectedId]);
+  const getLanguage = (stack) =>
+    languageOverrides[stack.id] ||
+    (blueprint.selectedStack?.id === stack.id
+      ? blueprint.selectedStack.selectedLanguage
+      : null) ||
+    stack.defaultLanguage ||
+    stack.availableLanguages?.[0] ||
+    "TypeScript";
 
   const handleLanguageChange = (stackId, lang) => {
     if (isLockedHistory) return;
-    setLanguageChoices((prev) => ({ ...prev, [stackId]: lang }));
+    setLanguageOverrides((prev) => ({ ...prev, [stackId]: lang }));
   };
 
   const handleSelectStack = (stack) => {
     if (isLockedHistory) return;
-    setSelectedId(stack.id);
+    selectOption(stack);
     setCompanion(
       "curious",
-      `¿${stack.title} con ${languageChoices[stack.id]}? Interesante, analicemos sus límites.`,
+      `¿${stack.title} con ${getLanguage(stack)}? Interesante, analicemos sus límites.`,
     );
   };
 
   const handleConfirm = () => {
-    if (isLockedHistory) {
-      goToStep(highestStep);
-      return;
-    }
-
-    const chosen = stacks.find((s) => s.id === selectedId);
-    if (!chosen) return;
-
-    const selectedStackPayload = {
-      ...chosen,
-      selectedLanguage: languageChoices[chosen.id],
+    if (!selectedOption) return;
+    const selectedStack = {
+      ...selectedOption,
+      selectedLanguage: getLanguage(selectedOption),
     };
-
-    updateBlueprint({
-      selectedStack: selectedStackPayload,
-    });
-
-    onNext({ selectedStack: selectedStackPayload });
-  };
-
-  const handleRewriteConfirm = () => {
-    truncateWorkflowFrom(2);
-    setConfirmRewriteOpen(false);
-  };
-
-  const levelStyles = {
-    simple: {
-      badge: "bg-sky-950/80 border-sky-800 text-sky-400",
-      borderSelected:
-        "border-sky-400 ring-1 ring-sky-400/80 shadow-[0_0_20px_rgba(56,189,248,0.15)]",
-      checkSelected: "bg-sky-400 border-sky-400 text-neutral-950",
-      accentDot: "bg-sky-400",
-    },
-    medium: {
-      badge: "bg-amber-950/80 border-amber-800 text-amber-400",
-      borderSelected:
-        "border-amber-400 ring-1 ring-amber-400/80 shadow-[0_0_20px_rgba(251,191,36,0.15)]",
-      checkSelected: "bg-amber-400 border-amber-400 text-neutral-950",
-      accentDot: "bg-amber-400",
-    },
-    advanced: {
-      badge: "bg-rose-950/80 border-rose-800 text-rose-400",
-      borderSelected:
-        "border-rose-400 ring-1 ring-rose-400/80 shadow-[0_0_20px_rgba(244,63,94,0.15)]",
-      checkSelected: "bg-rose-400 border-rose-400 text-neutral-950",
-      accentDot: "bg-rose-400",
-    },
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.08 },
-    },
+    updateBlueprint({ selectedStack });
+    onNext({ selectedStack });
   };
 
   return (
-    <div className="w-full flex flex-col gap-4 sm:gap-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-            <span>Estación 2 · Stack Tecnológico</span>
-            {isLockedHistory && (
-              <span className="text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
-                <Lock className="w-2.5 h-2.5" /> Modo Consulta
-              </span>
-            )}
-          </span>
-          <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight mt-0.5">
-            Combinaciones balanceadas a tu medida
-          </h2>
-        </div>
-
-        <TopBarControls />
-      </div>
-
-      {/* Leyenda responsiva */}
-      <div className="flex items-center gap-3 sm:gap-4 px-3 py-2 rounded-xl bg-neutral-900/40 border border-neutral-800/80 text-[10px] sm:text-[11px] font-mono flex-wrap">
-        <span className="text-neutral-500">Dificultad:</span>
-        <div className="flex items-center gap-1.5 text-sky-400">
-          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-sky-400" />
-          <span>Ágil / Directo</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-amber-400">
-          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-400" />
-          <span>Pragmático</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-rose-400">
-          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-400" />
-          <span>Enterprise</span>
-        </div>
-      </div>
-
-      {/* Grilla con Skeleton Shimmer durante carga */}
+    <StationShell
+      stepNumber={STEP}
+      eyebrow="Stack Tecnológico"
+      title="Combinaciones balanceadas a tu medida"
+      legend={
+        <LevelLegend
+          label="Dificultad"
+          simple="Ágil / Directo"
+          medium="Pragmático"
+          advanced="Enterprise"
+        />
+      }
+      confirmLabel="Confirmar Stack"
+      onConfirm={handleConfirm}
+      confirmDisabled={!selectedOption}
+      rewriteTitle="¿Cambiar tu elección de Stack?"
+      rewriteDescription="Se desbloquearán todas las opciones de stack. La arquitectura y diagramas generados más adelante se descartarán."
+    >
       {isLoading && stacks.length === 0 ? (
         <SkeletonGrid
           count={3}
@@ -176,187 +87,68 @@ export function Station2_Stack({ data, onNext }) {
         />
       ) : (
         <motion.div
-          variants={containerVariants}
+          variants={staggerContainer(0.08)}
           initial="hidden"
           animate="show"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
         >
           {stacks.map((stack) => {
-            const isSelected = selectedId === stack.id;
-            const currentLang = languageChoices[stack.id];
-            const currentLevel = stack.level || "medium";
-            const style = levelStyles[currentLevel] || levelStyles.medium;
-            const isDimmed = isLockedHistory && !isSelected;
+            const isSelected = selectedOption?.id === stack.id;
+            const currentLang = getLanguage(stack);
+            const languages = stack.availableLanguages || [];
 
             return (
-              <motion.div
+              <SelectionCard
                 key={stack.id}
-                whileHover={!isLockedHistory ? { y: -2 } : {}}
-                whileTap={!isLockedHistory ? { scale: 0.99 } : {}}
+                title={stack.title}
+                tag={stack.badge}
+                level={stack.level}
+                techs={stack.tags || []}
+                pros={stack.pros}
+                cons={stack.cons}
+                isSelected={isSelected}
+                isDimmed={isLockedHistory && !isSelected}
                 onClick={() => handleSelectStack(stack)}
-                className={`w-full flex flex-col justify-between p-4 sm:p-5 rounded-2xl border transition-all duration-300 select-none backdrop-blur-md ${
-                  isSelected
-                    ? `bg-neutral-900/90 ${style.borderSelected}`
-                    : isDimmed
-                      ? "bg-neutral-950/40 border-neutral-900/50 opacity-35 grayscale cursor-not-allowed"
-                      : "bg-neutral-950/70 border-neutral-900 hover:border-neutral-800 hover:bg-neutral-900/40 cursor-pointer"
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <span
-                      className={`text-[9px] sm:text-[10px] font-mono tracking-wider px-2 py-0.5 rounded-md border flex items-center gap-1.5 ${
-                        isDimmed
-                          ? "bg-neutral-900 border-neutral-800 text-neutral-500"
-                          : style.badge
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          isDimmed ? "bg-neutral-600" : style.accentDot
-                        }`}
-                      />
-                      {stack.badge || currentLevel.toUpperCase()}
-                    </span>
-
-                    <div
-                      className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border flex items-center justify-center transition-colors ${
-                        isSelected
-                          ? style.checkSelected
-                          : "border-neutral-700 bg-neutral-900 text-transparent"
-                      }`}
-                    >
-                      <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[3]" />
-                    </div>
-                  </div>
-
-                  <h3
-                    className={`text-sm sm:text-base font-semibold tracking-tight ${
-                      isDimmed ? "text-neutral-500" : "text-neutral-100"
-                    }`}
-                  >
-                    {stack.title}
-                  </h3>
-
-                  <div className="flex flex-wrap gap-1 sm:gap-1.5 my-2.5 sm:my-3">
-                    {stack.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className={`text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded border font-mono ${
-                          isDimmed
-                            ? "bg-neutral-950 border-neutral-900 text-neutral-600"
-                            : "bg-neutral-900 border-neutral-800 text-neutral-300"
-                        }`}
-                      >
-                        {tag}
+                footer={
+                  <div className="pt-2.5 border-t border-neutral-900 flex justify-between items-center text-[10px] sm:text-[11px] font-mono text-neutral-500">
+                    <span>Variante: {currentLang}</span>
+                    {isSelected && (
+                      <span className="text-neutral-300 font-medium">
+                        Elegido ✓
                       </span>
-                    ))}
-                  </div>
-
-                  {stack.availableLanguages &&
-                    stack.availableLanguages.length > 1 && (
-                      <div
-                        className="my-2.5 p-1.5 sm:p-2 rounded-lg bg-neutral-900/90 border border-neutral-800 flex items-center justify-between text-xs"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <span className="text-neutral-400 font-mono text-[10px] sm:text-[11px]">
-                          Sabor:
-                        </span>
-                        <select
-                          disabled={isLockedHistory}
-                          value={currentLang}
-                          onChange={(e) =>
-                            handleLanguageChange(stack.id, e.target.value)
-                          }
-                          className="bg-neutral-950 border border-neutral-700 text-neutral-200 text-[11px] sm:text-xs rounded px-1.5 py-0.5 outline-none font-mono disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                          {stack.availableLanguages.map((lang) => (
-                            <option key={lang} value={lang}>
-                              {lang}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
                     )}
-
-                  <div className="space-y-1.5 mt-3 text-[11px] sm:text-xs">
-                    <p
-                      className={`leading-relaxed ${
-                        isDimmed ? "text-neutral-600" : "text-emerald-400/90"
-                      }`}
-                    >
-                      <span className="font-bold mr-1">+</span>
-                      {stack.pro}
-                    </p>
-                    <p className="text-neutral-500 leading-relaxed">
-                      <span className="font-bold mr-1 text-neutral-600">-</span>
-                      {stack.con}
-                    </p>
                   </div>
-                </div>
-
-                <div className="mt-4 pt-2.5 border-t border-neutral-900 flex justify-between items-center text-[10px] sm:text-[11px] font-mono text-neutral-500">
-                  <span>Variante: {currentLang}</span>
-                  {isSelected && (
-                    <span className="text-neutral-300 font-medium">
-                      Elegido ✓
+                }
+              >
+                {languages.length > 1 && (
+                  <div
+                    className="mb-2.5 p-1.5 sm:p-2 rounded-lg bg-neutral-900/90 border border-neutral-800 flex items-center justify-between text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-neutral-400 font-mono text-[10px] sm:text-[11px]">
+                      Sabor:
                     </span>
-                  )}
-                </div>
-              </motion.div>
+                    <select
+                      disabled={isLockedHistory}
+                      value={currentLang}
+                      onChange={(e) =>
+                        handleLanguageChange(stack.id, e.target.value)
+                      }
+                      className="bg-neutral-950 border border-neutral-700 text-neutral-200 text-[11px] sm:text-xs rounded px-1.5 py-0.5 outline-none font-mono disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {languages.map((lang) => (
+                        <option key={lang} value={lang}>
+                          {lang}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </SelectionCard>
             );
           })}
         </motion.div>
       )}
-
-      {/* Zona de Botones Inferior Responsiva */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 pt-1">
-        <div className="w-full sm:w-auto">
-          {(isLockedHistory || Boolean(blueprint.selectedStack)) && (
-            <button
-              type="button"
-              onClick={() => setConfirmRewriteOpen(true)}
-              className="w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reescribir desde aquí</span>
-            </button>
-          )}
-        </div>
-
-        <div className="w-full sm:w-auto flex items-center gap-2">
-          <button
-            type="button"
-            disabled={!selectedId || isLoading}
-            onClick={handleConfirm}
-            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95"
-          >
-            {isLockedHistory ? (
-              <>
-                <span>Volver al Flujo (Fase {highestStep})</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            ) : (
-              <>
-                <span>Confirmar Stack</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      <ConfirmModal
-        isOpen={confirmRewriteOpen}
-        onClose={() => setConfirmRewriteOpen(false)}
-        onConfirm={handleRewriteConfirm}
-        variant="danger"
-        tag="Reescritura de Flujo"
-        title="¿Cambiar tu elección de Stack?"
-        description="Se desbloquearán todas las opciones de stack. La arquitectura y diagramas generados más adelante se descartarán."
-        confirmText="Sí, desbloquear y reescribir"
-        cancelText="Conservar como está"
-      />
-    </div>
+    </StationShell>
   );
 }

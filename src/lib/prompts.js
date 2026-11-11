@@ -1,6 +1,86 @@
 /**
  * Generador de prompts estructurados para el flujo completo de estaciones en Dev.Idea.
+ *
+ * La FORMA del JSON la impone `responseSchema` (src/lib/stepSchemas.js) y la
+ * garantiza el saneamiento (src/lib/stepContracts.js). Por eso los prompts no
+ * incluyen ejemplos de JSON: solo el contexto, las reglas de negocio y el
+ * significado de cada campo. Los nombres de campo se mencionan igualmente para
+ * que el modelo siga orientado si algún día responde sin esquema.
  */
+
+/** Título legible de una decisión del blueprint (objeto, array u otro). */
+function describeDecision(value, fallback = "No definido") {
+  if (Array.isArray(value)) {
+    const titles = value.map((v) => describeDecision(v, "")).filter(Boolean);
+    return titles.length ? titles.join(" + ") : fallback;
+  }
+  if (value && typeof value === "object") {
+    const title = value.title || value.name || "";
+    return title ? `${title}${value.tag ? ` (${value.tag})` : ""}` : fallback;
+  }
+  return value ? String(value) : fallback;
+}
+
+/**
+ * Bloque de contexto con las decisiones tomadas ANTES de `uptoStep`,
+ * para que cada estación se apoye en las anteriores.
+ */
+function buildDecisionContext(blueprint, uptoStep) {
+  const {
+    selectedName,
+    selectedStack,
+    selectedArchitecture,
+    selectedMethodology,
+    selectedDiagrams,
+    selectedStyle,
+    selectedLayout,
+    selectedDeploy,
+    selectedAiEcosystem,
+  } = blueprint;
+
+  const stackParts = [describeDecision(selectedStack)];
+  if (selectedStack?.selectedLanguage) {
+    stackParts.push(`Lenguaje: ${selectedStack.selectedLanguage}`);
+  }
+  if (Array.isArray(selectedStack?.tags) && selectedStack.tags.length) {
+    stackParts.push(`Piezas: ${selectedStack.tags.join(", ")}`);
+  }
+
+  const styleKey = selectedStyle?.styleKey
+    ? ` [styleKey: ${selectedStyle.styleKey}]`
+    : "";
+
+  const lines = [
+    [1, `NOMBRE: ${selectedName || "Sin nombre definido"}`],
+    [2, `STACK: ${stackParts.join(" | ")}`],
+    [3, `ARQUITECTURA: ${describeDecision(selectedArchitecture)}`],
+    [
+      4,
+      `METODOLOGÍA: ${describeDecision(selectedMethodology, "Omitida por el usuario")}`,
+    ],
+    [5, `DIAGRAMAS: ${describeDecision(selectedDiagrams)}`],
+    [6, `ESTILO VISUAL: ${describeDecision(selectedStyle)}${styleKey}`],
+    [7, `LAYOUT: ${describeDecision(selectedLayout)}`],
+    [8, `DEPLOY: ${describeDecision(selectedDeploy)}`],
+    [9, `ECOSISTEMA IA: ${describeDecision(selectedAiEcosystem)}`],
+  ];
+
+  return lines
+    .filter(([step]) => step < uptoStep)
+    .map(([, text]) => `- ${text}`)
+    .join("\n");
+}
+
+/** Guía de campos de Strobi, común a todas las estaciones. */
+const strobiFields = (mood, comment) =>
+  `- companionMood: "${mood}" · companionComment: ${comment} (1 frase, tono cercano).`;
+
+/** Guía de campos de una opción estándar (estaciones 3, 4, 6-9). */
+const optionFields = (techsHint) =>
+  `- Por opción: id único · level · title concreto · tag de 2-3 palabras · summary de 1-2 frases aplicado a ESTE proyecto · pros y cons (ventaja y trade-off principal) · techs: 3-5 ${techsHint}.`;
+
+const JSON_ONLY = "Responde ÚNICAMENTE con el JSON.";
+
 export function buildStepPrompt(stepId, blueprint = {}) {
   const {
     idea = "",
@@ -20,21 +100,11 @@ export function buildStepPrompt(stepId, blueprint = {}) {
     return `
 Eres el estratega técnico de Dev.Idea.
 IDEA: "${idea}" | CONTEXTO: "${context}".
-Propón 4 opciones de NOMBRE con estilos: Modern SaaS, Técnico/Pragmático, Disruptivo y Minimalista.
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "dialogue": "Comentario astuto de Strobi sobre el bautizo del software.",
-  "mood": "thinking",
-  "names": [
-    {
-      "id": "name-1",
-      "name": "NombrePropuesto",
-      "style": "Modern SaaS",
-      "tagline": "Una línea concisa de propuesta de valor.",
-      "rationale": "Por qué este nombre resuena técnicamente."
-    }
-  ]
-}
+Propón 4 NOMBRES (names), uno por estilo: Modern SaaS, Técnico/Pragmático, Disruptivo y Minimalista.
+CAMPOS:
+- Por nombre: name · style (uno de los 4 estilos) · tagline: propuesta de valor en una línea · rationale: por qué resuena técnicamente.
+${strobiFields("thinking", "comentario astuto sobre el bautizo del software")}
+${JSON_ONLY}
 `;
   }
 
@@ -46,36 +116,17 @@ Devuelve ÚNICAMENTE un JSON con:
 Eres el arquitecto senior de Dev.Idea.
 IDEA: "${idea}" | CONTEXTO: "${context}" | NOMBRE: "${selectedName || "App"}".
 
-Genera entre 4 y 5 opciones de STACK tecnológico diversas, clasificadas por nivel de curva y complejidad técnica mediante el campo "level" ("simple", "medium", "advanced"):
-
-- simple (Azul / Ágil): Mínimo setup y despliegue instantáneo (ej. Next.js Jamstack, Laravel/Django clásico, o herramientas Local-First/Client-side).
-- medium (Amarillo / Pragmático): Balance para proyectos en crecimiento (ej. React + Node/FastAPI/Go, bases de datos relacionales estándar Postgres/MySQL).
-- advanced (Rojo / Enterprise o Alto Rendimiento): Ecosistemas con tipado robusto y tipados estrictos (ej. C# / .NET con ASP.NET Core, Java/Spring Boot, Rust).
-
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "dialogue": "Consejo técnico de Strobi sobre no complicar las dependencias más de lo necesario.",
-  "mood": "curious",
-  "stacks": [
-    {
-      "id": "stack-1",
-      "level": "simple",
-      "badge": "ÁGIL / VELOZ",
-      "title": "Nombre del Stack",
-      "tags": ["Framework", "Backend", "DB", "CSS"],
-      "defaultLanguage": "TypeScript",
-      "availableLanguages": ["TypeScript", "JavaScript"],
-      "pro": "Ventaja técnica principal.",
-      "con": "Desventaja o trade-off a considerar."
-    }
-  ]
-}
+Genera entre 4 y 5 STACKS (stacks) diversos, clasificados por curva y complejidad técnica en "level":
+- simple (Ágil): mínimo setup y despliegue instantáneo (ej. Next.js Jamstack, Laravel/Django clásico, herramientas Local-First).
+- medium (Pragmático): balance para proyectos en crecimiento (ej. React + Node/FastAPI/Go con Postgres/MySQL).
+- advanced (Enterprise / Alto rendimiento): ecosistemas de tipado estricto (ej. C# / ASP.NET Core, Java/Spring Boot, Rust).
+CAMPOS:
+- Por stack: title · badge en mayúsculas (ej. "ÁGIL / VELOZ") · tags: piezas del stack (framework, backend, BD, CSS) · defaultLanguage y availableLanguages (sabores reales del stack) · pros y cons técnicos.
+${strobiFields("curious", "consejo sobre no complicar las dependencias más de lo necesario")}
+${JSON_ONLY}
 `;
   }
 
-  // ========================================================
-  // ESTACIÓN 3: ARQUITECTURA TÉCNICA (DINÁMICA Y PERSONALIZADA AL STACK)
-  // ========================================================
   // ========================================================
   // ESTACIÓN 3: ARQUITECTURA TÉCNICA (6 OPCIONES BALANCEADAS AL STACK)
   // ========================================================
@@ -84,39 +135,17 @@ Devuelve ÚNICAMENTE un JSON con:
 Eres el arquitecto de sistemas de Dev.Idea.
 IDEA: "${idea}" | CONTEXTO: "${context}" | STACK SELECCIONADO: "${stackTitle}".
 
-Genera EXACTAMENTE 6 opciones de patrones arquitectónicos técnicos adaptados y aterrizados ESPECÍFICAMENTE al stack tecnológico elegido ("${stackTitle}"), distribuidos estrictamente en 3 niveles de complejidad (2 simples, 2 intermedias, 2 avanzadas) mediante el campo "level" ("simple", "medium", "advanced"):
+Genera EXACTAMENTE 6 patrones arquitectónicos aterrizados ESPECÍFICAMENTE a "${stackTitle}": 2 por nivel.
+1. 2 "simple" (Rápido / Directo, sin sobreingeniería): patrones directos consagrados en este stack (ej. MVC/MVT tradicional, 3 capas Presentación-Servicio-Datos, API CRUD monolítica). tag sugerido: "Rápido / Directo" o "Estructurado Simple".
+2. 2 "medium" (Pragmático / Modular): patrones desacoplados y limpios (ej. Monolito Modular por dominios, API desacoplada con contratos DTO, Vertical Slice). tag sugerido: "Pragmático / Modular" o "Independiente".
+3. 2 "advanced" (Escalable / Robusto): alta concurrencia o aislamiento extremo (ej. Hexagonal con puertos y adaptadores, CQRS ligero con eventos de dominio, orientada a eventos/colas). tag sugerido: "Aislamiento Total" o "Alto Desempeño".
 
-1. 2 OPCIONES "simple" (Rápido / Directo / Sin Sobreingeniería):
-   - Adapta patrones directos consagrados a las convenciones de este stack (ej. MVC/MVT Tradicional con vistas y controladores directos, Arquitectura en 3 Capas Clásica Presentación-Servicio-Datos, o API CRUD Monolítica directa).
-   - "level": "simple", "tag": "Rápido / Directo" o "Estructurado Simple".
-
-2. 2 OPCIONES "medium" (Pragmático / Modular):
-   - Adapta patrones desacoplados y limpios (ej. Monolito Modular delimitado por dominios, Clean API Desacoplada Backend/Frontend con contratos DTO, o Vertical Slice Architecture orientada a características).
-   - "level": "medium", "tag": "Pragmático / Modular" o "Independiente".
-
-3. 2 OPCIONES "advanced" (Escalable / Robusto):
-   - Adapta patrones de alta ingeniería para proyectos de alta concurrencia o aislamiento extremo (ej. Arquitectura Hexagonal con Puertos y Adaptadores adaptada a las librerías del stack, CQRS Ligero con Eventos de dominio, o Arquitectura Orientada a Eventos / Colas).
-   - "level": "advanced", "tag": "Aislamiento Total" o "Alto Desempeño".
-
-IMPORTANTE: Los nombres, "techs", "pros" y "cons" deben mencionar explícitamente herramientas, componentes o conceptos que tengan sentido con "${stackTitle}" y la idea "${idea}".
-
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "companionMood": "thinking",
-  "companionComment": "Comentario técnico de Strobi sobre el balance arquitectónico adecuado para este stack sin caer en sobreingeniería.",
-  "options": [
-    {
-      "id": "arch-1",
-      "level": "simple",
-      "title": "Nombre del Patrón Aterrizado",
-      "tag": "Rápido / Directo",
-      "summary": "Resumen conciso de cómo fluyen los datos y peticiones usando las piezas del stack.",
-      "pros": "Ventaja clara de desarrollo o mantenimiento.",
-      "cons": "Límite o trade-off a considerar.",
-      "techs": ["Componente/Capa 1", "Componente/Capa 2", "Componente/Capa 3", "Componente/Capa 4"]
-    }
-  ]
-}
+IMPORTANTE: title, techs, pros y cons deben mencionar herramientas, componentes o conceptos que tengan sentido con "${stackTitle}" y la idea.
+CAMPOS:
+${optionFields("capas o componentes del patrón con piezas del stack")}
+- summary: cómo fluyen los datos y peticiones usando las piezas del stack.
+${strobiFields("thinking", "balance arquitectónico adecuado sin caer en sobreingeniería")}
+${JSON_ONLY}
 `;
   }
 
@@ -128,29 +157,15 @@ Devuelve ÚNICAMENTE un JSON con:
 Eres el Lead Agile Coach y Gestor de Ingeniería de Dev.Idea.
 IDEA: "${idea}" | CONTEXTO: "${context}" | STACK: "${stackTitle}" | ARQUITECTURA: "${archTitle}".
 
-Genera 4 opciones de metodología y gestión de desarrollo ágil adaptadas a la envergadura del proyecto y al equipo esperado, clasificadas por complejidad ("level": "simple", "medium", "advanced"):
-
-- 1 opción "simple": Flujos de fricción cero ideales para desarrolladores solos o MVPs ultrarrápidos (ej. Kanban Continuo con límite WIP estricto, Personal Kanban).
-- 2 opciones "medium": Enfoques iterativos para equipos pequeños o desarrollo por objetivos (ej. Micro-Sprints de 1 semana con entregables testeables, o Shape Up / Ciclos de Enfoque con apetito fijo).
-- 1 opción "advanced": Enfoques estructurados para defensa académica o trabajo riguroso en equipo (ej. Scrum Formal con ceremonias completas y métricas, o XP / Extreme Programming con TDD continuo).
-
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "companionMood": "working",
-  "companionComment": "Comentario astuto de Strobi sobre no ahogarse en reuniones y elegir un ritmo que se pueda sostener.",
-  "options": [
-    {
-      "id": "meth-1",
-      "level": "simple",
-      "title": "Nombre de la Metodología",
-      "tag": "Etiqueta Corta",
-      "summary": "Descripción de la cadencia de trabajo y cómo se gestionan los requerimientos.",
-      "pros": "Mayor beneficio para la velocidad o claridad del equipo.",
-      "cons": "Riesgo o compromiso que exige esta metodología.",
-      "techs": ["Práctica o Herramienta 1", "Práctica 2", "Práctica 3"]
-    }
-  ]
-}
+Genera 4 metodologías de desarrollo ágil adaptadas a la envergadura del proyecto y al equipo esperado:
+- 1 "simple": fricción cero para devs solos o MVPs ultrarrápidos (ej. Kanban continuo con límite WIP, Personal Kanban).
+- 2 "medium": iterativas para equipos pequeños o por objetivos (ej. micro-sprints de 1 semana, Shape Up con apetito fijo).
+- 1 "advanced": estructuradas para defensa académica o equipos rigurosos (ej. Scrum formal con ceremonias y métricas, XP con TDD continuo).
+CAMPOS:
+${optionFields("prácticas o herramientas de la metodología")}
+- summary: cadencia de trabajo y cómo se gestionan los requerimientos.
+${strobiFields("working", "no ahogarse en reuniones y elegir un ritmo sostenible")}
+${JSON_ONLY}
 `;
   }
 
@@ -182,42 +197,18 @@ Eres el arquitecto visual de sistemas de Dev.Idea.
 IDEA: "${idea}" | CONTEXTO: "${context}" | STACK: "${stackTitle}" | ARQUITECTURA: "${archTitle}".
 REQUIERE BASE DE DATOS: ${hasDatabase ? "SÍ (relacional/documental)" : "NO (sitio estático/frontend sin persistencia compleja)"}.
 
-Genera EXACTAMENTE 3 paquetes de diagramas técnicos clasificados por profundidad ("level": "simple", "medium", "advanced"):
-
-REGLAS ESTRICTAS DE CONTEXTO:
-1. SI NO REQUIERE BASE DE DATOS: QUEDA PROHIBIDO sugerir "Diagrama Entidad-Relación (ERD)". En su lugar sugiere diagramas de "Casos de Uso con Actores", "Wireflow de Navegación", "Árbol de Componentes" o "Embudo de Conversión".
-2. SI EL CONTEXTO ES ACADÉMICO ("academic"): Es OBLIGATORIO incluir diagramas formales UML de defensa (Diagrama de Casos de Uso con Actores, Diagrama de Clases o Diagrama de Secuencia).
-3. SI REQUIERE BASE DE DATOS: Incluye en el nivel medio el Diagrama ERD con entidades clave y relaciones.
-
-Para cada paquete define una lista de diagramas concretos en "diagrams" especificando su tipo exacto ("type") entre:
-- "use-case" (Casos de uso / actores)
-- "components" (Arquitectura de módulos / carpetas)
-- "erd" (Entidad-relación / BD)
-- "sequence" (Secuencia temporal / auth / APIs)
-- "cloud" (Despliegue / infraestructura)
-- "flowchart" (Flujo general de usuario)
-
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "companionMood": "curious",
-  "companionComment": "Comentario astuto de Strobi sobre no perder tiempo dibujando cajas innecesarias y enfocarse en los diagramas que realmente aportan valor.",
-  "options": [
-    {
-      "id": "diag-1",
-      "level": "simple",
-      "title": "Nombre del Paquete",
-      "tag": "Esencial / MVP",
-      "summary": "Resumen claro de lo que documenta este paquete.",
-      "pros": "Ventaja en claridad y rapidez.",
-      "cons": "Trade-off o qué diagramas omite.",
-      "diagrams": [
-        { "name": "Casos de Uso Principales", "type": "use-case", "description": "Actores y metas principales del usuario." },
-        { "name": "Flujo de Pantallas", "type": "flowchart", "description": "Recorrido desde el inicio hasta la acción clave." }
-      ],
-      "sampleMermaid": "graph TD\\n  User([Usuario]) --> Home[Landing Page]\\n  Home --> CTA[Formulario Lead]"
-    }
-  ]
-}
+Genera EXACTAMENTE 3 paquetes de diagramas técnicos, uno por nivel de profundidad (simple, medium, advanced).
+REGLAS ESTRICTAS:
+1. SIN BASE DE DATOS: PROHIBIDO sugerir ERD. Usa casos de uso con actores, wireflow de navegación, árbol de componentes o embudo de conversión.
+2. CONTEXTO "academic": OBLIGATORIO incluir UML formal de defensa (casos de uso con actores, clases o secuencia).
+3. CON BASE DE DATOS: incluye en el nivel medium el ERD con entidades clave y relaciones.
+CAMPOS:
+${optionFields("piezas o herramientas de diagramación")}
+- diagrams: diagramas concretos del paquete (name · type · description). type: use-case (actores), components (módulos/carpetas), erd (BD), sequence (auth/APIs), cloud (infraestructura), flowchart (flujo de usuario).
+- sampleMermaid: ejemplo breve en sintaxis Mermaid del diagrama principal, con saltos de línea \\n.
+- cons: qué diagramas omite el paquete.
+${strobiFields("curious", "no dibujar cajas innecesarias y enfocarse en los diagramas que aportan valor")}
+${JSON_ONLY}
 `;
   }
 
@@ -226,43 +217,28 @@ Devuelve ÚNICAMENTE un JSON con:
   // ========================================================
   if (stepId === 6 || stepId === "morphism") {
     return `
-Eres el Lead Designer de Dev.Idea.
-IDEA: "${idea}".
-Genera 3 o 4 estilos cosméticos y de interfaz adaptados al tono del proyecto.
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "companionMood": "playful",
-  "companionComment": "Elegir el estilo desde el principio evita rehacer estilos tres veces.",
-  "options": [
-    {
-      "id": "morph-1",
-      "title": "Minimalismo Plano / Modern SaaS",
-      "tag": "Estándar Limpio",
-      "summary": "Bordes de 1px, grises de alto contraste, acentos monocromáticos y tipografía suiza.",
-      "pros": "Accesibilidad garantizada, peso CSS mínimo y muy fácil de mantener.",
-      "cons": "Menos diferenciador si buscas una experiencia visual juguetona.",
-      "techs": ["Radix Colors", "Zinc Palette", "Geist Sans", "Border Subtlety"]
-    },
-    {
-      "id": "morph-2",
-      "title": "Dark Glassmorphism Sutil",
-      "tag": "Elegante & Técnico",
-      "summary": "Capas translúcidas con backdrop-blur, reflejos tenues de luz y gradientes oscuros.",
-      "pros": "Sensación premium inmediata que destaca en presentaciones y landing pages.",
-      "cons": "El desenfoque backdrop puede penalizar frames en móviles de gama baja.",
-      "techs": ["Backdrop Blur", "Glass Borders", "Radial Glows", "Dark Obsidian"]
-    },
-    {
-      "id": "morph-3",
-      "title": "Claymorphism 3D Suave",
-      "tag": "Lúdico & Amigable",
-      "summary": "Sombras internas dobles que dan volumen de arcilla inflada a botones y tarjetas.",
-      "pros": "Altamente carismático, ideal para apps que buscan cercanía o productos educativos.",
-      "cons": "Requiere calibrar sombras personalizadas complejas en Tailwind.",
-      "techs": ["Inner Shadows", "Soft Rounded 3XL", "Pastel Accents", "Chubby UI"]
-    }
-  ]
-}
+Eres el Lead UI/UX Designer de Dev.Idea.
+IDEA: "${idea}" | CONTEXTO: "${context}".
+DECISIONES PREVIAS:
+${buildDecisionContext(blueprint, 6)}
+
+Elige EXACTAMENTE 3 o 4 estilos visuales, los MÁS ADECUADOS para el propósito y público de este software, de este catálogo ("styleKey"):
+1. minimalism: flat SaaS moderno, bordes 1px, neutrales oscuros (Vercel/Stripe). Dashboards, B2B, analítica.
+2. glassmorphism: dark glass translúcido con resplandor difuso. Landings, fintech, web3, premium.
+3. claymorphism: arcilla 3D inflada, sombras internas suaves. Educación, lúdico, comunidad, bienestar.
+4. neobrutalism: bordes gruesos, alto contraste, sombras sólidas. Creadores, cultura pop, herramientas atrevidas.
+5. neumorphism: superficies extruidas cóncavas/convexas. IoT, domótica, audio/hardware.
+6. aurora: mesh gradients y bordes luminosos esmeralda/cian. IA, biotecnología, datos.
+7. cyberpunk: HUD futurista, cortes angulares, neón cian/rosa. Gaming, streaming, seguridad.
+8. skeuomorphism: biselado de luz y relieve tangible. Finanzas tradicionales, sonido, productividad premium.
+9. terminal: consola retro monoespaciada verde fósforo. Herramientas dev, DevOps, CLI web.
+10. papercraft: elevación sutil multicapa (Notion, Material You). Notas, wikis, productividad.
+
+La tarjeta se transforma visualmente según su styleKey: usa la clave exacta.
+CAMPOS:
+${optionFields("tokens de diseño o recursos (paletas, tipografías, efectos)")}
+${strobiFields("playful", "acertar con la estética según el tipo de cliente")}
+${JSON_ONLY}
 `;
   }
 
@@ -272,42 +248,19 @@ Devuelve ÚNICAMENTE un JSON con:
   if (stepId === 7 || stepId === "layout") {
     return `
 Eres el diseñador de UX de Dev.Idea.
-IDEA: "${idea}".
-Propón 3 estructuras espaciales de pantalla para resolver la experiencia de usuario.
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "companionMood": "thinking",
-  "companionComment": "Un buen layout resuelve el 80% de la experiencia de usuario.",
-  "options": [
-    {
-      "id": "lay-1",
-      "title": "Bento Grid Dinámico",
-      "tag": "Visual & Modular",
-      "summary": "Módulos rectangulares asimétricos con jerarquía según la prioridad de los datos.",
-      "pros": "Escanea mucha información en una sola pantalla sin sentirse abrumador.",
-      "cons": "Requiere una adaptación responsiva cuidada para móviles.",
-      "techs": ["CSS Grid 12 cols", "Span Adaptive", "Aspect Ratio Cards"]
-    },
-    {
-      "id": "lay-2",
-      "title": "App Shell con Sidebar Fija",
-      "tag": "Estándar Dashboard",
-      "summary": "Barra lateral replegable para navegación y canvas central de trabajo.",
-      "pros": "Navegación familiar para cualquier usuario de software profesional.",
-      "cons": "Resta ancho útil si la app requiere foco de lectura inmersiva.",
-      "techs": ["Collapsible Nav", "Main Container", "Sticky Header"]
-    },
-    {
-      "id": "lay-3",
-      "title": "Canvas Inmersivo / Focus View",
-      "tag": "Centrado en el Contenido",
-      "summary": "Área de trabajo maximizada con herramientas flotantes y cero distracciones.",
-      "pros": "Máxima concentración en la tarea principal del software.",
-      "cons": "Dificulta descubrir acciones secundarias o de configuración.",
-      "techs": ["Floating Island Controls", "Full Bleed Canvas", "Overlay Drawers"]
-    }
-  ]
-}
+IDEA: "${idea}" | CONTEXTO: "${context}".
+DECISIONES PREVIAS:
+${buildDecisionContext(blueprint, 7)}
+
+Propón EXACTAMENTE 3 patrones de maquetación (distribución espacial de pantallas) para ESTE producto, uno por nivel (simple, medium, advanced).
+REGLAS:
+- Coherente con el ESTILO VISUAL elegido y con el tipo de usuario de la idea.
+- Implementable con el STACK elegido; en techs menciona piezas reales de ese stack (componentes, utilidades CSS, librerías).
+- No propongas patrones genéricos sin justificarlos para esta idea.
+CAMPOS:
+${optionFields("piezas de layout del stack")}
+${strobiFields("thinking", "cómo el layout encaja con el estilo elegido")}
+${JSON_ONLY}
 `;
   }
 
@@ -317,42 +270,19 @@ Devuelve ÚNICAMENTE un JSON con:
   if (stepId === 8 || stepId === "deploy") {
     return `
 Eres el DevOps Lead de Dev.Idea.
-IDEA: "${idea}" | STACK: "${stackTitle}".
-Genera 3 planes de despliegue y hosting costo $0 con respaldo de repositorio.
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "companionMood": "proud",
-  "companionComment": "Hosting listo. Y recuerda: código que no está en GitHub, no existe.",
-  "options": [
-    {
-      "id": "dep-1",
-      "title": "Vercel / Cloudflare Pages + GitHub",
-      "tag": "Zero Config",
-      "summary": "Despliegue automático con cada git push a main mediante webhooks.",
-      "pros": "CI/CD integrado, HTTPS automático, CDN global en el edge sin tocar servidores.",
-      "cons": "Límites en funciones serverless prolongadas en el tier gratuito.",
-      "techs": ["GitHub CI/CD", "Edge CDN", "Preview Deployments"]
-    },
-    {
-      "id": "dep-2",
-      "title": "Render / Railway + PostgreSQL",
-      "tag": "Para Backends Persistentes",
-      "summary": "Contenedores Docker automáticos para APIs en Python, Node o Go con BD gestionada.",
-      "pros": "Soporta procesos en segundo plano y websockets sin caídas de conexión.",
-      "cons": "El plan gratuito de bases de datos suele tener tiempo de expiración o límites de RAM.",
-      "techs": ["Docker Containers", "Managed DB", "Environment Secrets"]
-    },
-    {
-      "id": "dep-3",
-      "title": "VPS Autónomo (Hetzner / Oracle Cloud Free)",
-      "tag": "Control Total",
-      "summary": "Máquina virtual Linux configurada con Coolify o Docker Compose.",
-      "pros": "Costo fijo predecible y libertad absoluta de microservicios sin bloqueos.",
-      "cons": "Debes encargarte manualmente de la seguridad, backups y parches de Linux.",
-      "techs": ["Coolify PaaS", "Docker Compose", "Caddy Reverse Proxy"]
-    }
-  ]
-}
+IDEA: "${idea}" | CONTEXTO: "${context}".
+DECISIONES PREVIAS:
+${buildDecisionContext(blueprint, 8)}
+
+Genera EXACTAMENTE 3 planes de despliegue con costo inicial $0 (free tier) y respaldo del código en GitHub, uno por nivel (simple, medium, advanced).
+REGLAS:
+- Cada plan soporta REALMENTE el STACK y la ARQUITECTURA elegidos (runtime, base de datos, procesos en segundo plano si aplican).
+- Si la METODOLOGÍA usa iteraciones cortas, prioriza preview deployments / CI por rama.
+- En cons indica el límite concreto del free tier que más afectaría a este proyecto.
+CAMPOS:
+${optionFields("servicios o herramientas de deploy")}
+${strobiFields("proud", "recordatorio de que el código que no está en GitHub no existe")}
+${JSON_ONLY}
 `;
   }
 
@@ -362,61 +292,40 @@ Devuelve ÚNICAMENTE un JSON con:
   if (stepId === 9 || stepId === "ai-ecosystem") {
     return `
 Eres el AI Strategist de Dev.Idea.
-IDEA: "${idea}" | STACK: "${stackTitle}".
-Propón 3 combinaciones de modelos de IA para el producto + copilots para acelerar el desarrollo del programador.
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "companionMood": "celebrate",
-  "companionComment": "El kit de aceleración listo para construir sin fricción cognitiva.",
-  "options": [
-    {
-      "id": "ai-1",
-      "title": "Kit Flash + Cursor IDE",
-      "tag": "Velocidad & Precisión",
-      "summary": "Inferencia con Gemini Flash para la app + Cursor Composer en el editor.",
-      "pros": "Costo de tokens ultra bajo en producción y generación de código veloz en tu IDE.",
-      "cons": "Requiere cuenta activa de Cursor y gestionar API keys separadas.",
-      "techs": ["Gemini Flash API", "Cursor Composer", "Rules for AI"]
-    },
-    {
-      "id": "ai-2",
-      "title": "Kit Local / Open Source",
-      "tag": "Privacidad 100%",
-      "summary": "Modelos DeepSeek-R1 / Qwen2.5 vía Ollama para desarrollo sin salir de tu máquina.",
-      "pros": "Cero costos recurrentes, privacidad total de datos y disponibilidad offline.",
-      "cons": "Demanda buena GPU y memoria RAM en tu equipo de desarrollo.",
-      "techs": ["Ollama Local", "DeepSeek Coder", "Continue.dev Extension"]
-    },
-    {
-      "id": "ai-3",
-      "title": "Kit Prototipado Híbrido",
-      "tag": "Generación Acelerada",
-      "summary": "v0 de Vercel para scaffold de componentes UI + Claude Code para refactorizaciones complejas.",
-      "pros": "Pasa de cero a interfaz funcional con animaciones en cuestión de minutos.",
-      "cons": "El código generado por v0 necesita revisión manual de tipados y arquitectura.",
-      "techs": ["v0 Component Gen", "Claude Code CLI", "Tailwind UI Blocks"]
-    }
-  ]
-}
+IDEA: "${idea}" | CONTEXTO: "${context}".
+DECISIONES PREVIAS:
+${buildDecisionContext(blueprint, 9)}
+
+Propón EXACTAMENTE 3 kits que combinen (a) modelos de IA útiles DENTRO del producto, si la idea los necesita, y (b) herramientas/copilots para acelerar su desarrollo, uno por nivel (simple, medium, advanced).
+REGLAS:
+- Los copilots deben trabajar bien con el STACK y LENGUAJE elegidos.
+- Si la idea no necesita IA en el producto, dilo en summary y enfoca el kit en el desarrollo.
+- CONTEXTO: "academic" prioriza herramientas gratuitas; "personal" costo cero; "startup" velocidad.
+CAMPOS:
+${optionFields("modelos o herramientas")}
+${strobiFields("celebrate", "acelerar sin perder el control del código")}
+${JSON_ONLY}
 `;
   }
 
   // ========================================================
   // ESTACIÓN 10 (⭐): BLUEPRINT FINAL
   // ========================================================
-  return `
+  if (stepId === 10 || stepId === "workspace") {
+    const nameHint = selectedName ? `"${selectedName}"` : "la idea";
+    return `
 Eres el Lead Architect de Dev.Idea.
-El usuario ha completado todas las decisiones para: "${idea}".
-Genera el blueprint de cierre con el resumen técnico y los primeros comandos para inicializar el proyecto.
-Devuelve ÚNICAMENTE un JSON con:
-{
-  "companionMood": "celebrate",
-  "companionComment": "¡Plano terminado! Copia tu contexto y ponte a construir.",
-  "scaffold": {
-    "projectName": "${selectedName || "mi-proyecto"}",
-    "techSummary": "${stackTitle}",
-    "commands": ["pnpm install", "pnpm dev"]
-  }
-}
+IDEA: "${idea}" | CONTEXTO: "${context}".
+DECISIONES DEL USUARIO:
+${buildDecisionContext(blueprint, 10)}
+
+Genera el blueprint de cierre (scaffold): resumen técnico coherente con TODAS las decisiones y los primeros comandos reales para inicializar el proyecto con el STACK y LENGUAJE elegidos (usa el gestor de paquetes propio de ese ecosistema).
+CAMPOS:
+- scaffold.projectName: kebab-case basado en ${nameHint} · scaffold.techSummary: 1-2 frases sobre stack, arquitectura y deploy · scaffold.commands: 3-6 comandos en orden de ejecución.
+${strobiFields("celebrate", "cierre animando a empezar a construir")}
+${JSON_ONLY}
 `;
+  }
+
+  throw new Error(`No existe prompt para la estación "${stepId}".`);
 }

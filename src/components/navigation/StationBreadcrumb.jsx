@@ -5,7 +5,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { STATIONS } from "@/config/stations.config";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
-import { Map, X, Check, Lightbulb, Flag, Lock, Sparkles } from "lucide-react";
+import { X, Check, Lightbulb, Flag, Lock, Sparkles } from "lucide-react";
+
+// Geometría del recorrido: el SVG y los nodos comparten estas medidas, así la
+// línea siempre pasa por el centro de cada nodo.
+const COLUMN_WIDTH = 260;
+const CENTER_X = COLUMN_WIDTH / 2;
+const ROW_HEIGHT = 88; // alto fijo de cada fila (nodo 44px + etiqueta + aire)
+const NODE_SIZE = 44;
+const ZIGZAG = [0, -38, 0, 38, -38, 0, 38, -38, 0, 38, 0];
+
+const nodeOffset = (index) => ZIGZAG[index % ZIGZAG.length];
+const nodeCenter = (index) => ({
+  x: CENTER_X + nodeOffset(index),
+  y: index * ROW_HEIGHT + NODE_SIZE / 2,
+});
 
 export function StationBreadcrumb() {
   const currentStep = useDecisionStore((state) => state.currentStep);
@@ -21,7 +35,7 @@ export function StationBreadcrumb() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const activeNodeRef = useRef(null);
 
-  // Auto-scroll al nodo activo cuando cambia de estación y el mapa está visible
+  // Auto-scroll al nodo activo cuando cambia de estación y el panel está abierto
   useEffect(() => {
     if (isRouteMapOpen && activeNodeRef.current) {
       activeNodeRef.current.scrollIntoView({
@@ -44,7 +58,6 @@ export function StationBreadcrumb() {
       return;
     }
 
-    // En móviles cerramos el mapa al seleccionar una estación
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       toggleRouteMap();
     }
@@ -59,9 +72,13 @@ export function StationBreadcrumb() {
     setShowExitConfirm(false);
   };
 
-  const getNodeOffset = (index) => {
-    const pattern = [0, -38, 0, 38, -38, 0, 38, -38, 0, 38, 0];
-    return pattern[index % pattern.length];
+  // Verifica con exactitud si la estación está completada en memoria
+  const checkIsCompleted = (station) => {
+    if (station.stepNumber === 0) return true;
+
+    const data = generatedOptions[station.stepNumber];
+
+    return Boolean(data && Object.keys(data).length > 0);
   };
 
   return (
@@ -69,7 +86,7 @@ export function StationBreadcrumb() {
       <AnimatePresence>
         {isRouteMapOpen && (
           <>
-            {/* Backdrop solo para móvil/tablet (< lg) para aislar el modal */}
+            {/* Backdrop en móvil y tablet para aislar el modal */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -78,7 +95,7 @@ export function StationBreadcrumb() {
               className="lg:hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-sm cursor-pointer"
             />
 
-            {/* Panel de Mapa: Modal centrado en móvil / Flotante a la derecha en escritorio */}
+            {/* Panel de Mapa Lateral / Modal */}
             <motion.aside
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -92,7 +109,9 @@ export function StationBreadcrumb() {
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-neutral-800 shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-emerald-400"></div>
+                  <div className="w-7 h-7 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-emerald-400">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </div>
                   <div>
                     <h3 className="text-xs font-bold text-white tracking-tight flex items-center gap-1.5">
                       <span>Ruta de Desarrollo</span>
@@ -116,30 +135,33 @@ export function StationBreadcrumb() {
               </div>
 
               {/* Recorrido vertical en zigzag */}
-              <div className="flex-1 overflow-y-auto py-4 relative px-1 scrollbar-thin scrollbar-thumb-neutral-800">
-                <div className="relative flex flex-col items-center gap-6 min-h-[720px]">
-                  {/* SVG animado del camino */}
+              <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 relative px-1 scrollbar-thin">
+                <div
+                  className="relative mx-auto"
+                  style={{
+                    width: COLUMN_WIDTH,
+                    height: STATIONS.length * ROW_HEIGHT,
+                  }}
+                >
+                  {/* SVG animado del camino (mismas coordenadas que los nodos) */}
                   <svg
-                    className="absolute top-4 bottom-4 w-full h-[calc(100%-32px)] pointer-events-none"
+                    className="absolute inset-0 pointer-events-none"
+                    width={COLUMN_WIDTH}
+                    height={STATIONS.length * ROW_HEIGHT}
                     fill="none"
                   >
                     {STATIONS.map((_, i) => {
                       if (i === STATIONS.length - 1) return null;
-                      const x1 = 140 + getNodeOffset(i);
-                      const y1 = i * 66 + 18;
-                      const x2 = 140 + getNodeOffset(i + 1);
-                      const y2 = (i + 1) * 66 + 18;
-                      const cx1 = x1;
-                      const cy1 = y1 + 33;
-                      const cx2 = x2;
-                      const cy2 = y1 + 33;
-
+                      const from = nodeCenter(i);
+                      const to = nodeCenter(i + 1);
+                      const midY = (from.y + to.y) / 2;
+                      const d = `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
                       const isPassed = currentStep > i;
 
                       return (
                         <g key={i}>
                           <path
-                            d={`M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`}
+                            d={d}
                             strokeWidth="2.5"
                             strokeDasharray="4 5"
                             className="stroke-neutral-800"
@@ -149,7 +171,7 @@ export function StationBreadcrumb() {
                               initial={{ pathLength: 0, opacity: 0 }}
                               animate={{ pathLength: 1, opacity: 1 }}
                               transition={{ duration: 0.6, ease: "easeInOut" }}
-                              d={`M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`}
+                              d={d}
                               strokeWidth="2.5"
                               strokeDasharray="4 5"
                               className="stroke-emerald-400"
@@ -163,23 +185,22 @@ export function StationBreadcrumb() {
                   {/* Nodos de Estación */}
                   {STATIONS.map((station, index) => {
                     const isActive = currentStep === station.stepNumber;
-                    const isCompleted =
-                      station.stepNumber === 0
-                        ? true
-                        : Boolean(generatedOptions[station.stepNumber]);
+                    const isCompleted = checkIsCompleted(station);
                     const canClick = !isLoading && (isCompleted || isActive);
-                    const offsetX = getNodeOffset(index);
+                    const offsetX = nodeOffset(index);
 
                     return (
                       <div
                         key={station.id}
                         ref={isActive ? activeNodeRef : null}
-                        style={{ transform: `translateX(${offsetX}px)` }}
+                        style={{
+                          height: ROW_HEIGHT,
+                          transform: `translateX(${offsetX}px)`,
+                        }}
                         className="relative z-10 flex flex-col items-center group"
                       >
                         <motion.button
                           type="button"
-                          layout
                           initial={false}
                           animate={
                             isActive
@@ -196,7 +217,7 @@ export function StationBreadcrumb() {
                           whileTap={canClick ? { scale: 0.95 } : {}}
                           disabled={!canClick}
                           onClick={() => handleStationClick(station.stepNumber)}
-                          className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center transition-colors duration-300 cursor-pointer ${
+                          className={`relative w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center transition-colors duration-300 cursor-pointer ${
                             isActive
                               ? "bg-white text-neutral-950 shadow-[0_0_20px_rgba(255,255,255,0.45)] ring-2 ring-white/60"
                               : isCompleted
@@ -258,8 +279,7 @@ export function StationBreadcrumb() {
                           )}
                         </motion.button>
 
-                        <motion.div
-                          layout
+                        <div
                           className={`mt-1.5 px-2 py-0.5 rounded-lg text-[9px] font-mono whitespace-nowrap transition-all duration-300 ${
                             isActive
                               ? "bg-white text-neutral-950 font-bold scale-105 shadow-sm"
@@ -273,7 +293,7 @@ export function StationBreadcrumb() {
                             : station.stepNumber === 10
                               ? "⭐ ¡A Trabajar!"
                               : `${String(station.stepNumber).padStart(2, "0")} · ${station.title}`}
-                        </motion.div>
+                        </div>
                       </div>
                     );
                   })}
