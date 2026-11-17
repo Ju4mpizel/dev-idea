@@ -63,3 +63,37 @@
     transform: rotate(3deg) translate(2px, -1px);
   }
 }
+
+/* Fondo de puntos (estilo lienzo de construcción), bajo la navbar */
+.dot-grid {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.075) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+  /* Se desvanece hacia los bordes para no competir con el contenido */
+  mask-image: radial-gradient(
+    ellipse 85% 75% at 50% 35%,
+    #000 55%,
+    transparent 100%
+  );
+}
+
+/* Carga: tuercas girando (la duración y el sentido van en línea por tuerca) */
+.loading-gear {
+  animation-name: gear-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes gear-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-gear {
+    animation: none;
+  }
+}

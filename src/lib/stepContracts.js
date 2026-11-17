@@ -5,31 +5,31 @@
  * se usa en /api/generate-step (servidor) y al restaurar/migrar datos en el store
  * (cliente). Garantiza los campos que consumen las estaciones, con defaults seguros:
  *
- *   { companionMood, companionComment, [optionsKey]: [...] }   (pasos 1-9)
- *   { companionMood, companionComment, scaffold: {...} }       (paso 10)
+ *   { companionMood, companionComment, [optionsKey]: [...] }   (estaciones con cartas)
+ *   { companionMood, companionComment, scaffold: {...} }       (workspace)
  */
 import { getStation } from "@/config/stations.config";
-
-const LEVELS = ["simple", "medium", "advanced"];
-const DIAGRAM_TYPES = [
-  "use-case",
-  "components",
-  "erd",
-  "sequence",
-  "cloud",
-  "flowchart",
-];
+import {
+  DATABASE_TYPES,
+  DIAGRAM_AUDIENCES,
+  DIAGRAM_CATEGORIES,
+  DIAGRAM_TYPES,
+  LEVELS,
+} from "@/lib/stepSchemas";
 
 const ID_PREFIX = {
-  1: "name",
-  2: "stack",
-  3: "arch",
-  4: "meth",
-  5: "diag",
-  6: "morph",
-  7: "lay",
-  8: "dep",
-  9: "ai",
+  naming: "name",
+  requirements: "req",
+  "user-stories": "story",
+  stack: "stack",
+  database: "db",
+  architecture: "arch",
+  methodology: "meth",
+  diagrams: "diag",
+  morphism: "morph",
+  layout: "lay",
+  deploy: "dep",
+  "ai-ecosystem": "ai",
 };
 
 // ---------- Primitivas ----------
@@ -48,10 +48,13 @@ const strList = (v) =>
     .map((item) => str(item))
     .filter(Boolean);
 
-const level = (v) => {
-  const value = str(v).toLowerCase();
-  return LEVELS.includes(value) ? value : "medium";
+const oneOf = (v, values, fallback) => {
+  const value = str(v);
+  const match = values.find((x) => x.toLowerCase() === value.toLowerCase());
+  return match || fallback;
 };
+
+const level = (v) => oneOf(v, LEVELS, "medium");
 
 /** Asigna ids únicos y estables (las estaciones seleccionan por id). */
 function withUniqueIds(items, prefix) {
@@ -66,7 +69,7 @@ function withUniqueIds(items, prefix) {
 
 // ---------- Normalizadores por tipo de opción ----------
 function normalizeName(raw) {
-  const name = str(raw.name);
+  const name = str(raw.name) || str(raw.title);
   if (!name) return null;
   return {
     id: str(raw.id),
@@ -77,10 +80,30 @@ function normalizeName(raw) {
   };
 }
 
+// Ecosistemas JavaScript: siempre se ofrece elegir entre TypeScript y JavaScript
+// (Angular y NestJS quedan fuera: son TypeScript por defecto)
+const JS_ECOSYSTEM =
+  /\b(react|next|vue|nuxt|svelte|remix|astro|node|express|vite)/i;
+
+/** Garantiza TypeScript y JavaScript en stacks del ecosistema JS. */
+function withJsFlavors(languages, stackText) {
+  if (!JS_ECOSYSTEM.test(stackText)) return languages;
+  const list = [...languages];
+  ["TypeScript", "JavaScript"].forEach((lang) => {
+    if (!list.some((l) => l.toLowerCase() === lang.toLowerCase())) {
+      list.push(lang);
+    }
+  });
+  return list;
+}
+
 function normalizeStack(raw) {
   const title = str(raw.title) || str(raw.name);
   if (!title) return null;
-  const availableLanguages = strList(raw.availableLanguages);
+  const availableLanguages = withJsFlavors(
+    strList(raw.availableLanguages),
+    `${title} ${strList(raw.tags).join(" ")}`,
+  );
   const defaultLanguage =
     str(raw.defaultLanguage) || availableLanguages[0] || "TypeScript";
   const normalized = {
@@ -89,6 +112,8 @@ function normalizeStack(raw) {
     level: level(raw.level),
     badge: str(raw.badge),
     title,
+    summary: str(raw.summary),
+    beginnerTip: str(raw.beginnerTip),
     tags: strList(raw.tags),
     defaultLanguage,
     availableLanguages: availableLanguages.length
@@ -103,7 +128,7 @@ function normalizeStack(raw) {
   return normalized;
 }
 
-function normalizeOption(raw, stepNumber) {
+function normalizeOption(raw, stationId) {
   const title = str(raw.title) || str(raw.name);
   if (!title) return null;
   const option = {
@@ -113,26 +138,38 @@ function normalizeOption(raw, stepNumber) {
     title,
     tag: str(raw.tag),
     summary: str(raw.summary) || str(raw.description),
+    beginnerTip: str(raw.beginnerTip),
     pros: str(raw.pros),
     cons: str(raw.cons),
     techs: strList(raw.techs),
   };
 
-  if (stepNumber === 5) {
-    option.diagrams = (Array.isArray(raw.diagrams) ? raw.diagrams : [])
-      .filter(isObject)
-      .map((d) => {
-        const type = str(d.type).toLowerCase();
-        return {
-          name: str(d.name, "Diagrama"),
-          type: DIAGRAM_TYPES.includes(type) ? type : "flowchart",
-          description: str(d.description),
-        };
-      });
+  if (stationId === "requirements") {
+    option.functional = strList(raw.functional);
+    option.nonFunctional = strList(raw.nonFunctional);
+  }
+
+  if (stationId === "user-stories") {
+    option.role = str(raw.role, "usuario");
+    option.action = str(raw.action);
+    option.benefit = str(raw.benefit);
+    option.acceptanceCriteria = strList(raw.acceptanceCriteria);
+    option.points = str(raw.points);
+  }
+
+  if (stationId === "database") {
+    option.dbType = oneOf(raw.dbType, DATABASE_TYPES, "relational");
+  }
+
+  if (stationId === "diagrams") {
+    const type = str(raw.diagramType || raw.type).toLowerCase();
+    option.diagramType = DIAGRAM_TYPES.includes(type) ? type : "flowchart";
+    option.category = oneOf(raw.category, DIAGRAM_CATEGORIES, "UML");
+    option.audience = oneOf(raw.audience, DIAGRAM_AUDIENCES, "Ambos");
     option.sampleMermaid = str(raw.sampleMermaid);
   }
 
-  if (stepNumber === 6) {
+  if (stationId === "morphism") {
     option.styleKey = str(raw.styleKey).toLowerCase();
   }
 
@@ -157,11 +194,11 @@ function normalizeScaffold(raw, blueprint = {}) {
 /**
  * Normaliza la respuesta de una estación. Nunca lanza: datos inválidos -> defaults.
  * @returns {{ data: object, validCount: number }}
- *   validCount = opciones utilizables (o 1 para el paso 10 si hay scaffold).
+ *   validCount = opciones utilizables (o 1 para el workspace si hay scaffold).
  */
 export function normalizeStepResponse(stepNumber, raw, blueprint = {}) {
-  const step = Number(stepNumber);
-  const station = getStation(step);
+  const station = getStation(stepNumber);
+  const stationId = station?.id;
   const source = isObject(raw) ? raw : {};
 
   const data = {
@@ -178,7 +215,7 @@ export function normalizeStepResponse(stepNumber, raw, blueprint = {}) {
       "",
   };
 
-  if (step === 10) {
+  if (stationId === "workspace") {
     data.scaffold = normalizeScaffold(source.scaffold, blueprint);
     return { data, validCount: 1 };
   }
@@ -188,18 +225,20 @@ export function normalizeStepResponse(stepNumber, raw, blueprint = {}) {
 
   const rawItems = Array.isArray(source[optionsKey]) ? source[optionsKey] : [];
   const normalizer =
-    step === 1
+    stationId === "naming"
       ? normalizeName
-      : step === 2
+      : stationId === "stack"
         ? normalizeStack
-        : (item) => normalizeOption(item, step);
+        : (item) => normalizeOption(item, stationId);
 
   const items = withUniqueIds(
     rawItems.filter(isObject).map(normalizer).filter(Boolean),
-    ID_PREFIX[step] || `opt${step}`,
+    ID_PREFIX[stationId] || `opt${stepNumber}`,
   );
 
   data[optionsKey] = items;
+  // Marca de estación omitida (se conserva al restaurar)
+  if (source.skipped) data.skipped = true;
   return { data, validCount: items.length };
 }
 

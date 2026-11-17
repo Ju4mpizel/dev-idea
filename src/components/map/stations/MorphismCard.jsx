@@ -1,9 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Lightbulb } from "lucide-react";
+import { TechChip } from "@/components/ui/TechChip";
 
-export function MorphismCard({ option, isSelected, isDimmed, onClick }) {
+/**
+ * Carta del lenguaje visual: adopta el material real de su estilo (styleKey).
+ * Vive dentro de `CardDeck`, así que ocupa toda su altura y desplaza el
+ * contenido por dentro, igual que `SelectionCard`.
+ */
+export function MorphismCard({ option, isSelected, isDimmed, levelLabel }) {
   // Normalizar para que detecte con o sin tildes, mayúsculas o styleKey
   const rawKey =
     `${option.styleKey || ""} ${option.title || ""} ${option.id || ""}`
@@ -77,7 +82,7 @@ export function MorphismCard({ option, isSelected, isDimmed, onClick }) {
   // 2. GLASSMORPHISM (Cristal esmerilado con resplandores internos de luz)
   else if (isGlass) {
     containerStyle =
-      "bg-white/[0.05] backdrop-blur-2xl border border-white/20 text-white rounded-3xl shadow-[0_16px_40px_rgba(0,0,0,0.7)] relative overflow-hidden";
+      "bg-[#0c0e14] border border-white/20 text-white rounded-3xl shadow-[0_16px_40px_rgba(0,0,0,0.7)] relative overflow-hidden";
     activeRing = isSelected
       ? "ring-2 ring-cyan-300 border-cyan-300 shadow-[0_0_35px_rgba(34,211,238,0.3)]"
       : "";
@@ -238,13 +243,8 @@ export function MorphismCard({ option, isSelected, isDimmed, onClick }) {
   }
 
   return (
-    <motion.div
-      whileHover={!isDimmed ? { y: -3 } : {}}
-      whileTap={!isDimmed ? { scale: 0.99 } : {}}
-      onClick={onClick}
-      className={`w-full p-4 sm:p-5 flex flex-col justify-between cursor-pointer transition-all duration-300 select-none ${containerStyle} ${activeRing} ${
-        isDimmed ? "opacity-35 grayscale pointer-events-none" : "opacity-100"
-      }`}
+    <article
+      className={`relative h-full w-full flex flex-col overflow-hidden select-none transition-[box-shadow] duration-300 isolate ${containerStyle} ${activeRing}`}
     >
       {/* Fondo técnico punteado exclusivo para Minimalist */}
       {isMinimal && (
@@ -274,12 +274,18 @@ export function MorphismCard({ option, isSelected, isDimmed, onClick }) {
         </div>
       )}
 
-      {/* Cabecera de la tarjeta */}
-      <div>
+      {/* Contenido desplazable */}
+      <div
+        className={`flex-1 min-h-0 overflow-y-auto scrollbar-thin p-4 flex flex-col ${
+          isDimmed ? "opacity-40 grayscale" : ""
+        }`}
+      >
+      <div className="flex-1">
         <div className="flex items-start justify-between gap-2 mb-2.5">
           <span
             className={`text-[9px] sm:text-[10px] px-2 py-0.5 ${badgeStyle}`}
           >
+            {levelLabel ? `${levelLabel} · ` : ""}
             {option.tag || "Estilo"}
           </span>
 
@@ -290,7 +296,7 @@ export function MorphismCard({ option, isSelected, isDimmed, onClick }) {
           </div>
         </div>
 
-        <h3 className={`text-sm sm:text-base mb-1 ${titleColor}`}>
+        <h3 className={`text-[15px] leading-snug mb-1.5 text-balance ${titleColor}`}>
           {option.title}
         </h3>
         <p
@@ -299,16 +305,27 @@ export function MorphismCard({ option, isSelected, isDimmed, onClick }) {
           {option.summary}
         </p>
 
+        {option.beginnerTip && (
+          <p
+            className={`mb-3 text-[11px] sm:text-xs leading-relaxed flex items-start gap-1.5 ${descColor}`}
+          >
+            <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
+            <span>
+              <b>En simple:</b> {option.beginnerTip}
+            </span>
+          </p>
+        )}
+
         {/* Chips de tecnologías y tokens */}
         {option.techs?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {option.techs.map((tech) => (
-              <span
+              <TechChip
                 key={tech}
-                className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 ${techChipStyle}`}
-              >
-                {tech}
-              </span>
+                name={tech}
+                onLight={isLightCard}
+                className={techChipStyle}
+              />
             ))}
           </div>
         )}
@@ -337,6 +354,7 @@ export function MorphismCard({ option, isSelected, isDimmed, onClick }) {
           </div>
         )}
       </div>
-    </motion.div>
+      </div>
+    </article>
   );
 }

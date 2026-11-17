@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { blueprintToDbRow } from "@/config/stations.config";
+import {
+  LAST_STEP,
+  blueprintToDbRow,
+  sanitizeGeneratedOptions,
+} from "@/config/stations.config";
+
+const clampStep = (step) =>
+  Math.min(Math.max(Number(step) || 0, 0), LAST_STEP);
 
 function getSupabaseServer(req) {
   const authHeader = req.headers.get("authorization");
@@ -39,7 +46,12 @@ export async function PUT(req, { params }) {
     }
 
     const body = await req.json();
-    const { blueprint, currentStep = 0, isCompleted = false } = body;
+    const {
+      blueprint,
+      generatedOptions,
+      currentStep = 0,
+      isCompleted = false,
+    } = body;
 
     const title =
       blueprint?.selectedName ||
@@ -52,7 +64,7 @@ export async function PUT(req, { params }) {
       .update({
         title,
         status,
-        current_step: currentStep,
+        current_step: clampStep(currentStep),
       })
       .eq("id", id)
       .select("id");
@@ -77,6 +89,7 @@ export async function PUT(req, { params }) {
       const blueprintPayload = {
         project_id: id,
         ...blueprintToDbRow(blueprint),
+        generated_options: sanitizeGeneratedOptions(generatedOptions),
       };
 
       const { error: bError } = await supabase

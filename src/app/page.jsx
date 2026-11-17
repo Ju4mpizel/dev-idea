@@ -4,13 +4,23 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DevIdeaLogo from "@/components/brand/DevIdeaLogo";
 import { CompanionAvatar } from "@/components/companion/CompanionAvatar";
+import { StationInfoPanel } from "@/components/companion/StationInfoPanel";
+import { StationCategoriesPanel } from "@/components/navigation/StationCategoriesPanel";
+import { CloudSyncBadge } from "@/components/navigation/CloudSyncBadge";
+import { LoadingSides } from "@/components/ui/LoadingSides";
+import { useCloudAutosave } from "@/hooks/useCloudAutosave";
 import { DecisionCanvas } from "@/components/map/DecisionCanvas";
 import { StationBreadcrumb } from "@/components/navigation/StationBreadcrumb";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { getStation } from "@/config/stations.config";
 import { supabase } from "@/lib/supabaseClient";
 import { signInWithGoogle, signOut } from "@/services/projectService";
-import { LogIn, LogOut, Cloud, CheckCircle2 } from "lucide-react";
+import { LogIn, LogOut, CheckCircle2 } from "lucide-react";
+
+// Espacio que el contenido cede a cada panel lateral (ancho del panel + margen)
+const INFO_PANEL_SPACE = 360;
+const MAP_PANEL_SPACE = 340;
 
 export default function HomePage() {
   const currentStep = useDecisionStore((state) => state.currentStep);
@@ -22,8 +32,22 @@ export default function HomePage() {
     (state) => state.setCloudProjectId,
   );
   const setCompanion = useDecisionStore((state) => state.setCompanion);
+  const infoStationId = useDecisionStore((state) => state.infoStationId);
+  const closeStationInfo = useDecisionStore((state) => state.closeStationInfo);
+  const isCategoriesOpen = useDecisionStore((state) => state.isCategoriesOpen);
 
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Con sesión iniciada, cada cambio del mapa se guarda solo en Supabase
+  useCloudAutosave();
+
+  // Escape cierra la explicación de Strobi
+  useEffect(() => {
+    if (!infoStationId) return undefined;
+    const onKey = (e) => e.key === "Escape" && closeStationInfo();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [infoStationId, closeStationInfo]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -54,9 +78,22 @@ export default function HomePage() {
     }
   };
 
-  // Reactivo al resize y seguro para hidratación (false en el servidor)
+  // Paneles laterales (Strobi / mapa a la derecha, categorías a la izquierda):
+  // al abrirse, el contenido se desliza y les deja sitio (animación de empuje).
+  // La cabecera mantiene su altura, así el empuje es solo horizontal.
   const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const shouldOffset = isRouteMapOpen && currentStep > 0 && isDesktop;
+  const isWide = useMediaQuery("(min-width: 1280px)");
+  const isInfoOpen = Boolean(infoStationId) && currentStep > 0;
+  const sidePanelSpace =
+    isInfoOpen && isWide
+      ? INFO_PANEL_SPACE
+      : isRouteMapOpen && currentStep > 0 && isDesktop
+        ? MAP_PANEL_SPACE
+        : 0;
+  const leftPanelSpace =
+    isCategoriesOpen && currentStep > 0 && isWide ? INFO_PANEL_SPACE : 0;
+  const currentStation = getStation(currentStep);
+  const isLoading = useDecisionStore((state) => state.isLoading);
 
   // Al cambiar de estación, volvemos arriba para no aterrizar a media página
   useEffect(() => {
@@ -65,6 +102,12 @@ export default function HomePage() {
 
   return (
     <main className="min-h-[100dvh] w-full flex flex-col bg-neutral-950 text-neutral-100 relative overflow-x-hidden font-sans selection:bg-neutral-800 selection:text-white">
+      {/* Fondo de puntos: solo bajo la navbar */}
+      <div className="dot-grid fixed inset-x-0 top-14 bottom-0 pointer-events-none" />
+
+      {/* Tuercas gigantes a los lados (detrás del contenido) mientras se genera */}
+      <LoadingSides active={isLoading && currentStep > 0} />
+
       {/* Resplandor ambiental */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[90vw] sm:w-[600px] lg:w-[800px] h-[200px] sm:h-[300px] bg-neutral-800/15 blur-[120px] pointer-events-none rounded-full" />
 
@@ -92,19 +135,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <AnimatePresence>
-              {cloudProjectId && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-1.5 text-[10px] font-mono px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-950/60 border border-emerald-800/80 text-emerald-400"
-                >
-                  <Cloud className="w-3 h-3 shrink-0" />
-                  <span className="hidden xs:inline">Nube activa</span>
-                </motion.span>
-              )}
-            </AnimatePresence>
+            {currentStep === 0 && cloudProjectId && <CloudSyncBadge />}
 
             <span className="hidden lg:inline text-[11px] px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono">
               Inferencia Gemini 3.8 Flash
@@ -182,33 +213,83 @@ export default function HomePage() {
       {/* Mapa lateral modal/panel */}
       <StationBreadcrumb />
 
+      {/* Explicación "¿Qué es...?" con Strobi al lado de la estación */}
+      <StationInfoPanel />
+
+      {/* Tabla de categorías de la estación, a la izquierda */}
+      {currentStep > 0 && <StationCategoriesPanel />}
+
       {/* Contenedor Central Fluido */}
       <motion.div
-        animate={{
-          x: shouldOffset ? -140 : 0,
-        }}
+        initial={false}
+        animate={{ paddingRight: sidePanelSpace, paddingLeft: leftPanelSpace }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col items-center justify-start gap-4 sm:gap-6"
+        className="relative z-10 flex-1 w-full flex flex-col"
       >
-        {/* Mascota Strobi con altura contenida y escala fluida */}
-        <section className="shrink-0 flex flex-col items-center">
-          <div className="scale-80 sm:scale-90 lg:scale-100 origin-center">
-            <CompanionAvatar size={105} />
-          </div>
+      <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-5 flex flex-col items-center justify-start gap-3 sm:gap-5">
+        {/* Cabecera: Strobi y el nombre de la estación comparten la MISMA celda
+            de la grilla, así su altura no cambia al abrir "¿Qué es?" y las
+            cartas no pegan un tirón. Mientras Strobi explica a un lado, en su
+            hueco queda el nombre de la estación en gris. */}
+        <section className="shrink-0 w-full grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1">
+          <motion.div
+            initial={false}
+            animate={
+              isInfoOpen
+                ? { opacity: 0, y: -60, scale: 0.9 }
+                : { opacity: 1, y: 0, scale: 1 }
+            }
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className={`w-full flex justify-center ${isInfoOpen ? "pointer-events-none" : ""}`}
+            aria-hidden={isInfoOpen || undefined}
+          >
+            {/* En las estaciones Strobi es más compacto para dejar sitio al mazo */}
+            <CompanionAvatar
+              size={currentStep > 0 ? 76 : 105}
+              compact={currentStep > 0}
+            />
+          </motion.div>
+
+          <AnimatePresence>
+            {isInfoOpen && currentStation && (
+              <motion.div
+                key={`station-name-${currentStation.id}`}
+                initial={{ opacity: 0, y: 12, letterSpacing: "0.3em" }}
+                animate={{ opacity: 1, y: 0, letterSpacing: "0.02em" }}
+                exit={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="pointer-events-none select-none text-center"
+              >
+                <span className="block text-[10px] sm:text-xs font-mono uppercase tracking-[0.3em] text-neutral-600">
+                  Estación {currentStation.stepNumber}
+                </span>
+                <span className="block text-4xl sm:text-6xl font-black uppercase text-neutral-800/90 leading-none">
+                  {currentStation.navLabel}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </section>
 
         {/* Lienzo de Decisiones Fluido */}
+        {/* Al cambiar de estación, la actual cae hacia abajo y la siguiente
+            (o su esqueleto de carga) baja desde arriba. El paso va como prop
+            para que la estación que sale conserve su contenido al animarse. */}
         <section className="w-full flex justify-center pb-6">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="w-full flex justify-center"
-          >
-            <DecisionCanvas />
-          </motion.div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: -28 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 90, scale: 0.97 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full flex justify-center"
+            >
+              <DecisionCanvas step={currentStep} />
+            </motion.div>
+          </AnimatePresence>
         </section>
+      </div>
       </motion.div>
 
       {/* Footer Fluido */}

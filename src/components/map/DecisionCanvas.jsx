@@ -1,26 +1,49 @@
 "use client";
 
-import { useRef } from "react";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStation } from "@/config/stations.config";
 
-// Estaciones Modulares
-import { Station0_Idea } from "./stations/Station0_Idea";
-import { Station1_Naming } from "./stations/Station1_Naming";
-import { Station2_Stack } from "./stations/Station2_Stack";
-import { Station3_Architecture } from "./stations/Station3_Architecture";
-import { Station4_Methodology } from "./stations/Station4_Methodology";
-import { Station5_Diagrams } from "./stations/Station5_Diagrams";
-import { Station6_Morphism } from "./stations/Station6_Morphism";
-import { StationNode } from "./stations/StationNode";
+import { IdeaStation } from "./stations/IdeaStation";
+import { NamingStation } from "./stations/NamingStation";
+import { RequirementsStation } from "./stations/RequirementsStations";
+import { UserStoriesStation } from "./stations/UserStoriesStation";
+import { StackStation } from "./stations/StackStation";
+import { DiagramsStation } from "./stations/DiagramsStation";
+import {
+  DatabaseStation,
+  MethodologyStation,
+  MorphismStation,
+} from "./stations/VisualAndDataStations";
+import { OptionStation } from "./stations/OptionStation";
 import { BlueprintShowcase } from "../workspace/BlueprintShowcase";
 
-export function DecisionCanvas() {
-  const currentStep = useDecisionStore((state) => state.currentStep);
+/**
+ * Componente de cada estación por id. Las que no aparecen aquí usan la
+ * estación genérica de cartas (arquitectura, layout, deploy, ecosistema IA).
+ */
+const STATION_COMPONENTS = {
+  naming: NamingStation,
+  requirements: RequirementsStation,
+  "user-stories": UserStoriesStation,
+  stack: StackStation,
+  database: DatabaseStation,
+  methodology: MethodologyStation,
+  diagrams: DiagramsStation,
+  morphism: MorphismStation,
+};
+
+// Contador global de peticiones: permite ignorar aborts de peticiones ya
+// reemplazadas (global porque cada estación monta su propio lienzo al animarse).
+let requestSeq = 0;
+
+/**
+ * `step` llega como prop (no del store) para que la estación que sale durante
+ * la animación de cambio conserve su contenido hasta desaparecer.
+ */
+export function DecisionCanvas({ step: currentStep }) {
   const goToStep = useDecisionStore((state) => state.goToStep);
   const previousStep = useDecisionStore((state) => state.previousStep);
   const startNewMap = useDecisionStore((state) => state.startNewMap);
-  const isLoading = useDecisionStore((state) => state.isLoading);
   const setLoading = useDecisionStore((state) => state.setLoading);
   const apiError = useDecisionStore((state) => state.apiError);
   const setApiError = useDecisionStore((state) => state.setApiError);
@@ -36,8 +59,6 @@ export function DecisionCanvas() {
     (state) => state.releaseAbortController,
   );
 
-  // Identificador incremental: permite ignorar aborts de peticiones ya reemplazadas
-  const requestSeqRef = useRef(0);
 
   /**
    * Navega a `targetStep` y, si no hay opciones en caché (o `forceNew`), las pide a Gemini.
@@ -63,7 +84,7 @@ export function DecisionCanvas() {
       return;
     }
 
-    const requestId = ++requestSeqRef.current;
+    const requestId = ++requestSeq;
     const controller = new AbortController();
     registerAbortController(controller);
 
@@ -89,7 +110,7 @@ export function DecisionCanvas() {
         }),
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
 
       if (!res.ok || !json.success) {
         throw new Error(
@@ -106,7 +127,7 @@ export function DecisionCanvas() {
       if (err.name === "AbortError") {
         // Solo retrocedemos si el usuario canceló ESTA petición y sigue en su estación
         // (no si fue reemplazada por otra o si el mapa se reinició).
-        const isLatest = requestId === requestSeqRef.current;
+        const isLatest = requestId === requestSeq;
         const stillHere =
           useDecisionStore.getState().currentStep === targetStep;
         if (isLatest && stillHere) previousStep();
@@ -115,7 +136,7 @@ export function DecisionCanvas() {
       setApiError(err.message);
     } finally {
       releaseAbortController(controller);
-      if (requestId === requestSeqRef.current) setLoading(false);
+      if (requestId === requestSeq) setLoading(false);
     }
   };
 
@@ -166,70 +187,43 @@ export function DecisionCanvas() {
     );
   }
 
-  return (
-    <div className="w-full max-w-5xl flex flex-col gap-4 sm:gap-6">
-      {currentStep === 0 && (
-        <Station0_Idea
+  const station = getStation(currentStep);
+
+  if (!station || station.id === "idea") {
+    return (
+      <div className="w-full max-w-5xl flex flex-col gap-4 sm:gap-6">
+        <IdeaStation
           onStartNew={handleStartNew}
           onResumeSaved={handleResumeSaved}
         />
-      )}
+      </div>
+    );
+  }
 
-      {currentStep === 1 && (
-        <Station1_Naming
-          data={generatedOptions[1]}
-          onNext={(extraFields) => requestStepAndNavigate(2, extraFields)}
-        />
-      )}
-
-      {currentStep === 2 && (
-        <Station2_Stack
-          data={generatedOptions[2]}
-          onNext={(extraFields) => requestStepAndNavigate(3, extraFields)}
-        />
-      )}
-
-      {currentStep === 3 && (
-        <Station3_Architecture
-          data={generatedOptions[3]}
-          onNext={(extraFields) => requestStepAndNavigate(4, extraFields)}
-        />
-      )}
-
-      {currentStep === 4 && (
-        <Station4_Methodology
-          data={generatedOptions[4]}
-          onNext={(extraFields) => requestStepAndNavigate(5, extraFields)}
-        />
-      )}
-
-      {currentStep === 5 && (
-        <Station5_Diagrams
-          data={generatedOptions[5]}
-          onNext={(extraFields) => requestStepAndNavigate(6, extraFields)}
-        />
-      )}
-
-      {currentStep === 6 && (
-        <Station6_Morphism
-          data={generatedOptions[6]}
-          onNext={(extraFields) => requestStepAndNavigate(7, extraFields)}
-        />
-      )}
-
-      {currentStep >= 7 && currentStep <= 9 && (
-        <StationNode
-          station={getStation(currentStep)}
+  if (station.id === "workspace") {
+    return (
+      <div className="w-full max-w-5xl flex flex-col gap-4 sm:gap-6">
+        <BlueprintShowcase
           data={generatedOptions[currentStep]}
-          onAdvance={(extraFields) =>
-            requestStepAndNavigate(currentStep + 1, extraFields)
-          }
+          blueprint={blueprint}
         />
-      )}
+      </div>
+    );
+  }
 
-      {currentStep === 10 && (
-        <BlueprintShowcase data={generatedOptions[10]} blueprint={blueprint} />
-      )}
+  const StationComponent = STATION_COMPONENTS[station.id] || OptionStation;
+
+  return (
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-4 sm:gap-6">
+      <StationComponent
+        key={station.id}
+        station={station}
+        data={generatedOptions[currentStep]}
+        onNext={(extraFields) =>
+          requestStepAndNavigate(currentStep + 1, extraFields)
+        }
+        onGenerate={() => requestStepAndNavigate(currentStep, {}, true)}
+      />
     </div>
   );
 }

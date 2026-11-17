@@ -18,3 +18,4 @@ export function useMediaQuery(query, serverFallback = false) {
     () => serverFallback,
   );
 }
+

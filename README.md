@@ -4,25 +4,26 @@
 
 # Dev.Idea
 
-**Lienzo interactivo de toma de decisiones técnicas para desarrolladores.**
-Transforma una idea difusa en un _blueprint_ técnico ejecutable, paso a paso y sin sobrecarga cognitiva.
+**Lienzo interactivo para planificar software paso a paso, pensado para quien empieza.**
+Convierte una idea difusa en un _blueprint_ técnico: requisitos, stack, base de datos, arquitectura, diagramas, diseño y despliegue, eligiendo entre cartas.
 
 <br />
 
-[![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![Zustand](https://img.shields.io/badge/Zustand-443e38?style=for-the-badge&logo=react&logoColor=white)](https://github.com/pmndrs/zustand)
 [![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](#-licencia)
 
 <br />
 
-[Propósito](#-qué-es-devidea) ·
-[Funcionalidades Clave](#-funcionalidades-clave) ·
-[Mapa de Estaciones](#-mapa-de-estaciones) ·
-[Stack Tecnológico](#-stack-tecnológico) ·
-[Inicio Rápido](#-inicio-rápido)
+[¿Qué es?](#-qué-es-devidea) ·
+[Funcionalidades](#-funcionalidades) ·
+[Estaciones](#-mapa-de-estaciones) ·
+[Stack](#-stack-tecnológico) ·
+[Inicio rápido](#-inicio-rápido) ·
+[Estructura](#-estructura-del-proyecto)
 
 </div>
 
@@ -30,25 +31,29 @@ Transforma una idea difusa en un _blueprint_ técnico ejecutable, paso a paso y 
 
 ## 🎯 ¿Qué es Dev.Idea?
 
-Muchos proyectos de software se estancan antes de su primera línea de código debido a la **fatiga de decisión** y a chats desordenados con IA.
+Mucha gente que empieza a programar, o que construye con IA ("vibe coding"), se lanza a escribir código sin saber qué requisitos tiene su proyecto, qué arquitectura le conviene o qué diagramas necesita. **Dev.Idea** propone un **mapa de 14 estaciones encadenadas**: en cada una, **Google Gemini** genera **6 cartas** adaptadas a tu idea y a todo lo que elegiste antes, y tú decides.
 
-**Dev.Idea** replantea este proceso mediante un **mapa secuencial de 10 estaciones encadenadas (*Chain-of-Context*)**:
-
-- Cada elección técnica condiciona el contexto que analiza **Google Gemini Flash**, mediante salidas estrictamente estructuradas (**JSON Schema**).
-- El recorrido está acompañado por **Strobi**, un copiloto visual reactivo con expresiones procedurales y criterio de *Tech Lead* pragmático para evitar la sobreingeniería.
-- Culmina entregando un resumen ejecutivo visual (*Bento Grid*), esquemas de arquitectura y un archivo `AGENTS.md` listo para configurar agentes de IA en tu editor de código.
+- Cada carta explica la opción **"en simple"**, con ventajas, desventajas y las tecnologías involucradas (con su logo).
+- Cada estación tiene un botón **"¿Qué es?"**: **Strobi**, el copiloto, se mueve al lado y explica el concepto (qué es un stack, qué es la arquitectura, qué son los requisitos...), dónde se ve en la universidad y cómo se usa en la industria.
+- Combina **temario universitario** (ERS / IEEE 830, UML, modelo entidad-relación, Scrum, RUP) con **práctica de la industria** (C4, BaaS, CI/CD, copilots de IA).
+- Recomienda en proporción al proyecto: una landing no recibe diagramas de componentes ni de despliegue, y si eliges no usar base de datos no se propone un diagrama entidad-relación.
 
 ---
 
-## ⚡ Funcionalidades Clave
+## ⚡ Funcionalidades
 
-- **Encadenamiento contextual real (*Chain-of-Context*):** cada respuesta se calcula sobre las elecciones de las estaciones previas, evitando alucinaciones o stacks incompatibles.
-- **Clasificación por complejidad y trade-offs:** stacks y arquitecturas categorizados con etiquetas claras de pros, contras y niveles (*Simple*, *Medium*, *Advanced*).
-- **Copiloto reactivo (Strobi):** avatar procedural integrado que evalúa el avance, reacciona a los estados de carga y emite recomendaciones directas.
-- **Mini-mapa interactivo y navegación no lineal:** visualizador de ruta para saltar entre estaciones previas completadas sin perder el contexto.
-- **Persistencia local segura:** guarda el avance de tu blueprint en `localStorage` con Zustand; reanuda tu sesión al instante o inicia un mapa limpio con un solo clic.
-- **Cancelación de peticiones en tiempo real:** control mediante `AbortController` para interrumpir llamadas a la IA si decides cambiar de rumbo sobre la marcha.
-- **Exportación de artefactos de producción:** genera el árbol sugerido de directorios, el esquema de datos y el archivo `AGENTS.md`, listo para copiar en Cursor, Claude Code o GitHub Copilot.
+- **Mazo de cartas barajable:** las 6 opciones de cada estación viven en un mazo de altura fija. Se navega con flechas, con los indicadores numerados, con el teclado (← →) o deslizando en móvil, y el botón de confirmar no se mueve nunca. Solo se montan las 3 cartas visibles, así que el rendimiento no depende del número de opciones.
+- **Selección única o múltiple:** requisitos, historias de usuario y diagramas permiten elegir varias cartas. Ninguna carta viene preseleccionada.
+- **Backlog de historias de usuario:** en lugar de cartas, una tabla con checks, criterios de aceptación y puntos; se pueden generar más historias por categoría y copiar la selección como tareas (GitHub Projects) o como tabla Markdown.
+- **Encadenamiento contextual (*Chain-of-Context*):** cada estación se calcula sobre las anteriores con salidas estructuradas (**JSON Schema**) y un saneamiento de respaldo.
+- **Strobi explica cada estación:** panel "¿Qué es?" con concepto, analogía, ideas clave, universidad vs. industria y un consejo. Se cierra con la X, con Escape o al confirmar.
+- **Logos de tecnologías:** catálogo curado de [Simple Icons](https://simpleicons.org) en stacks, bases de datos, deploy y herramientas.
+- **Diagramas dibujados:** cada diagrama recomendado incluye un ejemplo en **Mermaid** que se dibuja en un modal (la librería se carga solo al abrirlo).
+- **Lenguaje visual real:** en la estación de estilo, cada carta adopta su propio material (glassmorphism, neobrutalismo, aurora, terminal...).
+- **Login con Google + autoguardado:** con sesión iniciada (Supabase Auth), cada cambio se guarda solo en la nube, incluidas todas las cartas generadas, para retomar el mapa completo en otro dispositivo. Sin sesión, todo queda en `localStorage`.
+- **Modo consulta y reescritura:** las estaciones ya superadas se pueden revisar; "Reescribir desde aquí" descarta lo calculado después.
+- **Mapa de ruta:** panel lateral con el recorrido en zigzag para saltar entre estaciones completadas.
+- **Cancelación en tiempo real:** `AbortController` para pausar una generación en curso.
 
 ---
 
@@ -56,47 +61,55 @@ Muchos proyectos de software se estancan antes de su primera línea de código d
 
 ```mermaid
 flowchart LR
-    A["0 · Idea & Alcance"] --> B["1 · Naming<br/><i>opcional</i>"]
-    B --> C["2 · Stack Tecnológico"]
-    C --> D["3 · Arquitectura"]
-    D --> E["4 · Metodología<br/><i>opcional</i>"]
-    E --> F["5 · Diagramas IA"]
-    F --> G["6 · Morphism & Estilo"]
-    G --> H["7 · Layout"]
-    H --> I["8 · Deploy & GitHub"]
-    I --> J["9 · Ecosistema IA"]
-    J --> K["⭐ ¡A Trabajar!"]
+    A["0 · Idea"] --> B["1 · Naming<br/><i>opcional</i>"]
+    B --> C["2 · Requisitos"]
+    C --> D["3 · Historias<br/><i>opcional</i>"]
+    D --> E["4 · Stack"]
+    E --> F["5 · Base de datos"]
+    F --> G["6 · Arquitectura"]
+    G --> H["7 · Metodología<br/><i>opcional</i>"]
+    H --> I["8 · Diagramas"]
+    I --> J["9 · Estilo visual"]
+    J --> K["10 · Layout"]
+    K --> L["11 · Deploy"]
+    L --> M["12 · Ecosistema IA"]
+    M --> N["⭐ 13 · ¡A Trabajar!"]
 
-    style K fill:#8E75B2,stroke:#5b4a7a,color:#fff
+    style N fill:#8E75B2,stroke:#5b4a7a,color:#fff
 ```
 
-| # | Estación | Flujo funcional y decisiones | Modalidad |
-|:-:|----------|------------------------------|-----------|
-| 0 | **Idea & Alcance** | Captura de la idea principal y calibración del contexto (Académico, Startup / Trabajo, Personal). | Entrada inicial |
-| 1 | **Naming** | Generación de nombres comerciales, técnicos o minimalistas con su respectiva justificación. | ⏭️ Omitible |
-| 2 | **Stack Tecnológico** | Comparativa de frameworks, bases de datos y selectores dinámicos de lenguaje/sabor técnico. | Selección con trade-offs |
-| 3 | **Arquitectura** | Patrones estructurales (Monolito Modular, 3 Capas, Clean Architecture, BaaS Serverless o Event-Driven). | Clasificado por dificultad |
-| 4 | **Metodología** | Ritmo de trabajo adaptado al equipo o desarrollo individual (Kanban con WIP, Sprints o Modo Sniper). | ⏭️ Omitible |
-| 5 | **Diagramas Dinámicos** | Paquetes técnicos adaptados a la base de datos y complejidad (Básico, Medio o Completo con ERD). | 🤖 Generación contextual |
-| 6 | **Morphism & Estilo** | Definición del lenguaje de interfaz (Minimalismo SaaS, Dark Glassmorphism, Claymorphism 3D suave). | Sistema de diseño |
-| 7 | **Layout** | Maquetación espacial de pantalla (Bento Grid, App Shell con Sidebar fija, Canvas Inmersivo). | Experiencia de usuario |
-| 8 | **Deploy & GitHub** | Recomendación de hosting de costo $0 + modal de alerta contextual para versionar y respaldar en GitHub. | Infraestructura |
-| 9 | **Ecosistema IA** | Doble bloque: LLMs idóneos para integrar en tu producto + herramientas aceleradoras para tu IDE. | Kit de desarrollo |
-| ⭐ | **¡A Trabajar!** | Entrega del Showcase Bento, árbol de directorios, esquema físico y bloque de copia rápida de `AGENTS.md`. | 🎁 Blueprint final |
+| # | Estación | Qué decides | Selección |
+|:-:|----------|-------------|-----------|
+| 0 | **Idea** | Descripción y contexto (Académico, Startup / Trabajo, Personal / MVP). | Entrada |
+| 1 | **Naming** | 6 nombres por estilo, o el tuyo propio. | Única · ⏭️ omitible |
+| 2 | **Requisitos** | Módulos con requisitos funcionales (RF) y no funcionales (RNF), priorizados para el MVP. | Múltiple |
+| 3 | **Historias de usuario** | Backlog en **tabla** (10 iniciales): "Como… quiero… para…", criterios de aceptación, prioridad y puntos. Botón para generar 5 más por categoría y copiar como tareas para GitHub Projects. | Checks · ⏭️ omitible |
+| 4 | **Stack** | Combinaciones de tecnologías por dificultad, con el lenguaje a elegir. | Única |
+| 5 | **Base de datos** | Sin base de datos, relacional, documental, BaaS o embebida. Condiciona los diagramas. | Única |
+| 6 | **Arquitectura** | Patrones reales del stack elegido (MVC, MVT, capas, monolito modular, hexagonal...). | Única |
+| 7 | **Metodología** | Kanban, Scrum, Shape Up, XP, RUP... según equipo y contexto. | Única · ⏭️ omitible |
+| 8 | **Diagramas** | UML, C4, ERD, DFD, BPMN, wireflow, user journey... proporcionales al proyecto. | Múltiple |
+| 9 | **Estilo visual** | 6 lenguajes visuales; cada carta se ve con su propio estilo. | Única |
+| 10 | **Layout** | Distribución de pantallas coherente con el estilo y los requisitos. | Única |
+| 11 | **Deploy** | Planes con costo inicial $0 y el código en GitHub. | Única |
+| 12 | **Ecosistema IA** | Modelos para el producto y copilots para programar. | Única |
+| ⭐ | **¡A Trabajar!** | Blueprint final (en desarrollo). | — |
 
 ---
 
 ## 🧰 Stack Tecnológico
 
-| Capa | Tecnología | Detalle y rol |
-|------|------------|---------------|
-| **Framework base** | Next.js 15 (App Router) | Arquitectura full-stack monolítica moderna en JavaScript estándar (`.jsx` / `.js`). |
-| **Estilos & UI** | Tailwind CSS | Diseño responsivo con soporte para `backdrop-blur` y tarjetas translúcidas. |
-| **Iconografía** | Lucide + Simple Icons | SVGs y logotipos oficiales de tecnologías y herramientas. |
-| **Copiloto visual** | `@bible-strong/avatar-web` | Avatar procedural interactivo renderizado directamente en el DOM mediante `ref`. |
-| **Lienzo & animaciones** | Framer Motion | Transiciones fluidas entre estaciones y modales contextuales. |
-| **Inferencia IA** | Google Gemini Flash | Generación estructurada garantizada mediante el SDK `@google/genai` con esquemas JSON. |
-| **Gestión de estado** | Zustand | Estado global reactivo con middleware `persist` (`localStorage`) y soporte para `AbortController`. |
+| Capa | Tecnología | Rol |
+|------|------------|-----|
+| **Framework** | Next.js 16 (App Router) | Full-stack en JavaScript (`.jsx` / `.js`), rutas API para Gemini y proyectos. |
+| **Estilos** | Tailwind CSS 4 | Diseño responsivo y tarjetas por estilo visual. |
+| **Animaciones** | Framer Motion | Mazo de cartas, transiciones y paneles. |
+| **IA** | Google Gemini (Vertex AI REST) | Pool de modelos con fallback, `responseSchema` y validación. |
+| **Auth y datos** | Supabase | Login con Google, tablas `projects` / `blueprints` con RLS. |
+| **Estado** | Zustand + `persist` | Estado global, caché local y migraciones de versión. |
+| **Iconos** | Lucide + Simple Icons | Interfaz y logos oficiales de tecnologías. |
+| **Diagramas** | Mermaid | Ejemplos dibujados de cada diagrama recomendado. |
+| **Copiloto** | `@bible-strong/avatar-web` | Avatar procedural de Strobi. |
 
 ---
 
@@ -104,52 +117,93 @@ flowchart LR
 
 ### Requisitos previos
 
-- [Node.js](https://nodejs.org) 18.18 o superior
-- [pnpm](https://pnpm.io) (recomendado)
-- Una API key de [Google AI Studio](https://aistudio.google.com/apikey)
+- [Node.js](https://nodejs.org) 20 o superior
+- [pnpm](https://pnpm.io)
+- Una API key de Google Cloud con acceso a Gemini en Vertex AI
+- (Opcional) Un proyecto de [Supabase](https://supabase.com) para login y guardado en la nube
 
-### 1️⃣ Clonar e instalar dependencias
+### 1️⃣ Instalar dependencias
 
 ```bash
-git clone https://github.com/tu-usuario/dev-idea.git
-cd dev-idea
 pnpm install
 ```
 
-### 2️⃣ Configurar variables de entorno
+### 2️⃣ Variables de entorno
 
-Crea un archivo `.env.local` en la raíz del proyecto:
+Crea un archivo `.env.local` en la raíz:
 
 ```env
-GEMINI_API_KEY=tu_api_key_de_gemini
+GEMINI_API_KEY=tu_api_key
+GOOGLE_CLOUD_PROJECT=tu_proyecto_de_google_cloud
+
+# Opcional: login con Google y autoguardado
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 ```
 
-### 3️⃣ Archivo de definición del avatar
+### 3️⃣ Base de datos (Supabase)
 
-Asegúrate de contar con el archivo de definición procedural en la siguiente ruta:
+- **Proyecto nuevo:** ejecuta [`supabase/schema.sql`](supabase/schema.sql) en el SQL Editor.
+- **Proyecto existente:** ejecuta una vez [`supabase/migrations/20261116_estaciones_v3.sql`](supabase/migrations/20261116_estaciones_v3.sql), que añade las columnas de las nuevas estaciones y las cartas generadas.
+- Activa el proveedor **Google** en *Authentication → Providers*.
 
-```text
-src/data/avatar.avatar.json
-```
-
-### 4️⃣ Iniciar en entorno local
+### 4️⃣ Iniciar en local
 
 ```bash
 pnpm dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador y comienza a trazar la arquitectura de tu siguiente software. 🎉
+Abre [http://localhost:3000](http://localhost:3000) y escribe tu idea. 🎉
+
+### 🐳 Docker
+
+```bash
+docker compose up --build
+```
+
+---
+
+## 🗂️ Estructura del Proyecto
+
+```text
+src/
+├── app/
+│   ├── api/generate-step/     # Genera las cartas de una estación con Gemini
+│   ├── api/projects/          # CRUD de proyectos en Supabase (con el JWT del usuario)
+│   └── page.jsx               # Layout principal: cabecera, Strobi, mapa y lienzo
+├── components/
+│   ├── companion/             # Strobi: avatar, burbuja y panel "¿Qué es?"
+│   ├── map/deck/CardDeck.jsx  # Mazo de cartas común a todas las estaciones
+│   ├── map/stations/          # OptionStation (genérica) + estaciones con contenido propio
+│   ├── navigation/            # Barra de controles, mapa de ruta, estado del autoguardado
+│   └── ui/                    # TechChip (logos), esqueletos
+├── config/stations.config.js  # Registro único de estaciones (orden, claves, columnas)
+├── data/stationGuides.js      # Explicaciones de Strobi por estación
+├── hooks/                     # Store de Zustand, navegación y autoguardado
+├── lib/
+│   ├── prompts.js             # Prompts por estación
+│   ├── stepSchemas.js         # responseSchema de Gemini por estación
+│   ├── stepContracts.js       # Saneamiento de las respuestas
+│   ├── gemini.js              # Pool de modelos con presupuesto de tiempo y fallback
+│   └── techIcons.js           # Catálogo curado de logos (Simple Icons)
+└── services/projectService.js # Auth con Google y llamadas a /api/projects
+supabase/
+├── schema.sql                 # Esquema completo
+└── migrations/                # Cambios para bases existentes
+```
+
+**Añadir una estación:** regístrala en `stations.config.js`, añade su prompt en `prompts.js`, su esquema en `stepSchemas.js`, su guía en `stationGuides.js` y, si necesita columna propia, una migración en `supabase/migrations/`. Si sus cartas no necesitan contenido especial, `OptionStation` la dibuja sola.
 
 ---
 
 ## 📄 Licencia
 
-Distribuido bajo la licencia **MIT**. Consulta el archivo [`LICENSE`](LICENSE) para más información.
+Distribuido bajo la licencia **MIT**.
 
 <div align="center">
 
 **MIT © 2026 Dev.Idea**
 
-<sub>Hecho para desarrolladores que prefieren decidir con claridad antes de construir.</sub>
+<sub>Hecho para quienes prefieren entender antes de construir.</sub>
 
 </div>

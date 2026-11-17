@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 
 /**
@@ -33,26 +32,5 @@ export function useStationNavigation(stepNumber) {
     isLockedHistory,
     returnToFlow: () => goToStep(highestStep),
     rewriteFromHere: () => truncateWorkflowFrom(stepNumber),
-  };
-}
-
-/**
- * Selección de una opción por id sin `useEffect`: el valor efectivo se deriva en
- * cada render (elección del usuario -> decisión guardada -> primera opción), así
- * funciona aunque las opciones lleguen después de montar.
- */
-export function useOptionSelection(options, savedOption) {
-  const [pickedId, setPickedId] = useState(null);
-
-  const selectedOption =
-    options.find((o) => o.id === pickedId) ||
-    options.find((o) => o.id === savedOption?.id) ||
-    savedOption ||
-    options[0] ||
-    null;
-
-  return {
-    selectedOption,
-    selectOption: (option) => setPickedId(option.id),
   };
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { STATIONS } from "@/config/stations.config";
+import { STATIONS, LAST_STEP } from "@/config/stations.config";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { X, Check, Lightbulb, Flag, Lock, Sparkles } from "lucide-react";
 
@@ -13,7 +13,8 @@ const COLUMN_WIDTH = 260;
 const CENTER_X = COLUMN_WIDTH / 2;
 const ROW_HEIGHT = 88; // alto fijo de cada fila (nodo 44px + etiqueta + aire)
 const NODE_SIZE = 44;
-const ZIGZAG = [0, -38, 0, 38, -38, 0, 38, -38, 0, 38, 0];
+// Patrón de serpenteo que se repite para cualquier número de estaciones
+const ZIGZAG = [0, -38, 0, 38];
 
 const nodeOffset = (index) => ZIGZAG[index % ZIGZAG.length];
 const nodeCenter = (index) => ({
@@ -33,16 +34,21 @@ export function StationBreadcrumb() {
   const toggleRouteMap = useDecisionStore((state) => state.toggleRouteMap);
 
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const activeNodeRef = useRef(null);
+  const scrollRef = useRef(null);
 
-  // Auto-scroll al nodo activo cuando cambia de estación y el panel está abierto
+  // Centra el nodo activo DENTRO del panel. (scrollIntoView también desplazaba
+  // la página entera, y por eso el mapa y el contenido se descuadraban.)
   useEffect(() => {
-    if (isRouteMapOpen && activeNodeRef.current) {
-      activeNodeRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
+    if (!isRouteMapOpen) return undefined;
+    const frame = requestAnimationFrame(() => {
+      const container = scrollRef.current;
+      if (!container) return;
+      const index = STATIONS.findIndex((s) => s.stepNumber === currentStep);
+      const top =
+        index * ROW_HEIGHT + NODE_SIZE / 2 - container.clientHeight / 2 + 16;
+      container.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
   }, [currentStep, isRouteMapOpen]);
 
   if (currentStep === 0) return null;
@@ -120,7 +126,7 @@ export function StationBreadcrumb() {
                       )}
                     </h3>
                     <span className="text-[10px] font-mono text-neutral-400">
-                      Fase {currentStation.stepNumber} de 10
+                      Fase {currentStation.stepNumber} de {LAST_STEP}
                     </span>
                   </div>
                 </div>
@@ -135,7 +141,10 @@ export function StationBreadcrumb() {
               </div>
 
               {/* Recorrido vertical en zigzag */}
-              <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 relative px-1 scrollbar-thin">
+              <div
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto overflow-x-hidden py-4 relative px-1 scrollbar-thin overscroll-contain"
+              >
                 <div
                   className="relative mx-auto"
                   style={{
@@ -192,7 +201,6 @@ export function StationBreadcrumb() {
                     return (
                       <div
                         key={station.id}
-                        ref={isActive ? activeNodeRef : null}
                         style={{
                           height: ROW_HEIGHT,
                           transform: `translateX(${offsetX}px)`,
@@ -250,7 +258,7 @@ export function StationBreadcrumb() {
                                     : "text-neutral-600"
                               }`}
                             />
-                          ) : station.stepNumber === 10 ? (
+                          ) : station.id === "workspace" ? (
                             <Flag
                               className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
                                 isActive
@@ -288,11 +296,9 @@ export function StationBreadcrumb() {
                                 : "text-neutral-600"
                           }`}
                         >
-                          {station.stepNumber === 0
-                            ? "00 · Entrada"
-                            : station.stepNumber === 10
-                              ? "⭐ ¡A Trabajar!"
-                              : `${String(station.stepNumber).padStart(2, "0")} · ${station.title}`}
+                          {station.id === "workspace"
+                            ? "⭐ ¡A Trabajar!"
+                            : `${String(station.stepNumber).padStart(2, "0")} · ${station.navLabel || station.title}`}
                         </div>
                       </div>
                     );

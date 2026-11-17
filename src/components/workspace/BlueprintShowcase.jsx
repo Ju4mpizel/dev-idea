@@ -14,7 +14,7 @@ export function BlueprintShowcase({ data, blueprint }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400">
-            Estación 10 · ¡A Trabajar!
+            Estación 13 · ¡A Trabajar!
           </span>
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-0.5">
             Plano Técnico & Workspace

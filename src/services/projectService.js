@@ -49,14 +49,20 @@ async function getAuthHeaders() {
 export async function syncProjectToCloud({
   projectId = null,
   blueprint,
+  generatedOptions = {},
   currentStep = 0,
   isCompleted = false,
 }) {
-  const user = await getCurrentUser();
-  if (!user) return null; // Modo local: sin sesión no escribe en la nube
-
   const headers = await getAuthHeaders();
-  const body = JSON.stringify({ blueprint, currentStep, isCompleted });
+  // Modo local: sin sesión no escribe en la nube
+  if (!headers.Authorization) return null;
+
+  const body = JSON.stringify({
+    blueprint,
+    generatedOptions,
+    currentStep,
+    isCompleted,
+  });
 
   if (projectId) {
     // PUT /api/projects/[id]
@@ -112,7 +118,7 @@ export async function fetchUserProjects() {
   });
 
   if (!res.ok) {
-    const err = await res.json();
+    const err = await readJsonSafe(res);
     throw new Error(err.error || "Error al obtener proyectos");
   }
 
@@ -131,7 +137,7 @@ export async function deleteProjectFromCloud(projectId) {
   });
 
   if (!res.ok) {
-    const err = await res.json();
+    const err = await readJsonSafe(res);
     throw new Error(err.error || "Error al eliminar el proyecto");
   }
 

@@ -5,19 +5,61 @@
  * (src/lib/stepContracts.js). El saneamiento sigue activo como segunda barrera:
  * el esquema previene, el contrato garantiza.
  *
- * Sin imports a propósito: se usa en el servidor y en scripts de prueba.
+ * Se indexa por el `id` de la estación (no por número) para que reordenar el
+ * mapa no rompa nada. Sin imports a propósito: se usa también en scripts.
  */
 
-const LEVELS = ["simple", "medium", "advanced"];
-const DIAGRAM_TYPES = [
+export const OPTIONS_PER_STATION = 6;
+
+// Estaciones con más cartas que el resto (el stack tiene muchas combinaciones)
+const OPTION_COUNTS = { stack: 8, "user-stories": 10 };
+
+/** Número de cartas que se piden a Gemini para una estación. */
+export const getOptionCount = (stationId) =>
+  OPTION_COUNTS[stationId] || OPTIONS_PER_STATION;
+
+export const LEVELS = ["simple", "medium", "advanced"];
+
+export const DIAGRAM_TYPES = [
   "use-case",
-  "components",
-  "erd",
+  "class",
   "sequence",
-  "cloud",
+  "activity",
+  "state",
+  "components",
+  "deployment",
+  "c4-context",
+  "c4-container",
+  "erd",
+  "dfd",
+  "bpmn",
   "flowchart",
+  "wireflow",
+  "user-journey",
+  "architecture",
 ];
-const STYLE_KEYS = [
+
+export const DIAGRAM_CATEGORIES = [
+  "UML",
+  "C4",
+  "Datos",
+  "Procesos",
+  "Infraestructura",
+  "UX",
+];
+
+export const DIAGRAM_AUDIENCES = ["Universidad", "Industria", "Ambos"];
+
+export const DATABASE_TYPES = [
+  "none",
+  "relational",
+  "document",
+  "key-value",
+  "baas",
+  "embedded",
+];
+
+export const STYLE_KEYS = [
   "minimalism",
   "glassmorphism",
   "claymorphism",
@@ -33,6 +75,7 @@ const STYLE_KEYS = [
 const STRING = { type: "STRING" };
 const STRING_LIST = { type: "ARRAY", items: STRING };
 const LEVEL = { type: "STRING", enum: LEVELS };
+const enumOf = (values) => ({ type: "STRING", enum: values });
 
 const object = (properties, required = Object.keys(properties)) => ({
   type: "OBJECT",
@@ -48,20 +91,21 @@ const list = (items, min, max = min) => ({
   maxItems: max,
 });
 
-// Opción genérica (estaciones 3, 4, 7, 8, 9)
+// Opción genérica: base de todas las cartas con trade-offs
 const OPTION_FIELDS = {
   id: STRING,
   level: LEVEL,
   title: STRING,
   tag: STRING,
   summary: STRING,
+  beginnerTip: STRING,
   pros: STRING,
   cons: STRING,
   techs: STRING_LIST,
 };
 
 const OPTIONS_SCHEMA = {
-  1: {
+  naming: {
     key: "names",
     items: object({
       id: STRING,
@@ -70,55 +114,73 @@ const OPTIONS_SCHEMA = {
       tagline: STRING,
       rationale: STRING,
     }),
-    min: 4,
   },
-  2: {
+  requirements: {
+    key: "options",
+    items: object({
+      id: STRING,
+      level: LEVEL,
+      title: STRING,
+      tag: STRING,
+      summary: STRING,
+      beginnerTip: STRING,
+      functional: STRING_LIST,
+      nonFunctional: STRING_LIST,
+    }),
+  },
+  "user-stories": {
+    key: "options",
+    items: object({
+      id: STRING,
+      level: LEVEL,
+      title: STRING,
+      role: STRING,
+      action: STRING,
+      benefit: STRING,
+      acceptanceCriteria: STRING_LIST,
+      points: STRING,
+      tag: STRING,
+    }),
+  },
+  stack: {
     key: "stacks",
     items: object({
       id: STRING,
       level: LEVEL,
       badge: STRING,
       title: STRING,
+      summary: STRING,
+      beginnerTip: STRING,
       tags: STRING_LIST,
       defaultLanguage: STRING,
       availableLanguages: STRING_LIST,
       pros: STRING,
       cons: STRING,
     }),
-    min: 4,
-    max: 5,
   },
-  3: { key: "options", items: object(OPTION_FIELDS), min: 6 },
-  4: { key: "options", items: object(OPTION_FIELDS), min: 4 },
-  5: {
+  database: {
+    key: "options",
+    items: object({ ...OPTION_FIELDS, dbType: enumOf(DATABASE_TYPES) }),
+  },
+  architecture: { key: "options", items: object(OPTION_FIELDS) },
+  methodology: { key: "options", items: object(OPTION_FIELDS) },
+  diagrams: {
     key: "options",
     items: object({
       ...OPTION_FIELDS,
-      diagrams: {
-        type: "ARRAY",
-        items: object({
-          name: STRING,
-          type: { type: "STRING", enum: DIAGRAM_TYPES },
-          description: STRING,
-        }),
-        minItems: 1,
-      },
+      diagramType: enumOf(DIAGRAM_TYPES),
+      category: enumOf(DIAGRAM_CATEGORIES),
+      audience: enumOf(DIAGRAM_AUDIENCES),
       sampleMermaid: STRING,
     }),
-    min: 3,
   },
-  6: {
+  morphism: {
     key: "options",
-    items: object({
-      ...OPTION_FIELDS,
-      styleKey: { type: "STRING", enum: STYLE_KEYS },
-    }),
-    min: 3,
-    max: 4,
+    items: object({ ...OPTION_FIELDS, styleKey: enumOf(STYLE_KEYS) }),
   },
-  7: { key: "options", items: object(OPTION_FIELDS), min: 3 },
-  8: { key: "options", items: object(OPTION_FIELDS), min: 3 },
-  9: { key: "options", items: object(OPTION_FIELDS), min: 3 },
+  layout: { key: "options", items: object(OPTION_FIELDS) },
+  deploy: { key: "options", items: object(OPTION_FIELDS) },
+  "ai-ecosystem": { key: "options", items: object(OPTION_FIELDS) },
 };
 
 const COMPANION_FIELDS = {
@@ -126,11 +188,12 @@ const COMPANION_FIELDS = {
   companionComment: STRING,
 };
 
-/** Devuelve el responseSchema de la estación, o null si no hay uno definido. */
-export function getResponseSchema(stepNumber) {
-  const step = Number(stepNumber);
-
-  if (step === 10) {
+/**
+ * Devuelve el responseSchema de la estación (por id), o null si no hay uno.
+ * `count` permite pedir otro número de cartas (p. ej. "generar más historias").
+ */
+export function getResponseSchema(stationId, { count } = {}) {
+  if (stationId === "workspace") {
     return object({
       ...COMPANION_FIELDS,
       scaffold: object({
@@ -141,11 +204,15 @@ export function getResponseSchema(stepNumber) {
     });
   }
 
-  const spec = OPTIONS_SCHEMA[step];
+  const spec = OPTIONS_SCHEMA[stationId];
   if (!spec) return null;
 
   return object({
     ...COMPANION_FIELDS,
-    [spec.key]: list(spec.items, spec.min, spec.max),
+    [spec.key]: list(
+      spec.items,
+      count || getOptionCount(stationId),
+      count || getOptionCount(stationId),
+    ),
   });
 }

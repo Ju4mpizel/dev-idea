@@ -9,13 +9,13 @@ export const MODELS = [
 ];
 
 // Presupuesto de tiempo total (debe quedar por debajo del maxDuration de la ruta)
-const DEFAULT_BUDGET_MS = 50_000;
-// Tope por intento. Medido en vivo: el paso 3 (6 arquitecturas) tarda 24-31 s en
-// gemini-3.8-flash, con o sin responseSchema; 25 s lo cortaba en falso.
-const ATTEMPT_TIMEOUT_MS = 35_000;
+const DEFAULT_BUDGET_MS = 80_000;
+// Tope por intento. Medido en vivo con 6 cartas por estación: 14-28 s en
+// gemini-3.8-flash; Diagramas (con ejemplos Mermaid) supera los 35 s.
+const ATTEMPT_TIMEOUT_MS = 50_000;
 // Tiempo que se reserva para cada modelo de respaldo pendiente (flash-lite responde
 // en ~3-5 s), para que un intento lento no deje sin oportunidad a los demás.
-const FALLBACK_RESERVE_MS = 6_000;
+const FALLBACK_RESERVE_MS = 10_000;
 // Por debajo de esto no vale la pena lanzar otro intento
 const MIN_ATTEMPT_MS = 5_000;
 const RETRY_PAUSE_MS = 400;

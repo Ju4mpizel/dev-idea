@@ -12,9 +12,10 @@ import {
   deleteProjectFromCloud,
 } from "@/services/projectService";
 import { SkeletonFormStation0 } from "@/components/ui/SkeletonCard";
+import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { Cloud, HardDrive, Trash2 } from "lucide-react";
 
-export function Station0_Idea({ onStartNew, onResumeSaved }) {
+export function IdeaStation({ onStartNew, onResumeSaved }) {
   const blueprint = useDecisionStore((state) => state.blueprint);
   const updateBlueprint = useDecisionStore((state) => state.updateBlueprint);
   const currentIdeaDraft = useDecisionStore((state) => state.currentIdeaDraft);
@@ -39,6 +40,9 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
 
   const [cloudProjects, setCloudProjects] = useState([]);
   const [activeTab, setActiveTab] = useState("local");
+  // Proyecto de la nube pendiente de confirmar su borrado
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
   const hasSavedBlueprint = Boolean(
     blueprint?.idea && (blueprint?.selectedName || generatedOptions[1]),
@@ -88,8 +92,7 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
     }
   };
 
-  const handleDiscardLocal = (e) => {
-    e.stopPropagation();
+  const handleDiscardLocal = () => {
     clearAllMemory();
     const randomDiscard =
       STROBI_DISCARD_QUOTES[
@@ -103,16 +106,23 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
     onResumeSaved(stepToResume);
   };
 
-  const handleDeleteCloudProject = async (e, projectId) => {
-    e.stopPropagation();
+  const handleDeleteCloudProject = async () => {
+    const project = projectToDelete;
+    setProjectToDelete(null);
+    if (!project) return;
     try {
-      await deleteProjectFromCloud(projectId);
-      setCloudProjects((prev) => prev.filter((p) => p.id !== projectId));
-      // Si era el proyecto activo, desvinculamos para que el próximo guardado cree uno nuevo
-      if (projectId === cloudProjectId) setCloudProjectId(null);
-      setCompanion("celebrate", "¡Proyecto eliminado de Supabase!");
+      await deleteProjectFromCloud(project.id);
+      setCloudProjects((prev) => prev.filter((p) => p.id !== project.id));
+      // Si era el mapa abierto, también se limpia en local: si no, el
+      // autoguardado lo volvería a subir como un proyecto nuevo.
+      if (project.id === cloudProjectId) {
+        setCloudProjectId(null);
+        clearAllMemory();
+      }
+      setCompanion("celebrate", `"${project.title}" eliminado de la nube.`);
     } catch (err) {
       console.error(err);
+      setCompanion("uneasy-left", "No pude eliminar el proyecto. Intenta de nuevo.");
     }
   };
 
@@ -329,7 +339,10 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
                   </span>
                   <button
                     type="button"
-                    onClick={handleDiscardLocal}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmDiscardOpen(true);
+                    }}
                     className="text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
                   >
                     Descartar
@@ -358,7 +371,10 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
                         </span>
                         <button
                           type="button"
-                          onClick={(e) => handleDeleteCloudProject(e, proj.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProjectToDelete(proj);
+                          }}
                           className="text-neutral-500 hover:text-red-400 transition-colors p-0.5 cursor-pointer shrink-0"
                           title="Eliminar de la nube"
                         >
@@ -377,6 +393,38 @@ export function Station0_Idea({ onStartNew, onResumeSaved }) {
           </motion.aside>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={Boolean(projectToDelete)}
+        onClose={() => setProjectToDelete(null)}
+        onConfirm={handleDeleteCloudProject}
+        variant="danger"
+        tag="Eliminar de la nube"
+        title={`¿Eliminar "${projectToDelete?.title || "este proyecto"}"?`}
+        description={
+          projectToDelete?.id === cloudProjectId
+            ? "Se borrará de tu cuenta para siempre y, como es el mapa que tienes abierto, también se limpiará de la memoria local."
+            : "Se borrará de tu cuenta para siempre. Esta acción no se puede deshacer."
+        }
+        confirmText="Sí, eliminar"
+        cancelText="Conservar"
+      />
+
+      <ConfirmModal
+        isOpen={confirmDiscardOpen}
+        onClose={() => setConfirmDiscardOpen(false)}
+        onConfirm={handleDiscardLocal}
+        variant="danger"
+        tag="Memoria local"
+        title="¿Descartar el mapa guardado en este navegador?"
+        description={
+          cloudProjectId
+            ? "Se borrará la copia local. La copia en la nube seguirá en tu cuenta."
+            : "Se borrará el mapa y sus cartas. No está guardado en la nube, así que no se podrá recuperar."
+        }
+        confirmText="Descartar"
+        cancelText="Conservar"
+      />
     </div>
   );
 }
