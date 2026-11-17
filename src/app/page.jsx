@@ -109,7 +109,7 @@ export default function HomePage() {
       <LoadingSides active={isLoading && currentStep > 0} />
 
       {/* Resplandor ambiental */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[90vw] sm:w-[600px] lg:w-[800px] h-[200px] sm:h-[300px] bg-neutral-800/15 blur-[120px] pointer-events-none rounded-full" />
+      <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-[600px] lg:w-[800px] h-[300px] bg-neutral-800/15 blur-[120px] pointer-events-none rounded-full" />
 
       {/* Toast Flotante */}
       <AnimatePresence>

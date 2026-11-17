@@ -26,10 +26,18 @@ const FAN_HEIGHT = "h-[calc(clamp(296px,calc(100dvh-460px),430px)+24px)]";
 function useFanLayout() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 640px)");
-  if (isDesktop) return { spread: 175, reach: 2, tilt: 6, drop: 14 };
-  if (isTablet) return { spread: 120, reach: 2, tilt: 6, drop: 12 };
-  return { spread: 34, reach: 1, tilt: 4, drop: 10 };
+  if (isDesktop)
+    return { spread: 175, reach: 2, tilt: 6, drop: 14, spring: DESKTOP_SPRING };
+  if (isTablet)
+    return { spread: 120, reach: 2, tilt: 6, drop: 12, spring: DESKTOP_SPRING };
+  return { spread: 34, reach: 1, tilt: 4, drop: 10, spring: MOBILE_SPRING };
 }
+
+/** Rebote de las cartas. En móvil se asienta antes (menos fotogramas). */
+const DESKTOP_SPRING = { type: "spring", stiffness: 260, damping: 20 };
+const MOBILE_SPRING = { type: "spring", stiffness: 380, damping: 30, mass: 0.8 };
+/** Las cartas que no se ven se recolocan al instante, sin animar. */
+const INSTANT = { duration: 0 };
 
 /** Distancia circular más corta entre dos índices (-n/2 .. n/2). */
 function circularOffset(index, active, count) {
@@ -61,7 +69,7 @@ export function CardDeck({
   emptyMessage = "No hay opciones para mostrar.",
 }) {
   const count = items.length;
-  const { spread, reach, tilt, drop } = useFanLayout();
+  const { spread, reach, tilt, drop, spring } = useFanLayout();
   const [activeIndex, setActiveIndex] = useState(() => {
     const first = items.findIndex((item) => selectedKeys.has(getKey(item)));
     return first > 0 ? first : 0;
@@ -120,6 +128,9 @@ export function CardDeck({
           const distance = Math.abs(d);
           const isFront = d === 0;
           const isVisible = distance <= reach;
+          // Solo se dibuja el contenido de las visibles y de las que están a
+          // punto de entrar/salir; el resto es una carcasa vacía e invisible.
+          const isNear = distance <= reach + 1;
           const isSelected = selectedKeys.has(key);
           const isDimmed = isLocked && !isSelected;
 
@@ -139,15 +150,13 @@ export function CardDeck({
                   ? { y: distance * drop - 10, transition: { duration: 0.15 } }
                   : undefined
               }
-              transition={{
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
-                delay: 0,
-              }}
+              transition={isNear ? spring : INSTANT}
               style={{
                 zIndex: 20 - distance,
                 pointerEvents: isVisible ? "auto" : "none",
+                visibility: isNear ? "visible" : "hidden",
+                // Capa propia en GPU: mover la carta no obliga a repintarla
+                willChange: isNear ? "transform, opacity" : "auto",
               }}
               drag={isFront && count > 1 ? "x" : false}
               dragConstraints={{ left: 0, right: 0 }}
@@ -175,16 +184,18 @@ export function CardDeck({
                 isFront && isLocked ? "cursor-grab" : "cursor-pointer"
               }`}
             >
-              <div className="relative w-full h-full">
-                {renderCard(item, { isSelected, isFront, isDimmed })}
-                {/* Las laterales se oscurecen para leer solo la del centro */}
-                {!isFront && (
-                  <div
-                    className="absolute inset-0 rounded-2xl bg-neutral-950 pointer-events-none transition-opacity duration-300"
-                    style={{ opacity: Math.min(0.25 + distance * 0.2, 0.7) }}
-                  />
-                )}
-              </div>
+              {isNear && (
+                <div className="relative w-full h-full">
+                  {renderCard(item, { isSelected, isFront, isDimmed })}
+                  {/* Las laterales se oscurecen para leer solo la del centro */}
+                  {!isFront && (
+                    <div
+                      className="absolute inset-0 rounded-2xl bg-neutral-950 pointer-events-none"
+                      style={{ opacity: Math.min(0.25 + distance * 0.2, 0.7) }}
+                    />
+                  )}
+                </div>
+              )}
             </motion.div>
           );
         })}

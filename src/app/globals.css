@@ -71,6 +71,8 @@
     transparent 1px
   );
   background-size: 22px 22px;
+  /* Capa fija propia: las animaciones de encima no la repintan */
+  transform: translateZ(0);
   /* Se desvanece hacia los bordes para no competir con el contenido */
   mask-image: radial-gradient(
     ellipse 85% 75% at 50% 35%,
