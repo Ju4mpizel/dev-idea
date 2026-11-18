@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import DevIdeaLogo from "@/components/brand/DevIdeaLogo";
 import { CompanionAvatar } from "@/components/companion/CompanionAvatar";
 import { StationInfoPanel } from "@/components/companion/StationInfoPanel";
+import { ProjectPlanPanel } from "@/components/companion/ProjectPlanPanel";
 import { StationCategoriesPanel } from "@/components/navigation/StationCategoriesPanel";
 import { CloudSyncBadge } from "@/components/navigation/CloudSyncBadge";
 import { LoadingSides } from "@/components/ui/LoadingSides";
@@ -13,6 +14,7 @@ import { DecisionCanvas } from "@/components/map/DecisionCanvas";
 import { StationBreadcrumb } from "@/components/navigation/StationBreadcrumb";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
 import { getStation } from "@/config/stations.config";
 import { supabase } from "@/lib/supabaseClient";
 import { signInWithGoogle, signOut } from "@/services/projectService";
@@ -35,19 +37,28 @@ export default function HomePage() {
   const infoStationId = useDecisionStore((state) => state.infoStationId);
   const closeStationInfo = useDecisionStore((state) => state.closeStationInfo);
   const isCategoriesOpen = useDecisionStore((state) => state.isCategoriesOpen);
+  const isPlanPanelOpen = useDecisionStore((state) => state.isPlanOpen);
+  const closePlan = useDecisionStore((state) => state.closePlan);
 
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Entrada de la página: navbar, logo dibujándose, Strobi con "pop"...
+  const intro = useIntro();
 
   // Con sesión iniciada, cada cambio del mapa se guarda solo en Supabase
   useCloudAutosave();
 
-  // Escape cierra la explicación de Strobi
+  // Escape cierra la explicación de Strobi o "Mi plano"
   useEffect(() => {
-    if (!infoStationId) return undefined;
-    const onKey = (e) => e.key === "Escape" && closeStationInfo();
+    if (!infoStationId && !isPlanPanelOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      closeStationInfo();
+      closePlan();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [infoStationId, closeStationInfo]);
+  }, [infoStationId, isPlanPanelOpen, closeStationInfo, closePlan]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -84,15 +95,18 @@ export default function HomePage() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isWide = useMediaQuery("(min-width: 1280px)");
   const isInfoOpen = Boolean(infoStationId) && currentStep > 0;
+  const isPlanOpen = isPlanPanelOpen && currentStep > 0;
+  // Strobi sale de la cabecera para ir a un panel ("¿Qué es?" o "Mi plano")
+  const isStrobiAway = isInfoOpen || isPlanOpen;
   const sidePanelSpace =
-    isInfoOpen && isWide
+    isStrobiAway && isWide
       ? INFO_PANEL_SPACE
       : isRouteMapOpen && currentStep > 0 && isDesktop
         ? MAP_PANEL_SPACE
         : 0;
   // Strobi de la cabecera oculto o tapado por un panel: se congela
   const isStrobiCovered =
-    isInfoOpen ||
+    isStrobiAway ||
     (isRouteMapOpen && currentStep > 0 && !isDesktop) ||
     (isCategoriesOpen && currentStep > 0 && !isWide);
   const leftPanelSpace =
@@ -108,7 +122,10 @@ export default function HomePage() {
   return (
     <main className="min-h-[100dvh] w-full flex flex-col bg-neutral-950 text-neutral-100 relative overflow-x-hidden font-sans selection:bg-neutral-800 selection:text-white">
       {/* Fondo de puntos: solo bajo la navbar */}
-      <div className="dot-grid fixed inset-x-0 top-14 bottom-0 pointer-events-none" />
+      <div
+        className={`dot-grid fixed inset-x-0 top-14 bottom-0 pointer-events-none ${introClass(intro, "intro-fade")}`}
+        style={introDelay(intro, 150)}
+      />
 
       {/* Tuercas gigantes a los lados (detrás del contenido) mientras se genera */}
       <LoadingSides active={isLoading && currentStep > 0} />
@@ -133,13 +150,22 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* Header Fijo */}
-      <header className="w-full shrink-0 border-b border-neutral-900 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-30">
+      <header
+        className={`w-full shrink-0 border-b border-neutral-900 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-30 ${introClass(intro, "intro-drop")}`}
+      >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">
-            <DevIdeaLogo height={24} className="text-white sm:h-[26px]" />
+            <DevIdeaLogo
+              height={24}
+              className="text-white sm:h-[26px]"
+              intro={intro}
+            />
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div
+            className={`flex items-center gap-2 sm:gap-3 ${introClass(intro, "intro-slide-right")}`}
+            style={introDelay(intro, 420)}
+          >
             {currentStep === 0 && cloudProjectId && <CloudSyncBadge />}
 
             <span className="hidden lg:inline text-[11px] px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono">
@@ -221,6 +247,9 @@ export default function HomePage() {
       {/* Explicación "¿Qué es...?" con Strobi al lado de la estación */}
       <StationInfoPanel />
 
+      {/* 💡 Mi plano: lo decidido hasta ahora, con Strobi */}
+      <ProjectPlanPanel />
+
       {/* Tabla de categorías de la estación, a la izquierda */}
       {currentStep > 0 && <StationCategoriesPanel />}
 
@@ -240,16 +269,18 @@ export default function HomePage() {
           <motion.div
             initial={false}
             animate={
-              isInfoOpen
+              isStrobiAway
                 ? { opacity: 0, y: -60, scale: 0.9 }
                 : { opacity: 1, y: 0, scale: 1 }
             }
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className={`w-full flex justify-center will-change-transform ${isInfoOpen ? "pointer-events-none" : ""}`}
-            aria-hidden={isInfoOpen || undefined}
+            className={`w-full flex justify-center will-change-transform ${isStrobiAway ? "pointer-events-none" : ""}`}
+            aria-hidden={isStrobiAway || undefined}
           >
             {/* En las estaciones Strobi es más compacto para dejar sitio al mazo */}
             <CompanionAvatar
+              // Clase fija: si cambiara al volver a la estación 0, el pop se repetiría
+              intro={intro}
               size={currentStep > 0 ? 76 : 105}
               compact={currentStep > 0}
               paused={isStrobiCovered}
@@ -257,7 +288,7 @@ export default function HomePage() {
           </motion.div>
 
           <AnimatePresence>
-            {isInfoOpen && currentStation && (
+            {isStrobiAway && currentStation && (
               <motion.div
                 key={`station-name-${currentStation.id}`}
                 initial={{ opacity: 0, y: 12, scale: 1.08 }}
@@ -299,7 +330,10 @@ export default function HomePage() {
       </motion.div>
 
       {/* Footer Fluido */}
-      <footer className="w-full shrink-0 border-t border-neutral-900/80 py-3 sm:py-4 text-center text-[10px] sm:text-xs text-neutral-600 font-mono px-4 mt-auto">
+      <footer
+        className={`w-full shrink-0 border-t border-neutral-900/80 py-3 sm:py-4 text-center text-[10px] sm:text-xs text-neutral-600 font-mono px-4 mt-auto ${introClass(intro, "intro-fade")}`}
+        style={introDelay(intro, 1400)}
+      >
         Dev.Idea © 2026 · Lienzo de Arquitectura y Decisiones Técnicas
       </footer>
     </main>

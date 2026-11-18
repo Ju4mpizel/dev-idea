@@ -2,12 +2,14 @@
 
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStation } from "@/config/stations.config";
+import { normalizeStepResponse } from "@/lib/stepContracts";
 
 import { IdeaStation } from "./stations/IdeaStation";
 import { NamingStation } from "./stations/NamingStation";
 import { RequirementsStation } from "./stations/RequirementsStations";
 import { UserStoriesStation } from "./stations/UserStoriesStation";
 import { StackStation } from "./stations/StackStation";
+import { SystemTypeStation } from "./stations/SystemTypeStation";
 import { DiagramsStation } from "./stations/DiagramsStation";
 import {
   DatabaseStation,
@@ -23,6 +25,7 @@ import { BlueprintShowcase } from "../workspace/BlueprintShowcase";
  */
 const STATION_COMPONENTS = {
   naming: NamingStation,
+  "system-type": SystemTypeStation,
   requirements: RequirementsStation,
   "user-stories": UserStoriesStation,
   stack: StackStation,
@@ -80,6 +83,16 @@ export function DecisionCanvas({ step: currentStep }) {
           existingData.companionComment,
         );
       }
+      goToStep(targetStep);
+      return;
+    }
+
+    // Estaciones de catálogo fijo: se resuelven al instante, sin Gemini
+    const targetStation = getStation(targetStep);
+    if (targetStation?.local) {
+      const data = normalizeStepResponse(targetStep, {}).data;
+      setStepOptions(targetStep, data);
+      setCompanion(data.companionMood, data.companionComment);
       goToStep(targetStep);
       return;
     }

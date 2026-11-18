@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.projects (
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL DEFAULT 'Proyecto sin nombre',
   status TEXT NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'COMPLETED', 'ARCHIVED')),
-  current_step INTEGER NOT NULL DEFAULT 0 CHECK (current_step >= 0 AND current_step <= 13),
+  current_step INTEGER NOT NULL DEFAULT 0 CHECK (current_step >= 0 AND current_step <= 14),
   activo BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS public.blueprints (
   idea TEXT NOT NULL DEFAULT '',
   context TEXT NOT NULL DEFAULT 'startup' CHECK (context IN ('academic', 'startup', 'personal')),
   selected_name TEXT DEFAULT '',
+  selected_system_type JSONB DEFAULT NULL,
   selected_requirements JSONB DEFAULT '[]'::jsonb,
   selected_user_stories JSONB DEFAULT '[]'::jsonb,
   selected_stack JSONB DEFAULT NULL,

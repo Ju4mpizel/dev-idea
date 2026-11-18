@@ -9,6 +9,7 @@ import React from "react";
  *  - width / height: opcionales. Si solo das uno, el otro se calcula por aspect-ratio.
  *                    Si no das ninguno, height = 32 (lockup) o 32×32 (icon).
  *  - accentDot: true → el punto "." usa slate (#71717A); false → currentColor.
+ *  - intro:     true → se "dibuja" al aparecer (entrada de la página).
  *
  * Uso:
  *   <DevIdeaLogo height={28} />
@@ -20,8 +21,16 @@ export default function DevIdeaLogo({
   width,
   height,
   accentDot = true,
+  intro = false,
   ...props
 }) {
+  // Entrada: los trazos se dibujan uno tras otro y los rellenos aparecen después
+  const draw = (delay) =>
+    intro
+      ? { pathLength: 1, className: "intro intro-draw", style: { "--d": `${delay}ms` } }
+      : {};
+  const fadeIn = (delay, kind = "intro-fade") =>
+    intro ? { className: `intro ${kind}`, style: { "--d": `${delay}ms` } } : {};
   const isIcon = variant === "icon";
   const ratio = isIcon ? 1 : 452 / 100;
 
@@ -32,6 +41,7 @@ export default function DevIdeaLogo({
   if (h == null) h = Math.round((w / ratio) * 100) / 100;
 
   const spiral = (
+    <g {...fadeIn(120, "intro-spin-in")}>
     <g
       transform="translate(7.1 23.6) scale(6.6)"
       stroke="currentColor"
@@ -44,6 +54,7 @@ export default function DevIdeaLogo({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </g>
     </g>
   );
 
@@ -65,23 +76,24 @@ export default function DevIdeaLogo({
       {!isIcon && (
         <>
           <g stroke="currentColor" strokeWidth="9" strokeLinejoin="miter">
-            <path d="M124.5 26.5H138A23.5 23.5 0 0 1 138 73.5H124.5Z" />
-            <path d="M178.5 58H209.5A15.5 15.5 0 1 0 205 69" />
-            <circle cx="329" cy="58" r="15.5" />
-            <path d="M363.5 58H394.5A15.5 15.5 0 1 0 390 69" />
-            <circle cx="427" cy="58" r="15.5" />
+            <path d="M124.5 26.5H138A23.5 23.5 0 0 1 138 73.5H124.5Z" {...draw(220)} />
+            <path d="M178.5 58H209.5A15.5 15.5 0 1 0 205 69" {...draw(320)} />
+            <circle cx="329" cy="58" r="15.5" {...draw(420)} />
+            <path d="M363.5 58H394.5A15.5 15.5 0 1 0 390 69" {...draw(520)} />
+            <circle cx="427" cy="58" r="15.5" {...draw(620)} />
           </g>
           <g fill="currentColor">
-            <polygon points="222,38 232.5,38 239,58.8 245.5,38 256,38 243.5,78 234.5,78" />
-            <rect x="288" y="22" width="9" height="56" />
-            <rect x="340" y="22" width="9" height="56" />
-            <rect x="438" y="38" width="9" height="40" />
+            <polygon points="222,38 232.5,38 239,58.8 245.5,38 256,38 243.5,78 234.5,78" {...fadeIn(420)} />
+            <rect x="288" y="22" width="9" height="56" {...fadeIn(500)} />
+            <rect x="340" y="22" width="9" height="56" {...fadeIn(580)} />
+            <rect x="438" y="38" width="9" height="40" {...fadeIn(680)} />
           </g>
           <circle
             cx="270"
             cy="72.5"
             r="5.5"
             fill={accentDot ? "#71717A" : "currentColor"}
+            {...fadeIn(900, "intro-dot logo-dot")}
           />
         </>
       )}

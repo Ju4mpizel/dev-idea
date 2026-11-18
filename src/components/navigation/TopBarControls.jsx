@@ -14,6 +14,7 @@ import {
   Pause,
   RefreshCw,
   Map as MapIcon,
+  Lightbulb,
 } from "lucide-react";
 
 export function TopBarControls() {
@@ -26,6 +27,8 @@ export function TopBarControls() {
 
   const isRouteMapOpen = useDecisionStore((state) => state.isRouteMapOpen);
   const toggleRouteMap = useDecisionStore((state) => state.toggleRouteMap);
+  const isPlanOpen = useDecisionStore((state) => state.isPlanOpen);
+  const togglePlan = useDecisionStore((state) => state.togglePlan);
 
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
@@ -82,6 +85,25 @@ export function TopBarControls() {
             <span className="text-[11px] sm:text-xs">
               {isRouteMapOpen ? "Ocultar" : "Mapa"}
             </span>
+          </button>
+        )}
+
+        {/* 💡 Mi plano: todo lo decidido hasta ahora */}
+        {currentStep > 0 && (
+          <button
+            type="button"
+            onClick={togglePlan}
+            aria-pressed={isPlanOpen}
+            aria-label={isPlanOpen ? "Cerrar mi plano" : "Ver mi plano"}
+            title="Mi plano: lo que elegiste hasta ahora"
+            className={`min-h-9 min-w-9 flex items-center justify-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-mono transition-all cursor-pointer shrink-0 ${
+              isPlanOpen
+                ? "bg-amber-400 text-neutral-950 font-semibold shadow-[0_0_15px_rgba(251,191,36,0.35)]"
+                : "hover:bg-neutral-800/80 text-amber-300 hover:text-amber-200"
+            }`}
+          >
+            <Lightbulb className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden md:inline">Mi plano</span>
           </button>
         )}
 

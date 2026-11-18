@@ -3,7 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { STATIONS, LAST_STEP } from "@/config/stations.config";
+import {
+  STATIONS,
+  LAST_STEP,
+  PHASES,
+  getPhase,
+} from "@/config/stations.config";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { X, Check, Lightbulb, Flag, Lock, Sparkles } from "lucide-react";
 
@@ -140,6 +145,19 @@ export function StationBreadcrumb() {
                 </button>
               </div>
 
+              {/* Leyenda de fases (mismos colores que "Mi plano") */}
+              <div className="flex items-center justify-center gap-x-3 gap-y-1 flex-wrap pt-2.5 shrink-0">
+                {Object.entries(PHASES).map(([id, phase]) => (
+                  <span
+                    key={id}
+                    className="flex items-center gap-1 text-[10px] font-mono text-neutral-400"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${phase.dot}`} />
+                    {phase.label}
+                  </span>
+                ))}
+              </div>
+
               {/* Recorrido vertical en zigzag */}
               <div
                 ref={scrollRef}
@@ -197,6 +215,8 @@ export function StationBreadcrumb() {
                     const isCompleted = checkIsCompleted(station);
                     const canClick = !isLoading && (isCompleted || isActive);
                     const offsetX = nodeOffset(index);
+                    // Color de la fase (Definición, Técnica, Diseño, Entrega)
+                    const phase = getPhase(station);
 
                     return (
                       <div
@@ -229,7 +249,7 @@ export function StationBreadcrumb() {
                             isActive
                               ? "bg-white text-neutral-950 shadow-[0_0_20px_rgba(255,255,255,0.45)] ring-2 ring-white/60"
                               : isCompleted
-                                ? "bg-emerald-500 text-neutral-950 shadow-[0_0_14px_rgba(16,185,129,0.3)]"
+                                ? `${phase.dot} text-neutral-950`
                                 : "bg-neutral-950/80 border border-neutral-800 text-neutral-600 opacity-40 cursor-not-allowed"
                           }`}
                         >
@@ -292,7 +312,7 @@ export function StationBreadcrumb() {
                             isActive
                               ? "bg-white text-neutral-950 font-bold scale-105 shadow-sm"
                               : isCompleted
-                                ? "bg-neutral-950 text-neutral-300 border border-neutral-800"
+                                ? `bg-neutral-950 border ${phase.border} ${phase.text}`
                                 : "text-neutral-600"
                           }`}
                         >

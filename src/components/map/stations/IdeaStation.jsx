@@ -14,6 +14,7 @@ import {
 import { SkeletonFormStation0 } from "@/components/ui/SkeletonCard";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { Cloud, HardDrive, Trash2 } from "lucide-react";
+import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
 
 export function IdeaStation({ onStartNew, onResumeSaved }) {
   const blueprint = useDecisionStore((state) => state.blueprint);
@@ -37,6 +38,10 @@ export function IdeaStation({ onStartNew, onResumeSaved }) {
   const setCloudProjectId = useDecisionStore(
     (state) => state.setCloudProjectId,
   );
+
+  // Entrada de la página: la tarjeta sube, su borde se dibuja y el contenido
+  // aparece en cascada (solo al abrir la página, no al volver desde el mapa)
+  const intro = useIntro();
 
   const [cloudProjects, setCloudProjects] = useState([]);
   const [activeTab, setActiveTab] = useState("local");
@@ -146,18 +151,52 @@ export function IdeaStation({ onStartNew, onResumeSaved }) {
     <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 items-start">
       {/* Formulario Principal */}
       <div
+        style={introDelay(intro, 600)}
         className={`${
           showSidebar ? "md:col-span-2" : "md:col-span-3 max-w-xl mx-auto"
-        } w-full p-4 sm:p-7 rounded-3xl bg-neutral-900/40 border border-neutral-800/80 backdrop-blur-xl shadow-2xl flex flex-col gap-4 sm:gap-6 transition-all duration-300`}
+        } relative w-full p-4 sm:p-7 rounded-3xl bg-neutral-900/40 border border-neutral-800/80 backdrop-blur-xl shadow-2xl flex flex-col gap-4 sm:gap-6 transition-[border-color,box-shadow] duration-300 ${introClass(intro, "intro-rise")}`}
       >
+        {/* Línea que recorre el borde (la tarjeta "se dibuja") */}
+        {intro && (
+          <svg
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
+          >
+            <rect
+              x="0.75"
+              y="0.75"
+              rx="24"
+              pathLength="1"
+              fill="none"
+              stroke="rgba(255,255,255,0.55)"
+              strokeWidth="1.5"
+              className="intro-trace"
+              style={{
+                width: "calc(100% - 1.5px)",
+                height: "calc(100% - 1.5px)",
+                "--d": "700ms",
+              }}
+            />
+          </svg>
+        )}
+
         <div>
-          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500">
+          <span
+            style={introDelay(intro, 780)}
+            className={`block text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 ${introClass(intro, "intro-rise")}`}
+          >
             Estación 0 · Entrada & Contexto
           </span>
-          <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight mt-0.5 sm:mt-1">
+          <h2
+            style={introDelay(intro, 850)}
+            className={`text-lg sm:text-2xl font-bold text-white tracking-tight mt-0.5 sm:mt-1 ${introClass(intro, "intro-rise")}`}
+          >
             ¿Qué software tienes en mente?
           </h2>
-          <p className="text-[11px] sm:text-xs text-neutral-400 mt-1">
+          <p
+            style={introDelay(intro, 920)}
+            className={`text-[11px] sm:text-xs text-neutral-400 mt-1 ${introClass(intro, "intro-rise")}`}
+          >
             Escribe una descripción corta para calibrar los requerimientos
             técnicos.
           </p>
@@ -177,12 +216,16 @@ export function IdeaStation({ onStartNew, onResumeSaved }) {
             }
           }}
           placeholder="Ej. Sistema de reservas para una pesquería local con pagos QR..."
-          className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3.5 rounded-xl bg-neutral-950 border border-neutral-800 text-neutral-100 placeholder-neutral-600 text-xs sm:text-sm outline-none focus:border-neutral-600 transition-colors font-sans resize-none"
+          style={introDelay(intro, 1000)}
+          className={`${introClass(intro, "intro-rise")} w-full px-3.5 sm:px-4 py-2.5 sm:py-3.5 rounded-xl bg-neutral-950 border border-neutral-800 text-neutral-100 placeholder-neutral-600 text-xs sm:text-sm outline-none focus:border-neutral-600 transition-colors font-sans resize-none`}
         />
 
         {/* Selector de Contexto */}
         <div>
-          <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 block mb-2">
+          <span
+            style={introDelay(intro, 1080)}
+            className={`text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 block mb-2 ${introClass(intro, "intro-rise")}`}
+          >
             Propósito del proyecto
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -202,12 +245,13 @@ export function IdeaStation({ onStartNew, onResumeSaved }) {
                 title: "Personal / MVP",
                 desc: "Rápido, ligero y experimental",
               },
-            ].map((ctx) => (
+            ].map((ctx, i) => (
               <button
                 key={ctx.id}
                 type="button"
                 onClick={() => updateBlueprint({ context: ctx.id })}
-                className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                style={introDelay(intro, 1140 + i * 80)}
+                className={`${introClass(intro, "intro-rise")} p-2.5 sm:p-3 rounded-xl border text-left transition-[background-color,border-color,color] cursor-pointer ${
                   blueprint.context === ctx.id
                     ? "bg-neutral-800/90 border-neutral-500 text-white"
                     : "bg-neutral-950/60 border-neutral-900 hover:border-neutral-800 text-neutral-400"
@@ -224,7 +268,10 @@ export function IdeaStation({ onStartNew, onResumeSaved }) {
           </div>
         </div>
 
-        <div className="flex justify-end pt-1">
+        <div
+          style={introDelay(intro, 1400)}
+          className={`flex justify-end pt-1 ${introClass(intro, "intro-rise")}`}
+        >
           <button
             type="button"
             disabled={

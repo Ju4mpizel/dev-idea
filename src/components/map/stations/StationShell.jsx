@@ -33,6 +33,9 @@ export function StationShell({
   footerCenter = null,
   rewriteTitle,
   rewriteDescription = "Se desbloquearán las opciones de esta estación. Todo lo calculado más adelante se descartará.",
+  // Fuerza el modo de edición aunque haya estaciones posteriores (p. ej. una
+  // estación nueva que un proyecto antiguo aún no tiene decidida)
+  forceEditable = false,
   children,
 }) {
   const { stepNumber } = station;
@@ -42,8 +45,9 @@ export function StationShell({
   const closeStationInfo = useDecisionStore((s) => s.closeStationInfo);
   const isCategoriesOpen = useDecisionStore((s) => s.isCategoriesOpen);
   const toggleCategories = useDecisionStore((s) => s.toggleCategories);
-  const { highestStep, isLockedHistory, returnToFlow, rewriteFromHere } =
-    useStationNavigation(stepNumber);
+  const navigation = useStationNavigation(stepNumber);
+  const { highestStep, returnToFlow, rewriteFromHere } = navigation;
+  const isLockedHistory = navigation.isLockedHistory && !forceEditable;
   const [confirmRewriteOpen, setConfirmRewriteOpen] = useState(false);
 
   const guide = getStationGuide(station.id);

@@ -15,6 +15,7 @@
 export const STATIONS = [
   {
     id: "idea",
+    phase: "definition",
     stepNumber: 0,
     title: "Calibrador de Alcance",
     navLabel: "Entrada",
@@ -28,6 +29,7 @@ export const STATIONS = [
   },
   {
     id: "naming",
+    phase: "definition",
     stepNumber: 1,
     title: "Naming del Proyecto",
     navLabel: "Naming",
@@ -42,8 +44,27 @@ export const STATIONS = [
     selection: "single",
   },
   {
-    id: "requirements",
+    id: "system-type",
+    phase: "definition",
     stepNumber: 2,
+    title: "Tipo de Sistema",
+    navLabel: "Tipo de sistema",
+    subtitle: "¿Qué tipo de producto vas a construir?",
+    skippable: false,
+    // Catálogo fijo: se resuelve en el cliente, sin llamar a Gemini
+    local: true,
+    defaultMood: "curious",
+    defaultDialogue:
+      "Leí tu idea y te muestro los tipos de sistema que mejor le encajan.",
+    blueprintKey: "selectedSystemType",
+    dbColumn: "selected_system_type",
+    optionsKey: null,
+    selection: "single",
+  },
+  {
+    id: "requirements",
+    phase: "definition",
+    stepNumber: 3,
     title: "Requisitos",
     navLabel: "Requisitos",
     subtitle: "Módulos con requisitos funcionales y no funcionales",
@@ -64,7 +85,8 @@ export const STATIONS = [
   },
   {
     id: "user-stories",
-    stepNumber: 3,
+    phase: "definition",
+    stepNumber: 4,
     title: "Historias de Usuario",
     navLabel: "Historias",
     subtitle: "Lo que cada usuario necesita, contado en su idioma",
@@ -85,7 +107,8 @@ export const STATIONS = [
   },
   {
     id: "stack",
-    stepNumber: 4,
+    phase: "technical",
+    stepNumber: 5,
     title: "Stack Tecnológico",
     navLabel: "Stack",
     subtitle: "Combinaciones balanceadas a tu medida",
@@ -106,7 +129,8 @@ export const STATIONS = [
   },
   {
     id: "database",
-    stepNumber: 5,
+    phase: "technical",
+    stepNumber: 6,
     title: "Base de Datos",
     navLabel: "Base de datos",
     subtitle: "¿Dónde y cómo se guardará la información?",
@@ -127,7 +151,8 @@ export const STATIONS = [
   },
   {
     id: "architecture",
-    stepNumber: 6,
+    phase: "technical",
+    stepNumber: 7,
     title: "Arquitectura Técnica",
     navLabel: "Arquitectura",
     subtitle: "Patrón estructural de tu software",
@@ -148,7 +173,8 @@ export const STATIONS = [
   },
   {
     id: "methodology",
-    stepNumber: 7,
+    phase: "technical",
+    stepNumber: 8,
     title: "Metodología de Trabajo",
     navLabel: "Metodología",
     subtitle: "Cadencia de sprints y flujo de desarrollo",
@@ -168,7 +194,8 @@ export const STATIONS = [
   },
   {
     id: "diagrams",
-    stepNumber: 8,
+    phase: "design",
+    stepNumber: 9,
     title: "Diagramas",
     navLabel: "Diagramas",
     subtitle: "Los diagramas que de verdad aportan a tu proyecto",
@@ -189,7 +216,8 @@ export const STATIONS = [
   },
   {
     id: "morphism",
-    stepNumber: 9,
+    phase: "design",
+    stepNumber: 10,
     title: "Lenguaje Visual",
     navLabel: "Estilo visual",
     subtitle: "Personalidad visual y estilo de interfaz",
@@ -204,7 +232,8 @@ export const STATIONS = [
   },
   {
     id: "layout",
-    stepNumber: 10,
+    phase: "design",
+    stepNumber: 11,
     title: "Maquetación / Layout",
     navLabel: "Layout",
     subtitle: "Distribución espacial del producto",
@@ -225,7 +254,8 @@ export const STATIONS = [
   },
   {
     id: "deploy",
-    stepNumber: 11,
+    phase: "delivery",
+    stepNumber: 12,
     title: "Infraestructura & Deploy",
     navLabel: "Deploy",
     subtitle: "Hosting costo cero y respaldo en GitHub",
@@ -246,7 +276,8 @@ export const STATIONS = [
   },
   {
     id: "ai-ecosystem",
-    stepNumber: 12,
+    phase: "delivery",
+    stepNumber: 13,
     title: "Ecosistema de IA",
     navLabel: "Ecosistema IA",
     subtitle: "Modelos para el producto y copilots para programar",
@@ -266,7 +297,8 @@ export const STATIONS = [
   },
   {
     id: "workspace",
-    stepNumber: 13,
+    phase: "delivery",
+    stepNumber: 14,
     title: "¡A Trabajar!",
     navLabel: "¡A Trabajar!",
     subtitle: "Blueprint final, estructura de archivos y AGENTS.md",
@@ -278,6 +310,48 @@ export const STATIONS = [
     optionsKey: null,
   },
 ];
+
+/**
+ * Fases del recorrido: agrupan las estaciones por color (mapa y "Mi plano").
+ * Las clases van completas para que Tailwind las detecte.
+ */
+export const PHASES = {
+  definition: {
+    label: "Definición",
+    dot: "bg-amber-400",
+    text: "text-amber-300",
+    border: "border-amber-500/40",
+    soft: "bg-amber-950/30",
+    ring: "ring-amber-400/60",
+  },
+  technical: {
+    label: "Técnica",
+    dot: "bg-sky-400",
+    text: "text-sky-300",
+    border: "border-sky-500/40",
+    soft: "bg-sky-950/30",
+    ring: "ring-sky-400/60",
+  },
+  design: {
+    label: "Diseño",
+    dot: "bg-violet-400",
+    text: "text-violet-300",
+    border: "border-violet-500/40",
+    soft: "bg-violet-950/30",
+    ring: "ring-violet-400/60",
+  },
+  delivery: {
+    label: "Entrega",
+    dot: "bg-emerald-400",
+    text: "text-emerald-300",
+    border: "border-emerald-500/40",
+    soft: "bg-emerald-950/30",
+    ring: "ring-emerald-400/60",
+  },
+};
+
+export const getPhase = (station) =>
+  PHASES[station?.phase] || PHASES.definition;
 
 export const LAST_STEP = STATIONS[STATIONS.length - 1].stepNumber;
 

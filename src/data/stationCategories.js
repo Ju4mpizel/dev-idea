@@ -6,7 +6,21 @@
  * orden simple / medium / advanced que la leyenda de la estación) y, cuando la
  * estación tiene un catálogo cerrado, todas las opciones posibles (`catalog`).
  */
+import { SYSTEM_FAMILIES, getTypesOfFamily } from "./systemTypes";
+
 export const STATION_CATEGORIES = {
+  // Catálogo fijo de la estación "Tipo de sistema" (sale de src/data/systemTypes.js)
+  "system-type": {
+    title: "Catálogo de tipos de sistema",
+    catalog: SYSTEM_FAMILIES.map((family) => ({
+      group: family.title,
+      items: getTypesOfFamily(family.id).map((type) => ({
+        name: type.title,
+        desc: type.summary,
+      })),
+    })),
+  },
+
   naming: {
     title: "Estilos de nombre",
     catalog: [

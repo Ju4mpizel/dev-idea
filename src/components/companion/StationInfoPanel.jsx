@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStationGuide } from "@/data/stationGuides";
-import { StrobiAvatar } from "./StrobiAvatar";
+import { ArrivingStrobi } from "./ArrivingStrobi";
 import {
   X,
   Lightbulb,
@@ -20,26 +19,6 @@ import {
  * una hoja inferior. Se cierra con la X, con el fondo (móvil), con Escape o al
  * confirmar la estación.
  */
-/**
- * Strobi "llega" desde arriba y se coloca junto al panel. No anima su cara
- * hasta aterrizar: así el vuelo solo mueve una capa ya dibujada.
- */
-function ArrivingStrobi() {
-  const [hasLanded, setHasLanded] = useState(false);
-  return (
-    <motion.div
-      initial={{ y: -160, opacity: 0, rotate: -12 }}
-      animate={{ y: 0, opacity: 1, rotate: 0 }}
-      exit={{ y: -160, opacity: 0 }}
-      transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.08 }}
-      onAnimationComplete={() => setHasLanded(true)}
-      className="self-center -mb-6 relative z-10 will-change-transform"
-    >
-      <StrobiAvatar size={84} mood="explaining" paused={!hasLanded} />
-    </motion.div>
-  );
-}
-
 export function StationInfoPanel() {
   const infoStationId = useDecisionStore((s) => s.infoStationId);
   const closeStationInfo = useDecisionStore((s) => s.closeStationInfo);

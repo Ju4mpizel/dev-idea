@@ -31,7 +31,7 @@ Convierte una idea difusa en un _blueprint_ técnico: requisitos, stack, base de
 
 ## 🎯 ¿Qué es Dev.Idea?
 
-Mucha gente que empieza a programar, o que construye con IA ("vibe coding"), se lanza a escribir código sin saber qué requisitos tiene su proyecto, qué arquitectura le conviene o qué diagramas necesita. **Dev.Idea** propone un **mapa de 14 estaciones encadenadas**: en cada una, **Google Gemini** genera **6 cartas** adaptadas a tu idea y a todo lo que elegiste antes, y tú decides.
+Mucha gente que empieza a programar, o que construye con IA ("vibe coding"), se lanza a escribir código sin saber qué requisitos tiene su proyecto, qué arquitectura le conviene o qué diagramas necesita. **Dev.Idea** propone un **mapa de 15 estaciones encadenadas**: en cada una, **Google Gemini** genera **6 cartas** adaptadas a tu idea y a todo lo que elegiste antes, y tú decides. La única sin IA es **Tipo de sistema**, un catálogo fijo que se deduce de tu idea.
 
 - Cada carta explica la opción **"en simple"**, con ventajas, desventajas y las tecnologías involucradas (con su logo).
 - Cada estación tiene un botón **"¿Qué es?"**: **Strobi**, el copiloto, se mueve al lado y explica el concepto (qué es un stack, qué es la arquitectura, qué son los requisitos...), dónde se ve en la universidad y cómo se usa en la industria.
@@ -52,7 +52,9 @@ Mucha gente que empieza a programar, o que construye con IA ("vibe coding"), se 
 - **Lenguaje visual real:** en la estación de estilo, cada carta adopta su propio material (glassmorphism, neobrutalismo, aurora, terminal...).
 - **Login con Google + autoguardado:** con sesión iniciada (Supabase Auth), cada cambio se guarda solo en la nube, incluidas todas las cartas generadas, para retomar el mapa completo en otro dispositivo. Sin sesión, todo queda en `localStorage`.
 - **Modo consulta y reescritura:** las estaciones ya superadas se pueden revisar; "Reescribir desde aquí" descarta lo calculado después.
-- **Mapa de ruta:** panel lateral con el recorrido en zigzag para saltar entre estaciones completadas.
+- **Mapa de ruta:** panel lateral con el recorrido en zigzag para saltar entre estaciones completadas, coloreadas por fase (Definición, Técnica, Diseño, Entrega).
+- **Tipo de sistema sin volver a preguntar:** 22 tipos en 7 familias (página web, vender online, gestión, reservas, plataforma, móvil, backend). La idea se lee al instante (sin Gemini): "sistema de heladería" abre sistemas de gestión y "página web de helados" abre landing, multipágina y autoadministrable, con ⭐ en los más probables. Se pueden sumar complementos (+ Panel de admin, + Pedidos online...). Sus "superficies" acotan los prompts del stack, la base de datos, la arquitectura y el layout.
+- **💡 Mi plano:** botón con foquito que abre, junto a Strobi, todo lo que elegiste hasta ahora: un desplegable por estación con colores por fase, lo omitido, lo pendiente y un botón para copiar el resumen en Markdown.
 - **Cancelación en tiempo real:** `AbortController` para pausar una generación en curso.
 
 ---
@@ -62,18 +64,19 @@ Mucha gente que empieza a programar, o que construye con IA ("vibe coding"), se 
 ```mermaid
 flowchart LR
     A["0 · Idea"] --> B["1 · Naming<br/><i>opcional</i>"]
-    B --> C["2 · Requisitos"]
-    C --> D["3 · Historias<br/><i>opcional</i>"]
-    D --> E["4 · Stack"]
-    E --> F["5 · Base de datos"]
-    F --> G["6 · Arquitectura"]
-    G --> H["7 · Metodología<br/><i>opcional</i>"]
-    H --> I["8 · Diagramas"]
-    I --> J["9 · Estilo visual"]
-    J --> K["10 · Layout"]
-    K --> L["11 · Deploy"]
-    L --> M["12 · Ecosistema IA"]
-    M --> N["⭐ 13 · ¡A Trabajar!"]
+    B --> S["2 · Tipo de sistema<br/><i>sin IA</i>"]
+    S --> C["3 · Requisitos"]
+    C --> D["4 · Historias<br/><i>opcional</i>"]
+    D --> E["5 · Stack"]
+    E --> F["6 · Base de datos"]
+    F --> G["7 · Arquitectura"]
+    G --> H["8 · Metodología<br/><i>opcional</i>"]
+    H --> I["9 · Diagramas"]
+    I --> J["10 · Estilo visual"]
+    J --> K["11 · Layout"]
+    K --> L["12 · Deploy"]
+    L --> M["13 · Ecosistema IA"]
+    M --> N["⭐ 14 · ¡A Trabajar!"]
 
     style N fill:#8E75B2,stroke:#5b4a7a,color:#fff
 ```
@@ -82,17 +85,18 @@ flowchart LR
 |:-:|----------|-------------|-----------|
 | 0 | **Idea** | Descripción y contexto (Académico, Startup / Trabajo, Personal / MVP). | Entrada |
 | 1 | **Naming** | 6 nombres por estilo, o el tuyo propio. | Única · ⏭️ omitible |
-| 2 | **Requisitos** | Módulos con requisitos funcionales (RF) y no funcionales (RNF), priorizados para el MVP. | Múltiple |
-| 3 | **Historias de usuario** | Backlog en **tabla** (10 iniciales): "Como… quiero… para…", criterios de aceptación, prioridad y puntos. Botón para generar 5 más por categoría y copiar como tareas para GitHub Projects. | Checks · ⏭️ omitible |
-| 4 | **Stack** | Combinaciones de tecnologías por dificultad, con el lenguaje a elegir. | Única |
-| 5 | **Base de datos** | Sin base de datos, relacional, documental, BaaS o embebida. Condiciona los diagramas. | Única |
-| 6 | **Arquitectura** | Patrones reales del stack elegido (MVC, MVT, capas, monolito modular, hexagonal...). | Única |
-| 7 | **Metodología** | Kanban, Scrum, Shape Up, XP, RUP... según equipo y contexto. | Única · ⏭️ omitible |
-| 8 | **Diagramas** | UML, C4, ERD, DFD, BPMN, wireflow, user journey... proporcionales al proyecto. | Múltiple |
-| 9 | **Estilo visual** | 6 lenguajes visuales; cada carta se ve con su propio estilo. | Única |
-| 10 | **Layout** | Distribución de pantallas coherente con el estilo y los requisitos. | Única |
-| 11 | **Deploy** | Planes con costo inicial $0 y el código en GitHub. | Única |
-| 12 | **Ecosistema IA** | Modelos para el producto y copilots para programar. | Única |
+| 2 | **Tipo de sistema** | Qué producto es (landing, tienda, sistema de gestión, reservas, app...) y sus partes. Catálogo fijo con ⭐ según tu idea, más complementos. | Única · sin IA |
+| 3 | **Requisitos** | Módulos con requisitos funcionales (RF) y no funcionales (RNF), priorizados para el MVP. | Múltiple |
+| 4 | **Historias de usuario** | Backlog en **tabla** (10 iniciales): "Como… quiero… para…", criterios de aceptación, prioridad y puntos. Botón para generar 5 más por categoría y copiar como tareas para GitHub Projects. | Checks · ⏭️ omitible |
+| 5 | **Stack** | Combinaciones de tecnologías por dificultad, con el lenguaje a elegir. | Única |
+| 6 | **Base de datos** | Sin base de datos, relacional, documental, BaaS o embebida. Condiciona los diagramas. | Única |
+| 7 | **Arquitectura** | Patrones reales del stack elegido (MVC, MVT, capas, monolito modular, hexagonal...). | Única |
+| 8 | **Metodología** | Kanban, Scrum, Shape Up, XP, RUP... según equipo y contexto. | Única · ⏭️ omitible |
+| 9 | **Diagramas** | UML, C4, ERD, DFD, BPMN, wireflow, user journey... proporcionales al proyecto. | Múltiple |
+| 10 | **Estilo visual** | 6 lenguajes visuales; cada carta se ve con su propio estilo. | Única |
+| 11 | **Layout** | Distribución de pantallas coherente con el estilo y los requisitos. | Única |
+| 12 | **Deploy** | Planes con costo inicial $0 y el código en GitHub. | Única |
+| 13 | **Ecosistema IA** | Modelos para el producto y copilots para programar. | Única |
 | ⭐ | **¡A Trabajar!** | Blueprint final (en desarrollo). | — |
 
 ---
@@ -144,7 +148,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 ### 3️⃣ Base de datos (Supabase)
 
 - **Proyecto nuevo:** ejecuta [`supabase/schema.sql`](supabase/schema.sql) en el SQL Editor.
-- **Proyecto existente:** ejecuta una vez [`supabase/migrations/20261116_estaciones_v3.sql`](supabase/migrations/20261116_estaciones_v3.sql), que añade las columnas de las nuevas estaciones y las cartas generadas.
+- **Proyecto existente:** ejecuta una vez, en orden, [`supabase/migrations/20261116_estaciones_v3.sql`](supabase/migrations/20261116_estaciones_v3.sql) (columnas de requisitos, historias, base de datos y cartas generadas) y [`supabase/migrations/20261118_tipo_sistema.sql`](supabase/migrations/20261118_tipo_sistema.sql) (estación Tipo de sistema: nueva columna y renumeración de los pasos guardados).
 - Activa el proveedor **Google** en *Authentication → Providers*.
 
 ### 4️⃣ Iniciar en local

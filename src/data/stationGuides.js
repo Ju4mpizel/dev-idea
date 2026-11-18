@@ -20,6 +20,24 @@ export const STATION_GUIDES = {
     industry: "Branding, dominio, nombre del repositorio y del paquete.",
     tip: "Si dudas, omite esta estación: el nombre se puede cambiar luego.",
   },
+  "system-type": {
+    question: "¿Qué es el tipo de sistema?",
+    concept:
+      "Es la forma general de tu producto: una página web, una tienda, un sistema de gestión, una app... Define qué partes tendrá (sitio público, panel de admin, app de usuario) y eso cambia todo lo que viene después.",
+    analogy:
+      "Antes de diseñar una construcción decides si es una casa, un local o un edificio de oficinas: los planos de cada uno son muy distintos.",
+    keyPoints: [
+      "Una landing no necesita backend; un sistema de gestión sí necesita base de datos y usuarios.",
+      "Cada parte con estructura propia es una “superficie”: sitio público, tienda, panel admin, app...",
+      "¿Solo quieres cambiar textos y precios? Un sitio autoadministrable o un CMS suele bastar.",
+      "Los complementos suman partes sin cambiar de tipo (p. ej. + Panel de admin).",
+    ],
+    university:
+      "Alcance del sistema y diagrama de contexto: qué es el sistema y con quién interactúa.",
+    industry:
+      "Definición del producto y de sus superficies (marketing site, app, back-office).",
+    tip: "Empieza por el tipo más sencillo que resuelva tu problema: siempre puedes sumar complementos.",
+  },
   requirements: {
     question: "¿Qué son los requisitos de software?",
     concept:

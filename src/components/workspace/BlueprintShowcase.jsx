@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { TopBarControls } from "@/components/navigation/TopBarControls";
 import { Sparkles, Terminal } from "lucide-react";
+import { LAST_STEP } from "@/config/stations.config";
 
 export function BlueprintShowcase({ data, blueprint }) {
   return (
@@ -14,7 +15,7 @@ export function BlueprintShowcase({ data, blueprint }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400">
-            Estación 13 · ¡A Trabajar!
+            Estación {LAST_STEP} · ¡A Trabajar!
           </span>
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-0.5">
             Plano Técnico & Workspace

@@ -10,10 +10,12 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
  * caras en bucle). Siguen parpadeando, así Strobi no parece congelado.
  * - "focused-thinking": mirando hacia arriba, concentrado (mientras genera).
  * - "explaining": atento mirando hacia la estación (panel "¿Qué es?").
+ * - "reviewing": mirando hacia abajo, repasando tu plano (panel "Mi plano").
  */
 const FIXED_ANIMATIONS = {
   "focused-thinking": "upward-side-glance",
   explaining: "attentive-left",
+  reviewing: "gentle-downward-gaze",
 };
 
 function withFixedAnimations(base) {

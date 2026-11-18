@@ -11,6 +11,7 @@
  */
 import { STATIONS } from "@/config/stations.config";
 import { OPTIONS_PER_STATION as N, getOptionCount } from "@/lib/stepSchemas";
+import { SYSTEM_COMPLEMENTS, describeSurfaces } from "@/data/systemTypes";
 
 const MAX_IDEA_LENGTH = 600;
 
@@ -36,6 +37,16 @@ function describeDecision(value, fallback = "No definido") {
 /** Línea de contexto por estación de decisión. */
 const DECISION_LINES = {
   naming: (b) => `NOMBRE: ${b.selectedName || "Sin nombre definido"}`,
+  "system-type": (b) => {
+    const t = b.selectedSystemType;
+    if (!t?.title) return "TIPO DE SISTEMA: No definido";
+    const extras = (t.complements || [])
+      .map((id) => SYSTEM_COMPLEMENTS.find((c) => c.id === id)?.title)
+      .filter(Boolean);
+    return `TIPO DE SISTEMA: ${t.title} · superficies: ${describeSurfaces(t.surfaces)}${
+      extras.length ? ` · complementos: ${extras.join(", ")}` : ""
+    }`;
+  },
   requirements: (b) => {
     const mods = Array.isArray(b.selectedRequirements)
       ? b.selectedRequirements
@@ -88,7 +99,17 @@ function buildDecisionContext(blueprint, stationId) {
   const lines = STATIONS.filter(
     (s) => s.stepNumber > 0 && s.stepNumber < upto && DECISION_LINES[s.id],
   ).map((s) => `- ${DECISION_LINES[s.id](blueprint)}`);
-  return lines.length ? lines.join("\n") : "- (aún no hay decisiones previas)";
+  if (!lines.length) return "- (aún no hay decisiones previas)";
+
+  // El tipo de sistema acota TODO lo que viene después
+  const systemType = blueprint.selectedSystemType;
+  const systemStation = STATIONS.find((s) => s.id === "system-type");
+  if (systemType?.surfaces?.length && systemStation?.stepNumber < upto) {
+    lines.push(
+      `- AJUSTA TODO AL TIPO DE SISTEMA: las opciones deben servir para estas partes (${describeSurfaces(systemType.surfaces)}) y no para otras. Sin panel de admin no hay roles de administrador; un sitio solo público no necesita backend propio ni una base de datos compleja; si hay varias partes, cubre cada una.`,
+    );
+  }
+  return lines.join("\n");
 }
 
 /** Escala estimada del proyecto, para no recomendar de más ni de menos. */
@@ -346,6 +367,7 @@ ${buildDecisionContext(b, "layout")}
 
 Propón ${N} patrones de maquetación (distribución espacial de pantallas) para ESTE producto, 2 por nivel: p. ej. landing de una columna, App Shell con sidebar, dashboard Bento Grid, master-detail, navegación por pestañas inferiores (mobile-first), canvas inmersivo, layout de documentación con índice lateral, feed.
 REGLAS:
+- Coherente con el TIPO DE SISTEMA: si tiene varias superficies (p. ej. sitio público + panel admin), reparte las opciones entre ellas e indica en el tag a cuál pertenece cada layout.
 - Coherente con el ESTILO VISUAL elegido, con los módulos de los REQUISITOS y con el tipo de usuario.
 - Implementable con el STACK elegido; en techs menciona piezas reales de ese stack (componentes, utilidades CSS, librerías).
 - No propongas patrones genéricos sin justificarlos para esta idea.

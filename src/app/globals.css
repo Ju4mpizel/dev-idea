@@ -117,3 +117,168 @@
 .deck-gesture * {
   touch-action: pan-y;
 }
+
+/*
+ * ===== Entrada inicial de la página (estación 0) =====
+ * Solo transform / opacity / trazo SVG: lo anima la GPU y empieza en el primer
+ * pintado (antes de que cargue JavaScript). Cada pieza fija su retraso con la
+ * variable --d. `backwards`: oculta durante el retraso y, al terminar, el
+ * elemento vuelve a sus estilos normales (sin transform residual).
+ */
+.intro {
+  animation-duration: 0.65s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: backwards;
+  animation-delay: var(--d, 0ms);
+}
+.intro-fade {
+  animation-name: intro-fade;
+  animation-duration: 1.1s;
+}
+.intro-drop {
+  animation-name: intro-drop;
+}
+.intro-rise {
+  animation-name: intro-rise;
+}
+.intro-slide-left {
+  animation-name: intro-slide-left;
+  transform-origin: left center;
+}
+.intro-slide-right {
+  animation-name: intro-slide-right;
+}
+.intro-pop {
+  animation-name: intro-pop;
+  animation-duration: 0.8s;
+  animation-timing-function: ease-out;
+}
+.intro-dot {
+  animation-name: intro-dot;
+  animation-duration: 0.45s;
+  animation-timing-function: ease-out;
+}
+/* Trazos SVG que se dibujan (requieren pathLength="1") */
+.intro-draw {
+  stroke-dasharray: 1;
+  animation-name: intro-draw;
+  animation-duration: 0.9s;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+.intro-spin-in {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: intro-spin-in;
+  animation-duration: 0.9s;
+}
+/* Línea que recorre el borde de la tarjeta y se desvanece */
+.intro-trace {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: intro-trace 1.5s cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0ms)
+    forwards;
+}
+
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes intro-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+}
+@keyframes intro-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-14px) scale(0.96);
+  }
+}
+@keyframes intro-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+@keyframes intro-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-14deg);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.14) rotate(4deg);
+  }
+  78% {
+    transform: scale(0.96) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+@keyframes intro-dot {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes intro-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes intro-spin-in {
+  from {
+    opacity: 0;
+    transform: rotate(-140deg) scale(0.4);
+  }
+}
+@keyframes intro-trace {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  70% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro,
+  .intro-draw,
+  .intro-spin-in {
+    animation: none;
+  }
+  .intro-trace {
+    display: none;
+  }
+}
+
+/* El punto del logo crece desde su propio centro */
+.logo-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+}

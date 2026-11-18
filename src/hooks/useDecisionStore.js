@@ -10,7 +10,7 @@ import {
 import { normalizeStepResponse } from "@/lib/stepContracts";
 
 // Versión del esquema persistido en localStorage (ver `migrate` al final).
-const STORE_VERSION = 3;
+const STORE_VERSION = 4;
 const STORAGE_KEY = "dev-idea-blueprint-cache";
 
 /** Normaliza todas las opciones cacheadas al contrato vigente. */
@@ -42,8 +42,15 @@ function rebuildOptionsFromDecisions(blueprint) {
   const options = {};
   for (const station of DECISION_STATIONS) {
     const { stepNumber, blueprintKey, optionsKey, skippable } = station;
-    if (!optionsKey) continue;
     const value = blueprint[blueprintKey];
+
+    // Estaciones de catálogo fijo (sin cartas): basta con la decisión
+    if (station.local) {
+      if (!hasDecisionValue(value)) break;
+      options[stepNumber] = normalizeStepResponse(stepNumber, {}).data;
+      continue;
+    }
+    if (!optionsKey) continue;
 
     if (!hasDecisionValue(value)) {
       if (!skippable) break;
@@ -113,7 +120,11 @@ export const useDecisionStore = create(
       // Panel "¿Qué es...?" de la estación (Strobi se mueve a su lado)
       infoStationId: null,
       openStationInfo: (stationId) =>
-        set({ infoStationId: stationId, isRouteMapOpen: false }),
+        set({
+          infoStationId: stationId,
+          isRouteMapOpen: false,
+          isPlanOpen: false,
+        }),
       closeStationInfo: () => set({ infoStationId: null }),
 
       // Panel izquierdo con la tabla de categorías de la estación actual
@@ -121,6 +132,16 @@ export const useDecisionStore = create(
       toggleCategories: () =>
         set((state) => ({ isCategoriesOpen: !state.isCategoriesOpen })),
       closeCategories: () => set({ isCategoriesOpen: false }),
+
+      // Panel "💡 Mi plano": resumen de lo decidido (uno solo a la derecha)
+      isPlanOpen: false,
+      togglePlan: () =>
+        set((state) => ({
+          isPlanOpen: !state.isPlanOpen,
+          infoStationId: null,
+          isRouteMapOpen: false,
+        })),
+      closePlan: () => set({ isPlanOpen: false }),
 
       blueprint: createInitialBlueprint(),
       generatedOptions: {},
@@ -137,6 +158,7 @@ export const useDecisionStore = create(
         set((state) => ({
           isRouteMapOpen: !state.isRouteMapOpen,
           infoStationId: null,
+          isPlanOpen: false,
         })),
       setIsRouteMapOpen: (val) => set({ isRouteMapOpen: Boolean(val) }),
 
@@ -274,6 +296,7 @@ export const useDecisionStore = create(
           isMapCardActive: false,
           isRouteMapOpen: false,
           infoStationId: null,
+          isPlanOpen: false,
           isLoading: false,
           apiError: null,
           companionMood: "idle",
@@ -294,6 +317,7 @@ export const useDecisionStore = create(
           isMapCardActive: false,
           isRouteMapOpen: false,
           infoStationId: null,
+          isPlanOpen: false,
           isLoading: false,
           apiError: null,
           companionMood: "idle",
@@ -311,8 +335,26 @@ export const useDecisionStore = create(
       // y base de datos se insertaron antes del stack). Las decisiones antiguas ya
       // no encajan en la nueva cadena, así que se conserva la idea, el contexto y el
       // nombre (estación 1, sin cambios) y el usuario retoma desde Requisitos.
+      // v3 -> v4: se insertó "Tipo de sistema" como estación 2, así que las
+      // cartas de la estación 2 en adelante se corren un puesto.
       migrate: (persisted, version) => {
         if (!persisted || version >= STORE_VERSION) return persisted;
+        if (version === 3) {
+          return {
+            ...persisted,
+            generatedOptions: Object.fromEntries(
+              Object.entries(persisted.generatedOptions || {}).map(
+                ([key, value]) => {
+                  const step = Number(key);
+                  return [
+                    Number.isInteger(step) && step >= 2 ? String(step + 1) : key,
+                    value,
+                  ];
+                },
+              ),
+            ),
+          };
+        }
         const old = persisted.blueprint || {};
         const naming = filterNumericOptions(
           persisted.generatedOptions,

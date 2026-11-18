@@ -6,6 +6,7 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { CompanionBubble } from "./CompanionBubble";
 import { StrobiAvatar } from "./StrobiAvatar";
 import { STROBI_QUOTES } from "@/data/strobiQuotes";
+import { introClass, introDelay } from "@/hooks/useIntro";
 
 const STROBI_COLORS = [
   { id: "blue", label: "Azul Original", hex: "#5b7fe5" },
@@ -21,6 +22,8 @@ export function CompanionAvatar({
   compact = false,
   // Strobi tapado u oculto (panel abierto): se congela para no gastar CPU
   paused = false,
+  // Entrada de la página: Strobi aparece con un "pop" y luego habla
+  intro = false,
   className = "",
 }) {
   const resetTimerRef = useRef(null);
@@ -82,6 +85,10 @@ export function CompanionAvatar({
         className={`${compact ? "w-[84px]" : "w-[120px]"} sm:w-[130px] shrink-0 flex flex-col items-center justify-center`}
       >
         <div
+          className={introClass(intro, "intro-pop")}
+          style={introDelay(intro, 480)}
+        >
+        <div
           title={
             isLoading
               ? "Strobi está pensando..."
@@ -100,22 +107,26 @@ export function CompanionAvatar({
             paused={paused}
           />
         </div>
+        </div>
 
         {/* Paleta de colores */}
-        <div className="flex items-center gap-1.5 mt-1 sm:mt-2 bg-neutral-900/80 border border-neutral-800 px-2 py-0.5 sm:py-1 rounded-full shadow-sm">
-          {STROBI_COLORS.map((c) => (
+        <div
+          className={`flex items-center gap-1.5 mt-1 sm:mt-2 bg-neutral-900/80 border border-neutral-800 px-2 py-0.5 sm:py-1 rounded-full shadow-sm ${introClass(intro, "intro-fade")}`}
+          style={introDelay(intro, 820)}
+        >
+          {STROBI_COLORS.map((c, i) => (
             <button
               key={c.id}
               type="button"
               onClick={() => setStrobiColor(c.hex)}
               title={c.label}
               aria-label={`Color de Strobi: ${c.label}`}
-              className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-transform cursor-pointer ${
+              className={`${introClass(intro, "intro-dot")} w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-transform cursor-pointer ${
                 color === c.hex
                   ? "scale-125 ring-2 ring-white/90"
                   : "opacity-60 hover:opacity-100"
               }`}
-              style={{ backgroundColor: c.hex }}
+              style={introDelay(intro, 900 + i * 60, { backgroundColor: c.hex })}
             />
           ))}
         </div>
@@ -125,7 +136,8 @@ export function CompanionAvatar({
       <motion.div
         layout
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className={`${compact ? "flex-1 min-w-0" : "w-full"} sm:flex-none sm:w-[460px] md:w-[480px] sm:shrink-0 min-h-[64px] sm:min-h-[82px] flex items-center`}
+        style={introDelay(intro, 760)}
+        className={`${introClass(intro, "intro-slide-left")} ${compact ? "flex-1 min-w-0" : "w-full"} sm:flex-none sm:w-[460px] md:w-[480px] sm:shrink-0 min-h-[64px] sm:min-h-[82px] flex items-center`}
       >
         <CompanionBubble
           message={dialogue}
