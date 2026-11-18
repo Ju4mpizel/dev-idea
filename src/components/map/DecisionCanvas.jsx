@@ -1,9 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStation } from "@/config/stations.config";
 import { normalizeStepResponse } from "@/lib/stepContracts";
-import { fetchTestProject } from "@/services/projectService";
+import {
+  claimIdeaRun,
+  fetchTestProject,
+  requestStepGeneration,
+} from "@/services/projectService";
 
 import { IdeaStation } from "./stations/IdeaStation";
 import { NamingStation } from "./stations/NamingStation";
@@ -14,6 +19,7 @@ import { SystemTypeStation } from "./stations/SystemTypeStation";
 import { LayoutStation } from "./stations/LayoutStation";
 import { DiagramsStation } from "./stations/DiagramsStation";
 import { DeployStation } from "./stations/DeployStation";
+import { AiEcosystemStation } from "./stations/AiEcosystemStation";
 import {
   DatabaseStation,
   MethodologyStation,
@@ -24,7 +30,7 @@ import { BlueprintShowcase } from "../workspace/BlueprintShowcase";
 
 /**
  * Componente de cada estación por id. Las que no aparecen aquí usan la
- * estación genérica de cartas (arquitectura, layout, deploy, ecosistema IA).
+ * estación genérica de cartas (p. ej. arquitectura).
  */
 const STATION_COMPONENTS = {
   naming: NamingStation,
@@ -38,11 +44,69 @@ const STATION_COMPONENTS = {
   morphism: MorphismStation,
   layout: LayoutStation,
   deploy: DeployStation,
+  "ai-ecosystem": AiEcosystemStation,
 };
 
 // Contador global de peticiones: permite ignorar aborts de peticiones ya
 // reemplazadas (global porque cada estación monta su propio lienzo al animarse).
 let requestSeq = 0;
+
+// Modo prueba: duración de la "generación" simulada
+const SIMULATED_GENERATION_MS = 5000;
+
+/** Espera `ms` o rechaza con AbortError si se cancela (botón Pausar). */
+function waitAbortable(ms, signal) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new DOMException("Simulación cancelada", "AbortError"));
+    });
+  });
+}
+
+/**
+ * Generación simulada del modo prueba: misma carga y animaciones que con la IA,
+ * pero tras 5 s sirve las cartas del proyecto de prueba. Nunca llama a Gemini.
+ */
+async function simulateStepGeneration(targetStep) {
+  const store = useDecisionStore.getState();
+  const station = getStation(targetStep);
+  if (!station) return;
+
+  const requestId = ++requestSeq;
+  const controller = new AbortController();
+  store.registerAbortController(controller);
+  store.setLoading(true);
+  store.clearApiError();
+  store.goToStep(targetStep);
+  store.setCompanion("thinking", "Generando cartas de prueba... (simulado, sin IA)");
+
+  try {
+    await waitAbortable(SIMULATED_GENERATION_MS, controller.signal);
+    const latest = useDecisionStore.getState();
+    const data = normalizeStepResponse(
+      station.id,
+      latest.testFixture?.[station.id] || {},
+      latest.blueprint,
+    ).data;
+    latest.setStepOptions(station.id, data);
+    latest.setCompanion(data.companionMood, data.companionComment);
+  } catch (err) {
+    if (err.name === "AbortError") {
+      const latest = useDecisionStore.getState();
+      if (requestId === requestSeq && latest.currentStep === targetStep) {
+        latest.previousStep();
+      }
+      return;
+    }
+    useDecisionStore.getState().setApiError(err.message);
+  } finally {
+    const latest = useDecisionStore.getState();
+    latest.releaseAbortController(controller);
+    if (requestId === requestSeq) latest.setLoading(false);
+  }
+}
 
 /**
  * `step` llega como prop (no del store) para que la estación que sale durante
@@ -66,7 +130,14 @@ export function DecisionCanvas({ step: currentStep }) {
   const releaseAbortController = useDecisionStore(
     (state) => state.releaseAbortController,
   );
+  const simulationRequest = useDecisionStore((state) => state.simulationRequest);
 
+  // "Simular desde aquí" (modo prueba): el primer lienzo montado lo atiende
+  useEffect(() => {
+    if (!simulationRequest) return;
+    const request = useDecisionStore.getState().consumeSimulation();
+    if (request) simulateStepGeneration(request.step);
+  }, [simulationRequest]);
 
   /**
    * Navega a `targetStep` y, si no hay opciones en caché (o `forceNew`), las pide a Gemini.
@@ -102,6 +173,12 @@ export function DecisionCanvas({ step: currentStep }) {
       return;
     }
 
+    // Modo prueba: nunca se llama a Gemini; se simula la generación
+    if (useDecisionStore.getState().isTestProject) {
+      await simulateStepGeneration(targetStep);
+      return;
+    }
+
     const requestId = ++requestSeq;
     const controller = new AbortController();
     registerAbortController(controller);
@@ -118,25 +195,12 @@ export function DecisionCanvas({ step: currentStep }) {
         ...(extraFields || {}),
       };
 
-      const res = await fetch("/api/generate-step", {
-        method: "POST",
+      const data = await requestStepGeneration({
+        stepId: station?.id || targetStep,
+        blueprint: fullBlueprint,
+        ideaRunId: useDecisionStore.getState().ideaRunId,
         signal: controller.signal,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stepId: station?.id || targetStep,
-          blueprint: fullBlueprint,
-        }),
       });
-
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok || !json.success) {
-        throw new Error(
-          json.error || "No se pudo generar la propuesta técnica.",
-        );
-      }
-
-      const data = json.data;
       setStepOptions(targetStation.id, data);
 
       // La API ya normaliza el contrato (src/lib/stepContracts.js)
@@ -158,16 +222,23 @@ export function DecisionCanvas({ step: currentStep }) {
     }
   };
 
-  const handleStartNew = (newIdea, context) => {
-    startNewMap(newIdea, context);
+  /**
+   * Empieza una idea nueva: primero el servidor abre su ticket (cupo de 2 ideas
+   * cada 3 horas). Lanza ApiError 429 si no queda cupo (lo muestra la Estación 0).
+   */
+  const handleStartNew = async (newIdea, context) => {
+    const ticket = await claimIdeaRun(newIdea, context);
+    const { ideaRunId, ...quota } = ticket;
+    useDecisionStore.getState().setIdeaQuota(quota);
+    startNewMap(newIdea, context, ideaRunId);
     requestStepAndNavigate(1, undefined, true);
   };
 
-  // Proyecto de prueba: decisiones hasta el Layout y generación real del Deploy
+  // Proyecto de prueba: todo viene listo del servidor (sin Gemini), carga al instante
   const handleLoadTestProject = async () => {
     const project = await fetchTestProject();
     useDecisionStore.getState().loadTestProject(project);
-    await requestStepAndNavigate(project.targetStep, {}, true);
+    goToStep(project.targetStep);
   };
 
   const handleResumeSaved = (targetStep) => {

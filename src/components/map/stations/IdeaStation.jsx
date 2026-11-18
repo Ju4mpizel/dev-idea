@@ -16,6 +16,7 @@ import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { Cloud, HardDrive, Trash2 } from "lucide-react";
 import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
 import { TestProjectToggle } from "@/components/dev/TestProjectToggle";
+import { IdeaQuota, formatQuotaTime, hasIdeaSlot } from "./IdeaQuota";
 
 export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
   const blueprint = useDecisionStore((state) => state.blueprint);
@@ -39,6 +40,11 @@ export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
   const setCloudProjectId = useDecisionStore(
     (state) => state.setCloudProjectId,
   );
+  const setIdeaRunId = useDecisionStore((state) => state.setIdeaRunId);
+  const ideaQuota = useDecisionStore((state) => state.ideaQuota);
+  const setIdeaQuota = useDecisionStore((state) => state.setIdeaQuota);
+  // Abriendo el ticket de la idea en el servidor
+  const [isStarting, setIsStarting] = useState(false);
 
   // Entrada de la página: la tarjeta sube, su borde se dibuja y el contenido
   // aparece en cascada (solo al abrir la página, no al volver desde el mapa)
@@ -63,13 +69,20 @@ export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
     let cancelled = false;
     fetchUserProjects()
       .then((projects) => {
-        if (!cancelled) setCloudProjects(projects);
+        if (cancelled) return;
+        setCloudProjects(projects);
+        // Mapas locales anteriores al límite de ideas: recuperan el ticket que
+        // la migración creó para su proyecto en la nube
+        const { cloudProjectId: openId, ideaRunId: openRun } =
+          useDecisionStore.getState();
+        const linked = openId && projects.find((p) => p.id === openId);
+        if (linked?.idea_run_id && !openRun) setIdeaRunId(linked.idea_run_id);
       })
       .catch(console.error);
     return () => {
       cancelled = true;
     };
-  }, [currentUser]);
+  }, [currentUser, setIdeaRunId]);
 
   useEffect(() => {
     if (!isMapCardActive) {
@@ -132,12 +145,41 @@ export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
     }
   };
 
-  const handleSubmit = () => {
-    if (isMapCardActive && hasSavedBlueprint) {
+  const isResuming = isMapCardActive && hasSavedBlueprint;
+  const canStartNew = hasIdeaSlot(ideaQuota);
+
+  const handleSubmit = async () => {
+    if (isResuming) {
       onResumeSaved();
-    } else {
-      if (!currentIdeaDraft.trim()) return;
-      onStartNew(currentIdeaDraft.trim(), blueprint.context || "startup");
+      return;
+    }
+    if (!currentIdeaDraft.trim() || isStarting) return;
+    setIsStarting(true);
+    try {
+      await onStartNew(currentIdeaDraft.trim(), blueprint.context || "startup");
+    } catch (err) {
+      if (err?.status === 429) {
+        const body = err.body || {};
+        const quota = {
+          unlimited: false,
+          used: body.used,
+          limit: body.limit,
+          nextFreeAt: body.nextFreeAt,
+        };
+        setIdeaQuota(quota);
+        setCompanion(
+          "bored",
+          `Ya usaste tus ${quota.limit || 2} ideas por ahora. La próxima se libera a las ${formatQuotaTime(quota.nextFreeAt)}. Mientras, puedes seguir con tus mapas ya empezados.`,
+        );
+      } else if (err?.status !== 401) {
+        console.error(err);
+        setCompanion(
+          "uneasy-left",
+          err?.message || "No pude empezar la idea. Intenta de nuevo.",
+        );
+      }
+    } finally {
+      setIsStarting(false);
     }
   };
 
@@ -271,26 +313,33 @@ export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
 
         <div
           style={introDelay(intro, 1400)}
-          className={`flex justify-end pt-1 ${introClass(intro, "intro-rise")}`}
+          className={`flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-1 ${introClass(intro, "intro-rise")}`}
         >
+          <div className="flex justify-center sm:justify-start">
+            <IdeaQuota />
+          </div>
           <button
             type="button"
             disabled={
-              isLoading || (!isMapCardActive && !currentIdeaDraft.trim())
+              isLoading ||
+              isStarting ||
+              (!isResuming && (!currentIdeaDraft.trim() || !canStartNew))
             }
             onClick={handleSubmit}
             className={`w-full sm:w-auto px-5 sm:px-6 py-2.5 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95 ${
-              isMapCardActive && hasSavedBlueprint
+              isResuming
                 ? "bg-emerald-400 text-neutral-950 hover:bg-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.3)]"
                 : "bg-white text-neutral-950 hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed"
             }`}
           >
             <span>
-              {isLoading
+              {isLoading || isStarting
                 ? "Calibrando..."
-                : isMapCardActive && hasSavedBlueprint
+                : isResuming
                   ? "Continuar Mapa Guardado →"
-                  : "Comenzar Nuevo Mapa →"}
+                  : canStartNew
+                    ? "Comenzar Nuevo Mapa →"
+                    : `Próxima idea a las ${formatQuotaTime(ideaQuota?.nextFreeAt)}`}
             </span>
           </button>
         </div>

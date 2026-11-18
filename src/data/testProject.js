@@ -1,7 +1,7 @@
 /**
  * Proyecto de prueba ("Reservalo"): decisiones y cartas completas desde el
- * Naming hasta el Layout, para llegar directo a la estación de Deploy sin
- * gastar llamadas a Gemini en las anteriores.
+ * Naming hasta el Deploy, y la galería de Ecosistema de IA abierta para elegir.
+ * Carga al instante y no gasta llamadas a Gemini: sirve para revisar las opciones.
  *
  * Solo lo sirve /api/dev-tools/test-project a las cuentas autorizadas
  * (DEV_TOOLS_EMAILS): este módulo no se importa desde el cliente.
@@ -605,6 +605,165 @@ const RAW = {
       },
     ],
   },
+
+  // Cartas fijas de Deploy (sin Gemini). Planes con free tier vigente
+  deploy: {
+    companionMood: "proud",
+    companionComment:
+      "Elige dónde vivirá Reservalo. Y recuerda: código que no está en GitHub, no existe.",
+    options: [
+      {
+        id: "dep-1",
+        level: "simple",
+        title: "Vercel + Supabase",
+        tag: "Integración nativa",
+        summary:
+          "Vercel publica Next.js con cada push a GitHub y Supabase guarda reservas y pagos.",
+        beginnerTip:
+          "Subes el código y en un minuto tu página ya está en internet.",
+        pros: "Cero configuración para Next.js y vistas previas por cada rama.",
+        cons: "El plan Hobby es solo para uso no comercial.",
+        techs: ["Vercel", "Supabase", "GitHub"],
+        providers: [
+          { name: "Vercel", role: "hosting" },
+          { name: "Supabase", role: "database" },
+          { name: "GitHub", role: "repo" },
+        ],
+        steps: [
+          "Sube el código a un repositorio de GitHub",
+          "Importa el repo en Vercel",
+          "Copia las claves de Supabase en las variables de entorno",
+          "Haz push a main y se publica solo",
+        ],
+        cost: "$0 / mes en el plan Hobby",
+      },
+      {
+        id: "dep-2",
+        level: "simple",
+        title: "Cloudflare Workers + Supabase",
+        tag: "Red global",
+        summary:
+          "Next.js corre en la red de Cloudflare con el adaptador OpenNext, cerca de cada cliente.",
+        beginnerTip:
+          "Tu web se copia en cientos de ciudades para cargar rápido en todas.",
+        pros: "Tráfico sin límite de ancho de banda y uso comercial permitido.",
+        cons: "Algunas funciones de Next.js necesitan ajustes con OpenNext.",
+        techs: ["Cloudflare Workers", "Supabase", "GitHub"],
+        providers: [
+          { name: "Cloudflare Workers", role: "hosting" },
+          { name: "Supabase", role: "database" },
+          { name: "GitHub", role: "repo" },
+        ],
+        steps: [
+          "Agrega el adaptador @opennextjs/cloudflare al proyecto",
+          "Conecta el repo de GitHub en Cloudflare",
+          "Configura las variables de Supabase",
+          "Haz push y Cloudflare despliega en el borde",
+        ],
+        cost: "$0 / mes hasta 100.000 peticiones al día",
+      },
+      {
+        id: "dep-3",
+        level: "medium",
+        title: "Netlify + Supabase",
+        tag: "Alternativa simple",
+        summary:
+          "Netlify compila Next.js desde GitHub y sirve el sitio con formularios y funciones.",
+        beginnerTip: "Parecido a Vercel: conectas el repo y se publica solo.",
+        pros: "Vistas previas por pull request y despliegues atómicos.",
+        cons: "El plan gratuito limita minutos de build y ancho de banda.",
+        techs: ["Netlify", "Supabase", "GitHub"],
+        providers: [
+          { name: "Netlify", role: "hosting" },
+          { name: "Supabase", role: "database" },
+          { name: "GitHub", role: "repo" },
+        ],
+        steps: [
+          "Sube el código a GitHub",
+          "Crea un sitio en Netlify desde el repo",
+          "Agrega las variables de entorno de Supabase",
+          "Revisa la vista previa y publica",
+        ],
+        cost: "$0 / mes en el plan Free",
+      },
+      {
+        id: "dep-4",
+        level: "medium",
+        title: "Render + Supabase",
+        tag: "Servidor Node",
+        summary:
+          "Render ejecuta Next.js como servidor Node continuo, ideal para webhooks de pago.",
+        beginnerTip:
+          "Una computadora en la nube que tiene tu app siempre lista.",
+        pros: "Servidor real: tareas largas y webhooks sin límite de tiempo.",
+        cons: "En el plan gratis se duerme tras 15 minutos sin visitas.",
+        techs: ["Render", "Supabase", "GitHub"],
+        providers: [
+          { name: "Render", role: "hosting" },
+          { name: "Supabase", role: "database" },
+          { name: "GitHub", role: "repo" },
+        ],
+        steps: [
+          "Sube el código a GitHub",
+          "Crea un Web Service en Render desde el repo",
+          "Define build y start: npm run build y npm start",
+          "Agrega las variables de Supabase",
+        ],
+        cost: "$0 / mes con instancia gratuita que se suspende",
+      },
+      {
+        id: "dep-5",
+        level: "advanced",
+        title: "Koyeb con Docker",
+        tag: "Contenedor",
+        summary:
+          "La app se empaqueta en Docker y Koyeb la ejecuta; GitHub Actions construye la imagen.",
+        beginnerTip:
+          "Metes la app en una caja que funciona igual en cualquier servidor.",
+        pros: "El mismo contenedor sirve para mudarte a otra nube.",
+        cons: "Una sola instancia gratuita con poca memoria.",
+        techs: ["Docker", "Koyeb", "GitHub Actions"],
+        providers: [
+          { name: "Koyeb", role: "hosting" },
+          { name: "GitHub Actions", role: "ci" },
+          { name: "Supabase", role: "database" },
+          { name: "GitHub", role: "repo" },
+        ],
+        steps: [
+          "Escribe un Dockerfile con salida standalone de Next.js",
+          "Crea un flujo de GitHub Actions que construya la imagen",
+          "Despliega la imagen en Koyeb",
+          "Configura las variables de Supabase",
+        ],
+        cost: "$0 / mes con una instancia gratuita",
+      },
+      {
+        id: "dep-6",
+        level: "advanced",
+        title: "Google Cloud Run",
+        tag: "Escala automática",
+        summary:
+          "El contenedor corre en Cloud Run y escala de cero a muchas instancias según las visitas.",
+        beginnerTip: "Si nadie entra no pagas; si llegan muchos, crece solo.",
+        pros: "Escala a cero y aguanta picos de reservas en temporada.",
+        cons: "Pide tarjeta para activar la cuenta y la configuración es más técnica.",
+        techs: ["Google Cloud Run", "Docker", "GitHub Actions"],
+        providers: [
+          { name: "Google Cloud Run", role: "hosting" },
+          { name: "GitHub Actions", role: "ci" },
+          { name: "Supabase", role: "database" },
+          { name: "GitHub", role: "repo" },
+        ],
+        steps: [
+          "Crea el Dockerfile del proyecto",
+          "Configura GitHub Actions con una cuenta de servicio",
+          "Publica la imagen y despliega en Cloud Run",
+          "Agrega las variables de Supabase como secretos",
+        ],
+        cost: "$0 / mes dentro de la capa gratuita mensual",
+      },
+    ],
+  },
 };
 
 /** Primera carta cuyo id coincide, sin la marca de selección del mazo. */
@@ -613,7 +772,8 @@ const pickMany = (data, key, ids) =>
   data[key].filter((o) => ids.includes(o.id));
 
 /**
- * Proyecto de prueba completo hasta el Layout.
+ * Proyecto de prueba: decisiones hasta el Deploy y la estación 13 (Ecosistema
+ * de IA) lista para armar el kit (queda sin decidir).
  * @returns {{ blueprint: object, generatedOptions: object, targetStep: number }}
  */
 export function buildTestProject() {
@@ -630,6 +790,8 @@ export function buildTestProject() {
   });
   // Tipo de sistema: catálogo fijo, se resuelve en el cliente
   options["system-type"] = normalizeStepResponse("system-type", {}).data;
+  // Ecosistema de IA: galería fija (src/data/aiTools.js), sin cartas de Gemini
+  options["ai-ecosystem"] = normalizeStepResponse("ai-ecosystem", {}).data;
 
   const stack = pick(options.stack, "stacks", "stack-1");
 
@@ -664,11 +826,12 @@ export function buildTestProject() {
       booking: "booking-steps",
       admin: "crud-table",
     }),
+    selectedDeploy: pick(options.deploy, "options", "dep-1"),
   };
 
   return {
     blueprint,
     generatedOptions: options,
-    targetStep: getStationById("deploy").stepNumber,
+    targetStep: getStationById("ai-ecosystem").stepNumber,
   };
 }

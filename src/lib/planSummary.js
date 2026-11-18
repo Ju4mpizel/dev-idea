@@ -87,7 +87,7 @@ export function buildPlanEntries(blueprint = {}, generatedOptions = {}) {
   });
 }
 
-/** Comentario de Strobi según el avance. */
+/** Comentario de Dev-i según el avance. */
 export function planComment(entries) {
   const done = entries.filter((e) => e.status !== "pending").length;
   const total = entries.length;

@@ -5,12 +5,24 @@ import { normalizeStepResponse, parseModelJson } from "@/lib/stepContracts";
 import { getResponseSchema } from "@/lib/stepSchemas";
 import { STATIONS } from "@/config/stations.config";
 import { layoutSurfacesFor } from "@/data/layoutCatalog";
+import {
+  getRequestUser,
+  isUnlimitedUser,
+  isUuid,
+  serverError,
+  unauthorized,
+} from "@/lib/supabaseServer";
 
 export const maxDuration = 90;
 // Margen de 10 s respecto a maxDuration para serializar y responder
 const GENERATION_BUDGET_MS = 80_000;
 // Mínimo de opciones utilizables para aceptar una respuesta (de las 6 pedidas)
 const MIN_VALID_OPTIONS = 3;
+// Un blueprint completo con todas sus decisiones ocupa ~10-20 KB
+const MAX_BODY_BYTES = 64 * 1024;
+
+const fail = (status, error, code) =>
+  NextResponse.json({ success: false, error, code }, { status });
 
 class InvalidModelOutputError extends Error {
   name = "InvalidModelOutputError";
@@ -67,28 +79,60 @@ function resolveStation(stepId) {
 }
 
 export async function POST(request) {
+  // 1. Solo usuarios con sesión (cada llamada gasta créditos de Gemini)
+  const { user, supabase } = await getRequestUser(request);
+  if (!user) return unauthorized("Inicia sesión con Google para generar.");
+
+  // 2. Cuerpo acotado
+  const rawBody = await request.text().catch(() => "");
+  if (rawBody.length > MAX_BODY_BYTES) {
+    return fail(413, "La petición es demasiado grande.");
+  }
   let body;
   try {
-    body = await request.json();
+    body = JSON.parse(rawBody);
   } catch {
-    return NextResponse.json(
-      { success: false, error: "Cuerpo de la petición inválido." },
-      { status: 400 },
-    );
+    return fail(400, "Cuerpo de la petición inválido.");
   }
 
-  const { stepId, blueprint, extras: rawExtras } = body || {};
+  const { stepId, blueprint, extras: rawExtras, ideaRunId } = body || {};
   const station = resolveStation(stepId);
-
-  if (!station) {
-    return NextResponse.json(
-      { success: false, error: `Estación desconocida: "${stepId}".` },
-      { status: 400 },
-    );
-  }
+  if (!station) return fail(400, "Estación desconocida.");
 
   const safeBlueprint =
-    blueprint && typeof blueprint === "object" ? blueprint : {};
+    blueprint && typeof blueprint === "object" && !Array.isArray(blueprint)
+      ? { ...blueprint }
+      : {};
+
+  // 3. Cupo: cada generación gasta una del ticket de la idea. La idea y el
+  //    contexto salen del ticket (no del navegador), así no se recicla una idea
+  //    para otra. Las cuentas sin límite no usan ticket.
+  if (!isUnlimitedUser(user)) {
+    if (!isUuid(ideaRunId)) {
+      return fail(
+        403,
+        "Esta ruta no tiene una idea activa. Vuelve a la Estación 0 y comienza de nuevo.",
+        "NO_IDEA_RUN",
+      );
+    }
+    const { data: run, error: runError } = await supabase.rpc(
+      "use_idea_generation",
+      { p_run: ideaRunId },
+    );
+    if (runError) {
+      return serverError("generate-step cupo", runError, "No se pudo verificar tu cupo.");
+    }
+    if (!run) {
+      return fail(
+        429,
+        "Esta idea llegó a su límite de generaciones. Empieza una idea nueva cuando tengas cupo.",
+        "IDEA_GENERATIONS_LIMIT",
+      );
+    }
+    safeBlueprint.idea = run.idea;
+    safeBlueprint.context = run.context;
+  }
+
   const extras = sanitizeExtras(station.id, rawExtras);
   // Layout: una opción por superficie del proyecto (1, 2 o 3), no 6 cartas
   const layoutCount =
@@ -129,16 +173,14 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
+    // El detalle técnico queda en el log; al navegador, un mensaje genérico
     console.error("[API generate-step] Error:", error);
     const isInvalidOutput = error instanceof InvalidModelOutputError;
-    return NextResponse.json(
-      {
-        success: false,
-        error: isInvalidOutput
-          ? "La IA devolvió una respuesta incompleta. Intenta de nuevo."
-          : error.message || "Error al comunicarse con Gemini.",
-      },
-      { status: isInvalidOutput ? 502 : 500 },
+    return fail(
+      isInvalidOutput ? 502 : 503,
+      isInvalidOutput
+        ? "La IA devolvió una respuesta incompleta. Intenta de nuevo."
+        : "La IA no respondió a tiempo. Intenta de nuevo en unos segundos.",
     );
   }
 }

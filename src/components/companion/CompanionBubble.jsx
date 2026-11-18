@@ -27,7 +27,7 @@ export function CompanionBubble({ message, isThinking = false, compact = false }
             <p className="leading-relaxed">{message}</p>
           )}
 
-          {/* Flecha hacia Strobi */}
+          {/* Flecha hacia Dev-i */}
           <div className={`${compact ? "block" : "hidden sm:block"} absolute -left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-neutral-900 border-l border-b border-neutral-800 rotate-45`} />
           <div className={`${compact ? "hidden" : "sm:hidden"} absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-neutral-900 border-t border-l border-neutral-800 rotate-45`} />
         </motion.div>

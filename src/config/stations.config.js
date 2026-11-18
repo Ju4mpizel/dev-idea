@@ -281,20 +281,18 @@ export const STATIONS = [
     stepNumber: 13,
     title: "Ecosistema de IA",
     navLabel: "Ecosistema IA",
-    subtitle: "Modelos para el producto y copilots para programar",
-    skippable: false,
+    subtitle: "Las herramientas de IA con las que vas a programar",
+    // Opcional: hay quien programa sin IA
+    skippable: true,
+    // Galería fija (src/data/aiTools.js): se resuelve en el cliente, sin Gemini
+    local: true,
     defaultMood: "celebrate",
-    defaultDialogue: "El kit de aceleración listo para construir sin fricción.",
+    defaultDialogue:
+      "Toca una herramienta para ver en qué te ayuda y arma tu kit. Es opcional.",
     blueprintKey: "selectedAiEcosystem",
     dbColumn: "selected_ai_ecosystem",
-    optionsKey: "options",
-    selection: "single",
-    legend: {
-      label: "Nivel",
-      simple: "Gratis / Básico",
-      medium: "Equilibrado",
-      advanced: "Avanzado",
-    },
+    optionsKey: null,
+    selection: "multi",
   },
   {
     id: "workspace",
@@ -368,6 +366,7 @@ const EMPTY_VALUES = {
   selectedRequirements: [],
   selectedUserStories: [],
   selectedDiagrams: [],
+  selectedAiEcosystem: [],
   architectureNotes: "",
 };
 
@@ -480,7 +479,8 @@ const isPlainObject = (value) =>
  */
 export function toIdKeyedOptions(options, legacyVersion = 4) {
   if (!isPlainObject(options)) return {};
-  const legacyIds = legacyVersion === 3 ? LEGACY_STEP_IDS_V3 : LEGACY_STEP_IDS_V4;
+  const legacyIds =
+    legacyVersion === 3 ? LEGACY_STEP_IDS_V3 : LEGACY_STEP_IDS_V4;
   const result = {};
   Object.entries(options).forEach(([key, value]) => {
     const id = /^\d+$/.test(key) ? legacyIds[Number(key)] : key;

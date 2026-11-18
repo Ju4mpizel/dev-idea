@@ -1,7 +1,7 @@
 /**
  * Guía de categorías de cada estación (panel deslizable de la IZQUIERDA).
  *
- * Strobi (derecha) explica el CONCEPTO de la estación; este panel es la tabla
+ * Dev-i (derecha) explica el CONCEPTO de la estación; este panel es la tabla
  * de referencia: qué significa cada nivel de las cartas (`levels`, en el mismo
  * orden simple / medium / advanced que la leyenda de la estación) y, cuando la
  * estación tiene un catálogo cerrado, todas las opciones posibles (`catalog`).
@@ -318,20 +318,20 @@ export const STATION_CATEGORIES = {
   },
 
   "ai-ecosystem": {
-    title: "Niveles del kit de IA",
+    title: "Tipos de herramientas de IA",
     levels: {
-      simple: "Gratis / básico: planes gratuitos y un asistente de código.",
-      medium: "Equilibrado: IA dentro del producto con una API y copilot en el editor.",
-      advanced: "Avanzado: agentes, búsqueda semántica (RAG) o modelos propios.",
+      simple: "Chat: le preguntas y copias el código (ChatGPT, Claude, Gemini, DeepSeek).",
+      medium: "Editor con IA: sugiere y edita mientras programas (Cursor, Copilot, Antigravity).",
+      advanced: "Agente: trabaja solo sobre tu repo y corre comandos (Claude Code, Codex, OpenCode).",
     },
     catalog: [
       {
         group: "Conceptos",
         items: [
-          { name: "LLM", desc: "Modelo de lenguaje: Gemini, Claude, GPT." },
+          { name: "Agente", desc: "IA que lee tu proyecto, edita archivos y ejecuta comandos." },
           { name: "Copilot", desc: "Asistente en el editor que sugiere código." },
-          { name: "Agente", desc: "IA que ejecuta tareas por pasos (Claude Code)." },
-          { name: "RAG", desc: "La IA responde usando tus propios documentos." },
+          { name: "Modelo local", desc: "IA que corre en tu PC, sin internet (Ollama)." },
+          { name: "API key", desc: "Clave para conectar un modelo a una herramienta y pagar por uso." },
           { name: "AGENTS.md", desc: "Archivo de contexto para que la IA conozca tu proyecto." },
         ],
       },

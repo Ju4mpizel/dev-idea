@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { StrobiAvatar } from "./StrobiAvatar";
 
 /**
- * Strobi "llega" volando desde arriba y se coloca sobre un panel lateral
+ * Dev-i "llega" volando desde arriba y se coloca sobre un panel lateral
  * ("¿Qué es?", "Mi plano"). No anima su cara hasta aterrizar: así el vuelo
  * solo mueve una capa ya dibujada.
  */

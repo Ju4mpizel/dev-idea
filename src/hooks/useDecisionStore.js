@@ -50,7 +50,13 @@ function rebuildOptionsFromDecisions(blueprint) {
 
     // Estaciones de catálogo fijo (sin cartas): basta con la decisión
     if (station.local) {
-      if (!hasDecisionValue(value)) break;
+      if (!hasDecisionValue(value)) {
+        if (!skippable) break;
+        options[station.id] = normalizeStepResponse(station.id, {
+          skipped: true,
+        }).data;
+        continue;
+      }
       options[station.id] = normalizeStepResponse(station.id, {}).data;
       continue;
     }
@@ -86,6 +92,26 @@ function rebuildOptionsFromDecisions(blueprint) {
   return options;
 }
 
+/**
+ * Blueprint y cartas tras descartar todo lo posterior a `fromStep`
+ * (base de "Reescribir desde aquí" y de "Simular desde aquí").
+ */
+function truncatedAfter(state, fromStep) {
+  const blueprint = { ...state.blueprint };
+  DECISION_STATIONS.forEach((station) => {
+    if (station.stepNumber > fromStep) {
+      blueprint[station.blueprintKey] = getEmptyValue(station.blueprintKey);
+    }
+  });
+  return {
+    blueprint,
+    generatedOptions: filterOptionsByStep(
+      state.generatedOptions,
+      (step) => step <= fromStep,
+    ),
+  };
+}
+
 let activeAbortController = null;
 
 const abortActiveRequest = () => {
@@ -107,6 +133,12 @@ export const useDecisionStore = create(
       setCurrentUser: (user) => set({ currentUser: user }),
       cloudProjectId: null,
       setCloudProjectId: (id) => set({ cloudProjectId: id }),
+      // Ticket de la idea actual (límite de ideas): viaja en cada generación
+      ideaRunId: null,
+      setIdeaRunId: (id) => set({ ideaRunId: id }),
+      // Cupo de ideas del usuario: { unlimited, used, limit, nextFreeAt }
+      ideaQuota: null,
+      setIdeaQuota: (quota) => set({ ideaQuota: quota }),
       // idle | saving | saved | error
       cloudSyncStatus: "idle",
       cloudSyncError: null,
@@ -121,7 +153,7 @@ export const useDecisionStore = create(
       strobiColor: "#5b7fe5",
       setStrobiColor: (hex) => set({ strobiColor: hex }),
 
-      // Panel "¿Qué es...?" de la estación (Strobi se mueve a su lado)
+      // Panel "¿Qué es...?" de la estación (Dev-i se mueve a su lado)
       infoStationId: null,
       openStationInfo: (stationId) =>
         set({
@@ -152,10 +184,16 @@ export const useDecisionStore = create(
 
       // Proyecto de prueba (herramientas de desarrollo): nunca se sube a la nube
       isTestProject: false,
+      // Cartas del proyecto de prueba: la "generación simulada" las vuelve a servir
+      testFixture: null,
       loadTestProject: ({ blueprint, generatedOptions }) => {
         abortActiveRequest();
+        const fixture = normalizeAllOptions(toIdKeyedOptions(generatedOptions));
         set({
           isTestProject: true,
+          testFixture: fixture,
+          simulationRequest: null,
+          ideaRunId: null,
           currentStep: 0,
           currentIdeaDraft: "",
           cloudProjectId: null,
@@ -168,12 +206,10 @@ export const useDecisionStore = create(
           isLoading: false,
           apiError: null,
           blueprint: createInitialBlueprint(blueprint),
-          generatedOptions: normalizeAllOptions(
-            toIdKeyedOptions(generatedOptions),
-          ),
+          generatedOptions: fixture,
           companionMood: "proud",
           companionDialogue:
-            "Proyecto de prueba cargado: decisiones listas hasta el Layout. Vamos al deploy.",
+            "Proyecto de prueba cargado: todo decidido hasta el Deploy. Arma tu kit de IA cuando quieras.",
         });
       },
 
@@ -236,28 +272,31 @@ export const useDecisionStore = create(
 
       // Trunca y purga en cascada todo lo posterior a `fromStep`
       truncateWorkflowFrom: (fromStep) =>
-        set((state) => {
-          const blueprint = { ...state.blueprint };
-          DECISION_STATIONS.forEach((station) => {
-            if (station.stepNumber > fromStep) {
-              blueprint[station.blueprintKey] = getEmptyValue(
-                station.blueprintKey,
-              );
-            }
-          });
+        set((state) => ({
+          ...truncatedAfter(state, fromStep),
+          currentStep: fromStep,
+          companionMood: "curious",
+          companionDialogue:
+            "Camino reiniciado desde este punto. Elige de nuevo y recalcularemos la ruta.",
+        })),
 
-          return {
-            currentStep: fromStep,
-            generatedOptions: filterOptionsByStep(
-              state.generatedOptions,
-              (step) => step <= fromStep,
-            ),
-            blueprint,
-            companionMood: "curious",
-            companionDialogue:
-              "Camino reiniciado desde este punto. Elige de nuevo y recalcularemos la ruta.",
-          };
-        }),
+      // Modo prueba: descarta desde `stepNumber` (incluida) y pide al lienzo que
+      // "regenere" esa estación con las cartas de prueba tras una carga simulada
+      simulationRequest: null,
+      simulateFromStep: (stepNumber) =>
+        set((state) => ({
+          ...truncatedAfter(state, stepNumber - 1),
+          currentStep: stepNumber,
+          isLoading: true,
+          apiError: null,
+          simulationRequest: { step: stepNumber, nonce: Date.now() },
+        })),
+      // Lo consume una sola vez el lienzo que esté montado
+      consumeSimulation: () => {
+        const request = useDecisionStore.getState().simulationRequest;
+        if (request) set({ simulationRequest: null });
+        return request;
+      },
 
       cancelRequest: () => {
         abortActiveRequest();
@@ -307,7 +346,10 @@ export const useDecisionStore = create(
 
         set({
           isTestProject: false,
+          testFixture: null,
+          simulationRequest: null,
           cloudProjectId: project.id,
+          ideaRunId: project.idea_run_id || null,
           currentStep: targetStep,
           isMapCardActive: false,
           blueprint: restoredBlueprint,
@@ -319,10 +361,13 @@ export const useDecisionStore = create(
         return targetStep;
       },
 
-      startNewMap: (newIdea, context = "startup") => {
+      // `ideaRunId`: ticket de la idea que emite el servidor (null = sin límite)
+      startNewMap: (newIdea, context = "startup", ideaRunId = null) => {
         abortActiveRequest();
         set({
           isTestProject: false,
+          testFixture: null,
+          simulationRequest: null,
           currentStep: 0,
           currentIdeaDraft: "",
           cloudProjectId: null,
@@ -335,6 +380,7 @@ export const useDecisionStore = create(
           isLoading: false,
           apiError: null,
           companionMood: "idle",
+          ideaRunId,
           companionDialogue: `Iniciando nuevo análisis para: "${newIdea}".`,
           blueprint: createInitialBlueprint({ idea: newIdea, context }),
           generatedOptions: {},
@@ -345,6 +391,9 @@ export const useDecisionStore = create(
         abortActiveRequest();
         set({
           isTestProject: false,
+          testFixture: null,
+          simulationRequest: null,
+          ideaRunId: null,
           currentStep: 0,
           currentIdeaDraft: "",
           cloudProjectId: null,
@@ -404,8 +453,10 @@ export const useDecisionStore = create(
         blueprint: state.blueprint,
         generatedOptions: state.generatedOptions,
         cloudProjectId: state.cloudProjectId,
+        ideaRunId: state.ideaRunId,
         strobiColor: state.strobiColor,
         isTestProject: state.isTestProject,
+        testFixture: state.testFixture,
       }),
     },
   ),

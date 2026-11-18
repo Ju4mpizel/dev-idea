@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getRequestUser, isUuid, serverError } from "@/lib/supabaseServer";
 import {
   LAST_STEP,
   blueprintToDbRow,
@@ -9,20 +9,7 @@ import {
 const clampStep = (step) =>
   Math.min(Math.max(Number(step) || 0, 0), LAST_STEP);
 
-function getSupabaseServer(req) {
-  const authHeader = req.headers.get("authorization");
-  const token = authHeader?.replace("Bearer ", "");
-
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      global: {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      },
-    },
-  );
-}
+const toIdeaRunId = (value) => (isUuid(value) ? value : null);
 
 // PUT: Actualiza el proyecto y su blueprint
 export async function PUT(req, { params }) {
@@ -35,13 +22,9 @@ export async function PUT(req, { params }) {
       );
     }
 
-    const supabase = getSupabaseServer(req);
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, supabase } = await getRequestUser(req);
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "No autorizado." }, { status: 401 });
     }
 
@@ -51,6 +34,7 @@ export async function PUT(req, { params }) {
       generatedOptions,
       currentStep = 0,
       isCompleted = false,
+      ideaRunId,
     } = body;
 
     const title =
@@ -65,12 +49,14 @@ export async function PUT(req, { params }) {
         title,
         status,
         current_step: clampStep(currentStep),
+        // Solo se escribe si llega un ticket válido (nunca se borra el vínculo)
+        ...(toIdeaRunId(ideaRunId) ? { idea_run_id: ideaRunId } : {}),
       })
       .eq("id", id)
       .select("id");
 
     if (pError) {
-      return NextResponse.json({ error: pError.message }, { status: 500 });
+      return serverError("projects", pError);
     }
 
     // 0 filas: el proyecto fue borrado o no pertenece al usuario (RLS)
@@ -97,7 +83,7 @@ export async function PUT(req, { params }) {
         .upsert(blueprintPayload, { onConflict: "project_id" });
 
       if (bError) {
-        return NextResponse.json({ error: bError.message }, { status: 500 });
+        return serverError("projects", bError);
       }
     }
 
@@ -106,10 +92,7 @@ export async function PUT(req, { params }) {
       { status: 200 },
     );
   } catch (err) {
-    return NextResponse.json(
-      { error: "Error interno del servidor", details: err.message },
-      { status: 500 },
-    );
+    return serverError("projects", err);
   }
 }
 
@@ -124,20 +107,16 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    const supabase = getSupabaseServer(req);
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, supabase } = await getRequestUser(req);
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "No autorizado." }, { status: 401 });
     }
 
     const { error } = await supabase.from("projects").delete().eq("id", id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return serverError("projects", error);
     }
 
     return NextResponse.json(
@@ -145,9 +124,6 @@ export async function DELETE(req, { params }) {
       { status: 200 },
     );
   } catch (err) {
-    return NextResponse.json(
-      { error: "Error interno del servidor", details: err.message },
-      { status: 500 },
-    );
+    return serverError("projects", err);
   }
 }

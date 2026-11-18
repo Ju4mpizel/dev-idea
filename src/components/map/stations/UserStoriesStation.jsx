@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
+import { requestStepGeneration } from "@/services/projectService";
 import { isStepLocked } from "@/hooks/useStationNavigation";
 import { getLevelStyle } from "./levelStyles";
 import { StationShell } from "./StationShell";
@@ -126,28 +127,40 @@ export function UserStoriesStation({ station, data, onNext, onGenerate }) {
     setIsGenerating(true);
     setGenError(null);
     try {
-      const res = await fetch("/api/generate-step", {
-        method: "POST",
-        signal: controller.signal,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { isTestProject, testFixture } = useDecisionStore.getState();
+      let generated;
+      if (isTestProject) {
+        // Modo prueba: carga simulada de 5 s y repite historias de prueba (sin IA)
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(resolve, 5000);
+          controller.signal.addEventListener("abort", () => {
+            clearTimeout(timer);
+            reject(new DOMException("Simulación cancelada", "AbortError"));
+          });
+        });
+        generated = (testFixture?.[station.id]?.[optionsKey] || []).slice(
+          0,
+          MORE_COUNT,
+        );
+      } else {
+        const latest = useDecisionStore.getState();
+        const result = await requestStepGeneration({
           stepId: station.id,
-          blueprint: useDecisionStore.getState().blueprint,
+          blueprint: latest.blueprint,
+          ideaRunId: latest.ideaRunId,
+          signal: controller.signal,
           extras: {
             count: MORE_COUNT,
             focus: focus.trim() || undefined,
             exclude: stories.map((s) => s.title),
           },
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "No se pudieron generar más historias.");
+        });
+        generated = result?.[optionsKey] || [];
       }
 
       // Ids nuevos garantizados únicos frente a los ya existentes
       const stamp = Date.now().toString(36);
-      const fresh = (json.data?.[optionsKey] || []).map((s, i) => ({
+      const fresh = generated.map((s, i) => ({
         ...s,
         id: `story-${stamp}-${i + 1}`,
       }));

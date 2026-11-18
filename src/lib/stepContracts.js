@@ -32,7 +32,6 @@ const ID_PREFIX = {
   morphism: "morph",
   layout: "lay",
   deploy: "dep",
-  "ai-ecosystem": "ai",
 };
 
 // ---------- Primitivas ----------
@@ -313,7 +312,7 @@ export function normalizeStepResponse(stationRef, raw, blueprint = {}) {
   const source = isObject(raw) ? raw : {};
 
   const data = {
-    // Contrato unificado de Strobi; se aceptan `mood`/`dialogue` heredados
+    // Contrato unificado de Dev-i; se aceptan `mood`/`dialogue` heredados
     companionMood:
       str(source.companionMood) ||
       str(source.mood) ||
@@ -332,7 +331,10 @@ export function normalizeStepResponse(stationRef, raw, blueprint = {}) {
   }
 
   const optionsKey = station?.optionsKey;
-  if (!optionsKey) return { data, validCount: 0 };
+  if (!optionsKey) {
+    if (source.skipped) data.skipped = true;
+    return { data, validCount: 0 };
+  }
 
   const rawItems = Array.isArray(source[optionsKey]) ? source[optionsKey] : [];
 

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 /**
- * Panel "¿Qué es...?": Strobi sale de la cabecera y aparece al lado de la
+ * Panel "¿Qué es...?": Dev-i sale de la cabecera y aparece al lado de la
  * estación explicando su concepto. En escritorio es un panel lateral; en móvil,
  * una hoja inferior. Se cierra con la X, con el fondo (móvil), con Escape o al
  * confirmar la estación.
@@ -61,7 +61,7 @@ export function StationInfoPanel() {
               <div className="flex items-start justify-between gap-2 px-4 sm:px-5 pt-7 pb-3 border-b border-neutral-800">
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
-                    <BookOpen className="w-3 h-3" /> Strobi te explica
+                    <BookOpen className="w-3 h-3" /> Dev-i te explica
                   </span>
                   <h3 className="text-sm sm:text-base font-bold text-white leading-snug mt-0.5">
                     {guide.question}

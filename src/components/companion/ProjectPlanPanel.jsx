@@ -30,7 +30,7 @@ import {
 /**
  * Panel "💡 Mi plano": todo lo que el usuario guardó hasta ahora, estación por
  * estación, con desplegables y colores por fase. Mismo patrón que "¿Qué es?":
- * panel a la derecha en escritorio, hoja inferior en móvil, Strobi encima.
+ * panel a la derecha en escritorio, hoja inferior en móvil, Dev-i encima.
  */
 export function ProjectPlanPanel() {
   const isPlanOpen = useDecisionStore((s) => s.isPlanOpen);

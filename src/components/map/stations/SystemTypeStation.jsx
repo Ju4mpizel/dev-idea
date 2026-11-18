@@ -131,7 +131,7 @@ export function SystemTypeStation({ station, onNext }) {
   const complements = pickedComplements ?? saved?.complements ?? [];
   const selectedType = getSystemType(selectedId);
 
-  // Strobi explica qué leyó en la idea (solo al llegar a la estación)
+  // Dev-i explica qué leyó en la idea (solo al llegar a la estación)
   useEffect(() => {
     if (saved) return;
     const family = getSystemFamily(detection.familyId);

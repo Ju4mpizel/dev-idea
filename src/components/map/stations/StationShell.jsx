@@ -14,6 +14,7 @@ import {
   SkipForward,
   HelpCircle,
   Layers,
+  FlaskConical,
 } from "lucide-react";
 
 /**
@@ -45,6 +46,9 @@ export function StationShell({
   const closeStationInfo = useDecisionStore((s) => s.closeStationInfo);
   const isCategoriesOpen = useDecisionStore((s) => s.isCategoriesOpen);
   const toggleCategories = useDecisionStore((s) => s.toggleCategories);
+  // Modo prueba: "Reescribir" pasa a ser "Simular desde aquí" (sin IA)
+  const isTestProject = useDecisionStore((s) => s.isTestProject);
+  const simulateFromStep = useDecisionStore((s) => s.simulateFromStep);
   const navigation = useStationNavigation(stepNumber);
   const { highestStep, returnToFlow, rewriteFromHere } = navigation;
   const isLockedHistory = navigation.isLockedHistory && !forceEditable;
@@ -61,7 +65,9 @@ export function StationShell({
   };
 
   const handleRewriteConfirm = () => {
-    rewriteFromHere();
+    closeStationInfo();
+    if (isTestProject) simulateFromStep(stepNumber);
+    else rewriteFromHere();
     setConfirmRewriteOpen(false);
   };
 
@@ -136,8 +142,17 @@ export function StationShell({
               onClick={() => setConfirmRewriteOpen(true)}
               className="w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/30 text-amber-300 hover:text-amber-200 text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reescribir desde aquí</span>
+              {isTestProject ? (
+                <>
+                  <FlaskConical className="w-3.5 h-3.5" />
+                  <span>Simular desde aquí</span>
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reescribir desde aquí</span>
+                </>
+              )}
             </button>
           ) : (
             onSkip && (
@@ -187,11 +202,21 @@ export function StationShell({
         isOpen={confirmRewriteOpen}
         onClose={() => setConfirmRewriteOpen(false)}
         onConfirm={handleRewriteConfirm}
-        variant="danger"
-        tag="Reescritura de Flujo"
-        title={rewriteTitle || `¿Reescribir desde la Estación ${stepNumber}?`}
-        description={rewriteDescription}
-        confirmText="Sí, desbloquear y reescribir"
+        variant={isTestProject ? "default" : "danger"}
+        tag={isTestProject ? "Proyecto de prueba" : "Reescritura de Flujo"}
+        title={
+          isTestProject
+            ? `¿Simular desde la Estación ${stepNumber}?`
+            : rewriteTitle || `¿Reescribir desde la Estación ${stepNumber}?`
+        }
+        description={
+          isTestProject
+            ? "Se vuelven a \"generar\" las cartas de esta estación con 5 s de carga simulada (sin IA, mismas cartas de prueba). Lo decidido desde aquí en adelante se descarta y cada estación siguiente también se simula."
+            : rewriteDescription
+        }
+        confirmText={
+          isTestProject ? "Simular desde aquí" : "Sí, desbloquear y reescribir"
+        }
         cancelText="Conservar como está"
       />
     </div>

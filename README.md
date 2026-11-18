@@ -34,7 +34,7 @@ Convierte una idea difusa en un _blueprint_ técnico: requisitos, stack, base de
 Mucha gente que empieza a programar, o que construye con IA ("vibe coding"), se lanza a escribir código sin saber qué requisitos tiene su proyecto, qué arquitectura le conviene o qué diagramas necesita. **Dev.Idea** propone un **mapa de 15 estaciones encadenadas**: en cada una, **Google Gemini** genera **6 cartas** adaptadas a tu idea y a todo lo que elegiste antes, y tú decides. La única sin IA es **Tipo de sistema**, un catálogo fijo que se deduce de tu idea.
 
 - Cada carta explica la opción **"en simple"**, con ventajas, desventajas y las tecnologías involucradas (con su logo).
-- Cada estación tiene un botón **"¿Qué es?"**: **Strobi**, el copiloto, se mueve al lado y explica el concepto (qué es un stack, qué es la arquitectura, qué son los requisitos...), dónde se ve en la universidad y cómo se usa en la industria.
+- Cada estación tiene un botón **"¿Qué es?"**: **Dev-i**, el copiloto, se mueve al lado y explica el concepto (qué es un stack, qué es la arquitectura, qué son los requisitos...), dónde se ve en la universidad y cómo se usa en la industria.
 - Combina **temario universitario** (ERS / IEEE 830, UML, modelo entidad-relación, Scrum, RUP) con **práctica de la industria** (C4, BaaS, CI/CD, copilots de IA).
 - Recomienda en proporción al proyecto: una landing no recibe diagramas de componentes ni de despliegue, y si eliges no usar base de datos no se propone un diagrama entidad-relación.
 
@@ -46,7 +46,7 @@ Mucha gente que empieza a programar, o que construye con IA ("vibe coding"), se 
 - **Selección única o múltiple:** requisitos, historias de usuario y diagramas permiten elegir varias cartas. Ninguna carta viene preseleccionada.
 - **Backlog de historias de usuario:** en lugar de cartas, una tabla con checks, criterios de aceptación y puntos; se pueden generar más historias por categoría y copiar la selección como tareas (GitHub Projects) o como tabla Markdown.
 - **Encadenamiento contextual (*Chain-of-Context*):** cada estación se calcula sobre las anteriores con salidas estructuradas (**JSON Schema**) y un saneamiento de respaldo.
-- **Strobi explica cada estación:** panel "¿Qué es?" con concepto, analogía, ideas clave, universidad vs. industria y un consejo. Se cierra con la X, con Escape o al confirmar.
+- **Dev-i explica cada estación:** panel "¿Qué es?" con concepto, analogía, ideas clave, universidad vs. industria y un consejo. Se cierra con la X, con Escape o al confirmar.
 - **Logos de tecnologías:** catálogo curado de [Simple Icons](https://simpleicons.org) en stacks, bases de datos, deploy y herramientas.
 - **Diagramas dibujados:** cada diagrama recomendado incluye un ejemplo en **Mermaid** que se dibuja en un modal (la librería se carga solo al abrirlo).
 - **Lenguaje visual real:** en la estación de estilo, cada carta adopta su propio material (glassmorphism, neobrutalismo, aurora, terminal...).
@@ -54,7 +54,7 @@ Mucha gente que empieza a programar, o que construye con IA ("vibe coding"), se 
 - **Modo consulta y reescritura:** las estaciones ya superadas se pueden revisar; "Reescribir desde aquí" descarta lo calculado después.
 - **Mapa de ruta:** panel lateral con el recorrido en zigzag para saltar entre estaciones completadas, coloreadas por fase (Definición, Técnica, Diseño, Entrega).
 - **Tipo de sistema sin volver a preguntar:** 22 tipos en 7 familias (página web, vender online, gestión, reservas, plataforma, móvil, backend). La idea se lee al instante (sin Gemini): "sistema de heladería" abre sistemas de gestión y "página web de helados" abre landing, multipágina y autoadministrable, con ⭐ en los más probables. Se pueden sumar complementos (+ Panel de admin, + Pedidos online...). Sus "superficies" acotan los prompts del stack, la base de datos, la arquitectura y el layout.
-- **💡 Mi plano:** botón con foquito que abre, junto a Strobi, todo lo que elegiste hasta ahora: un desplegable por estación con colores por fase, lo omitido, lo pendiente y un botón para copiar el resumen en Markdown.
+- **💡 Mi plano:** botón con foquito que abre, junto a Dev-i, todo lo que elegiste hasta ahora: un desplegable por estación con colores por fase, lo omitido, lo pendiente y un botón para copiar el resumen en Markdown.
 - **Cancelación en tiempo real:** `AbortController` para pausar una generación en curso.
 
 ---
@@ -96,7 +96,7 @@ flowchart LR
 | 10 | **Estilo visual** | 6 lenguajes visuales; cada carta se ve con su propio estilo. | Única |
 | 11 | **Layout** | Una carta por cada parte del sistema (sitio público, panel admin, app…); al elegirla se despliegan sus **wireframes** (zig-zag, hero, tabla CRUD, maestro-detalle, bento…) con ⭐ en los que Gemini recomienda. | Uno por superficie |
 | 12 | **Deploy** | Planes con costo inicial $0 y el código en GitHub. | Única |
-| 13 | **Ecosistema IA** | Modelos para el producto y copilots para programar. | Única |
+| 13 | **Ecosistema IA** | Galería de herramientas para programar con IA (Claude Code, Codex, OpenCode, Antigravity, Cursor, chats...). Sin IA. | Múltiple · ⏭️ omitible |
 | ⭐ | **¡A Trabajar!** | Blueprint final (en desarrollo). | — |
 
 ---
@@ -113,7 +113,7 @@ flowchart LR
 | **Estado** | Zustand + `persist` | Estado global, caché local y migraciones de versión. |
 | **Iconos** | Lucide + Simple Icons | Interfaz y logos oficiales de tecnologías. |
 | **Diagramas** | Mermaid | Ejemplos dibujados de cada diagrama recomendado. |
-| **Copiloto** | `@bible-strong/avatar-web` | Avatar procedural de Strobi. |
+| **Copiloto** | `@bible-strong/avatar-web` | Avatar procedural de Dev-i. |
 
 ---
 
@@ -140,15 +140,21 @@ Crea un archivo `.env.local` en la raíz:
 GEMINI_API_KEY=tu_api_key
 GOOGLE_CLOUD_PROJECT=tu_proyecto_de_google_cloud
 
-# Opcional: login con Google y autoguardado
+# Login con Google (obligatorio para generar), autoguardado y cupo de ideas
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+
+# Solo servidor (nunca NEXT_PUBLIC_): cuentas sin límite de ideas y con
+# herramientas de desarrollo, separadas por comas
+DEV_TOOLS_EMAILS=tu@correo.com
 ```
+
+> **Cupo de ideas:** cada cuenta abre hasta **2 ideas cada 3 horas** (ventana móvil) y cada idea admite hasta **40 generaciones**. Los límites viven en las funciones SQL de [`supabase/migrations/20261119_limite_ideas.sql`](supabase/migrations/20261119_limite_ideas.sql).
 
 ### 3️⃣ Base de datos (Supabase)
 
 - **Proyecto nuevo:** ejecuta [`supabase/schema.sql`](supabase/schema.sql) en el SQL Editor.
-- **Proyecto existente:** ejecuta una vez, en orden, [`supabase/migrations/20261116_estaciones_v3.sql`](supabase/migrations/20261116_estaciones_v3.sql) (columnas de requisitos, historias, base de datos y cartas generadas) y [`supabase/migrations/20261118_tipo_sistema.sql`](supabase/migrations/20261118_tipo_sistema.sql) (estación Tipo de sistema: nueva columna y renumeración de los pasos guardados).
+- **Proyecto existente:** ejecuta una vez, en orden, [`supabase/migrations/20261116_estaciones_v3.sql`](supabase/migrations/20261116_estaciones_v3.sql) (columnas de requisitos, historias, base de datos y cartas generadas) y [`supabase/migrations/20261118_tipo_sistema.sql`](supabase/migrations/20261118_tipo_sistema.sql) (estación Tipo de sistema: nueva columna y renumeración de los pasos guardados) y [`supabase/migrations/20261119_limite_ideas.sql`](supabase/migrations/20261119_limite_ideas.sql) (cupo de ideas; córrela **antes** de desplegar el código).
 - Activa el proveedor **Google** en *Authentication → Providers*.
 
 ### 4️⃣ Iniciar en local
@@ -174,15 +180,15 @@ src/
 ├── app/
 │   ├── api/generate-step/     # Genera las cartas de una estación con Gemini
 │   ├── api/projects/          # CRUD de proyectos en Supabase (con el JWT del usuario)
-│   └── page.jsx               # Layout principal: cabecera, Strobi, mapa y lienzo
+│   └── page.jsx               # Layout principal: cabecera, Dev-i, mapa y lienzo
 ├── components/
-│   ├── companion/             # Strobi: avatar, burbuja y panel "¿Qué es?"
+│   ├── companion/             # Dev-i: avatar, burbuja y panel "¿Qué es?"
 │   ├── map/deck/CardDeck.jsx  # Mazo de cartas común a todas las estaciones
 │   ├── map/stations/          # OptionStation (genérica) + estaciones con contenido propio
 │   ├── navigation/            # Barra de controles, mapa de ruta, estado del autoguardado
 │   └── ui/                    # TechChip (logos), esqueletos
 ├── config/stations.config.js  # Registro único de estaciones (orden, claves, columnas)
-├── data/stationGuides.js      # Explicaciones de Strobi por estación
+├── data/stationGuides.js      # Explicaciones de Dev-i por estación
 ├── hooks/                     # Store de Zustand, navegación y autoguardado
 ├── lib/
 │   ├── prompts.js             # Prompts por estación

@@ -86,7 +86,9 @@ const DECISION_LINES = {
   diagrams: (b) => `DIAGRAMAS: ${describeDecision(b.selectedDiagrams)}`,
   morphism: (b) =>
     `ESTILO VISUAL: ${describeDecision(b.selectedStyle)}${
-      b.selectedStyle?.styleKey ? ` [styleKey: ${b.selectedStyle.styleKey}]` : ""
+      b.selectedStyle?.styleKey
+        ? ` [styleKey: ${b.selectedStyle.styleKey}]`
+        : ""
     }`,
   layout: (b) => {
     const picks = b.selectedLayout?.selections;
@@ -139,7 +141,7 @@ function estimateScale(blueprint) {
   return "MEDIANO (aplicación web con lógica y datos propios)";
 }
 
-/** Guía de campos de Strobi, común a todas las estaciones. */
+/** Guía de campos de Dev-i, común a todas las estaciones. */
 const strobiFields = (mood, comment) =>
   `- companionMood: "${mood}" · companionComment: ${comment} (1 frase, tono cercano).`;
 
@@ -406,8 +408,13 @@ ${header("el DevOps Lead", b)}
 DECISIONES PREVIAS:
 ${buildDecisionContext(b, "deploy")}
 
-Propón ${N} planes de despliegue con costo inicial $0 (free tier) y el código respaldado en GitHub, 2 por nivel (simple: un clic como Vercel/Netlify; medium: PaaS configurable como Render/Railway/Fly.io; advanced: contenedores Docker, VPS o cloud como Google Cloud Run / AWS).
+Propón ${N} planes de despliegue con costo inicial $0 (free tier) y el código respaldado en GitHub, 2 por nivel:
+- simple (un clic): Vercel, Cloudflare (Pages o Workers), Netlify, GitHub Pages.
+- medium (PaaS configurable): Render, Koyeb, Deno Deploy, Netlify con funciones.
+- advanced (contenedores o cloud): Docker en Google Cloud Run, Koyeb o un VPS con Coolify.
 REGLAS:
+- Cloudflare es de las opciones más usadas hoy: incluye al menos un plan con Cloudflare si el stack lo admite (Pages para sitios estáticos, SPA, Astro o Vite; Workers con el adaptador OpenNext para Next.js; Workers para APIs ligeras).
+- Railway y Fly.io ya no tienen plan gratuito permanente (solo crédito de prueba o pago por uso): no los presentes como gratis; si los propones, dilo claramente en cost.
 - Cada plan soporta REALMENTE el STACK, la BASE DE DATOS y la ARQUITECTURA elegidos (runtime, base de datos, tareas en segundo plano si aplican).
 - Si la METODOLOGÍA usa iteraciones cortas, menciona preview deployments / CI con GitHub Actions.
 - En cons indica el límite concreto del free tier que más afectaría a este proyecto.
@@ -418,23 +425,6 @@ ${optionFields("servicios o herramientas de deploy")}
 - steps: 3-4 pasos cortos y en orden para publicar el proyecto la primera vez (máx. 12 palabras cada uno, empezando con un verbo: "Sube el código a GitHub", "Conecta el repo en Vercel"...).
 - cost: costo mensual estimado para este proyecto con el plan gratuito, en una frase corta (p. ej. "$0 / mes hasta 100 GB de tráfico").
 ${strobiFields("proud", "recordatorio de que el código que no está en GitHub no existe")}
-${rulesCommon()}
-${JSON_ONLY}
-`,
-
-  "ai-ecosystem": (b) => `
-${header("el AI Strategist", b)}
-DECISIONES PREVIAS:
-${buildDecisionContext(b, "ai-ecosystem")}
-
-Propón ${N} kits que combinen (a) modelos de IA útiles DENTRO del producto, si la idea los necesita, y (b) herramientas/copilots para acelerar su desarrollo, 2 por nivel.
-REGLAS:
-- Los copilots deben trabajar bien con el STACK y LENGUAJE elegidos.
-- Si la idea no necesita IA en el producto, dilo en summary y enfoca el kit en el desarrollo.
-- CONTEXTO: "academic" prioriza herramientas gratuitas o con plan educativo; "personal" costo cero; "startup" velocidad.
-CAMPOS:
-${optionFields("modelos o herramientas")}
-${strobiFields("celebrate", "acelerar sin perder el control del código")}
 ${rulesCommon()}
 ${JSON_ONLY}
 `,

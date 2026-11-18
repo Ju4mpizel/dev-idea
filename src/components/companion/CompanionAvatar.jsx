@@ -16,13 +16,13 @@ const STROBI_COLORS = [
   { id: "dark", label: "Obsidian Tech", hex: "#3f3f46" },
 ];
 
-/** Strobi en la cabecera: avatar + paleta de colores + burbuja de diálogo. */
+/** Dev-i en la cabecera: avatar + paleta de colores + burbuja de diálogo. */
 export function CompanionAvatar({
   size = 110,
   compact = false,
-  // Strobi tapado u oculto (panel abierto): se congela para no gastar CPU
+  // Dev-i tapado u oculto (panel abierto): se congela para no gastar CPU
   paused = false,
-  // Entrada de la página: Strobi aparece con un "pop" y luego habla
+  // Entrada de la página: Dev-i aparece con un "pop" y luego habla
   intro = false,
   className = "",
 }) {
@@ -80,7 +80,7 @@ export function CompanionAvatar({
         compact ? "flex-row" : "flex-col sm:flex-row"
       } items-center justify-center gap-3 sm:gap-6 select-none px-2 ${className}`}
     >
-      {/* Columna Strobi: tamaño estricto para evitar saltos horizontales */}
+      {/* Columna Dev-i: tamaño estricto para evitar saltos horizontales */}
       <div
         className={`${compact ? "w-[84px]" : "w-[120px]"} sm:w-[130px] shrink-0 flex flex-col items-center justify-center`}
       >
@@ -91,8 +91,8 @@ export function CompanionAvatar({
         <div
           title={
             isLoading
-              ? "Strobi está pensando..."
-              : "Haz clic para un consejo técnico de Strobi"
+              ? "Dev-i está pensando..."
+              : "Haz clic para un consejo técnico de Dev-i"
           }
           className={`transition-transform ${
             isLoading ? "cursor-wait" : "hover:scale-105 active:scale-95"
@@ -120,7 +120,7 @@ export function CompanionAvatar({
               type="button"
               onClick={() => setStrobiColor(c.hex)}
               title={c.label}
-              aria-label={`Color de Strobi: ${c.label}`}
+              aria-label={`Color de Dev-i: ${c.label}`}
               className={`${introClass(intro, "intro-dot")} w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-transform cursor-pointer ${
                 color === c.hex
                   ? "scale-125 ring-2 ring-white/90"
@@ -132,7 +132,7 @@ export function CompanionAvatar({
         </div>
       </div>
 
-      {/* Columna Burbuja: ancho fijo en escritorio para fijar la posición de Strobi */}
+      {/* Columna Burbuja: ancho fijo en escritorio para fijar la posición de Dev-i */}
       <motion.div
         layout
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}

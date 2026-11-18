@@ -52,6 +52,7 @@ export async function syncProjectToCloud({
   generatedOptions = {},
   currentStep = 0,
   isCompleted = false,
+  ideaRunId = null,
 }) {
   const headers = await getAuthHeaders();
   // Modo local: sin sesión no escribe en la nube
@@ -62,6 +63,7 @@ export async function syncProjectToCloud({
     generatedOptions,
     currentStep,
     isCompleted,
+    ideaRunId,
   });
 
   if (projectId) {
@@ -165,6 +167,91 @@ export async function fetchTestProject() {
   const body = await readJsonSafe(res);
   if (!res.ok || !body.data) {
     throw new Error(body.error || "No se pudo cargar el proyecto de prueba");
+  }
+  return body.data;
+}
+
+// ==========================================
+// GENERACIÓN CON IA Y CUPO DE IDEAS
+// ==========================================
+
+/** Error de la API con su status y cuerpo (p. ej. 429 con el cupo). */
+export class ApiError extends Error {
+  constructor(message, status, body = {}) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = body.code || null;
+    this.body = body;
+  }
+}
+
+/**
+ * Sesión vencida o revocada (401): se cierra la sesión local y la portada
+ * vuelve a pedir el login. El mapa del navegador no se borra.
+ */
+async function handleUnauthorized(res) {
+  if (res.status === 401) {
+    await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+  }
+}
+
+/** Cupo de ideas del usuario: { unlimited, used, limit, nextFreeAt }. */
+export async function fetchIdeaQuota() {
+  const headers = await getAuthHeaders();
+  if (!headers.Authorization) return null;
+  const res = await fetch("/api/idea-runs", { headers });
+  const body = await readJsonSafe(res);
+  if (!res.ok) {
+    await handleUnauthorized(res);
+    throw new ApiError(body.error || "No se pudo leer tu cupo.", res.status, body);
+  }
+  return body;
+}
+
+/**
+ * Abre una idea nueva (ticket). Lanza ApiError 429 (`code: "IDEA_LIMIT"`) si
+ * no queda cupo; su `body` trae `nextFreeAt`.
+ * @returns {Promise<{ ideaRunId: string|null, unlimited: boolean, used: number, limit: number|null, nextFreeAt: string|null }>}
+ */
+export async function claimIdeaRun(idea, context) {
+  const headers = await getAuthHeaders();
+  const res = await fetch("/api/idea-runs", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ idea, context }),
+  });
+  const body = await readJsonSafe(res);
+  if (!res.ok) {
+    await handleUnauthorized(res);
+    throw new ApiError(body.error || "No se pudo abrir la idea.", res.status, body);
+  }
+  return body;
+}
+
+/** Pide a la IA las cartas de una estación (con sesión y ticket de idea). */
+export async function requestStepGeneration({
+  stepId,
+  blueprint,
+  extras,
+  ideaRunId,
+  signal,
+}) {
+  const headers = await getAuthHeaders();
+  const res = await fetch("/api/generate-step", {
+    method: "POST",
+    signal,
+    headers,
+    body: JSON.stringify({ stepId, blueprint, extras, ideaRunId }),
+  });
+  const body = await readJsonSafe(res);
+  if (!res.ok || !body.success) {
+    await handleUnauthorized(res);
+    throw new ApiError(
+      body.error || "No se pudo generar la propuesta técnica.",
+      res.status,
+      body,
+    );
   }
   return body.data;
 }

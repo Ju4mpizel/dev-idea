@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getRequestUser, isUuid, serverError } from "@/lib/supabaseServer";
 import {
   LAST_STEP,
   blueprintToDbRow,
@@ -9,31 +9,14 @@ import {
 const clampStep = (step) =>
   Math.min(Math.max(Number(step) || 0, 0), LAST_STEP);
 
-function getSupabaseServer(req) {
-  const authHeader = req.headers.get("authorization");
-  const token = authHeader?.replace("Bearer ", "");
-
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      global: {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      },
-    },
-  );
-}
+const toIdeaRunId = (value) => (isUuid(value) ? value : null);
 
 // GET: Obtiene proyectos del usuario autenticado
 export async function GET(req) {
   try {
-    const supabase = getSupabaseServer(req);
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, supabase } = await getRequestUser(req);
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json(
         { error: "No autorizado. Sesión no válida o ausente." },
         { status: 401 },
@@ -46,28 +29,21 @@ export async function GET(req) {
       .order("updated_at", { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return serverError("projects", error);
     }
 
     return NextResponse.json({ data: projects }, { status: 200 });
   } catch (err) {
-    return NextResponse.json(
-      { error: "Error interno del servidor", details: err.message },
-      { status: 500 },
-    );
+    return serverError("projects", err);
   }
 }
 
 // POST: Crea un nuevo proyecto con su blueprint
 export async function POST(req) {
   try {
-    const supabase = getSupabaseServer(req);
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { user, supabase } = await getRequestUser(req);
 
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json(
         { error: "No autorizado. Inicia sesión para guardar." },
         { status: 401 },
@@ -80,6 +56,7 @@ export async function POST(req) {
       generatedOptions,
       currentStep = 0,
       isCompleted = false,
+      ideaRunId,
     } = body;
 
     if (!blueprint) {
@@ -103,13 +80,14 @@ export async function POST(req) {
           title,
           status,
           current_step: clampStep(currentStep),
+          idea_run_id: toIdeaRunId(ideaRunId),
         },
       ])
       .select("id")
       .single();
 
     if (pError) {
-      return NextResponse.json({ error: pError.message }, { status: 500 });
+      return serverError("projects", pError);
     }
 
     // 2. Insertar en blueprints
@@ -132,7 +110,7 @@ export async function POST(req) {
       if (rollbackError) {
         console.error("[API projects] Rollback fallido:", rollbackError);
       }
-      return NextResponse.json({ error: bError.message }, { status: 500 });
+      return serverError("projects", bError);
     }
 
     return NextResponse.json(
@@ -140,9 +118,6 @@ export async function POST(req) {
       { status: 201 },
     );
   } catch (err) {
-    return NextResponse.json(
-      { error: "Error interno del servidor", details: err.message },
-      { status: 500 },
-    );
+    return serverError("projects", err);
   }
 }

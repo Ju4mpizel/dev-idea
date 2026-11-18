@@ -86,8 +86,8 @@ export function TestProjectToggle({ onLoad }) {
           </p>
           <p className="text-[11px] text-neutral-400 leading-snug">
             {isTestProject
-              ? "Activo: “Reservalo” con todo decidido hasta el Layout. No se guarda en la nube."
-              : "Carga “Reservalo” con todo decidido hasta el Layout y salta directo al Deploy."}
+              ? "Activo: “Reservalo” con todo decidido hasta el Deploy y la galería de IA abierta. No se guarda en la nube."
+              : "Carga al instante “Reservalo” hasta el Deploy y abre la estación 13 (Ecosistema de IA). Sin usar créditos de IA."}
           </p>
           {error && <p className="text-[11px] text-red-400 mt-1">{error}</p>}
         </div>

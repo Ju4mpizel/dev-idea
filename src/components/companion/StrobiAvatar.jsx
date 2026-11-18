@@ -7,7 +7,7 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
 
 /**
  * Animaciones propias con UNA sola expresión (las de serie recorren varias
- * caras en bucle). Siguen parpadeando, así Strobi no parece congelado.
+ * caras en bucle). Siguen parpadeando, así Dev-i no parece congelado.
  * - "focused-thinking": mirando hacia arriba, concentrado (mientras genera).
  * - "explaining": atento mirando hacia la estación (panel "¿Qué es?").
  * - "reviewing": mirando hacia abajo, repasando tu plano (panel "Mi plano").
@@ -46,7 +46,7 @@ function withFixedAnimations(base) {
 const AVATAR_DEFINITION = withFixedAnimations(baseAvatarDefinition);
 
 /**
- * Avatar procedural de Strobi (sin burbuja ni paleta).
+ * Avatar procedural de Dev-i (sin burbuja ni paleta).
  * Lo usan la cabecera (CompanionAvatar) y el panel "¿Qué es...?".
  * El color vive en el store para que sea el mismo en ambos sitios.
  */
@@ -57,7 +57,7 @@ export function StrobiAvatar({
   onClick,
   // Expresión puntual (p. ej. al hacer clic); null = la del ánimo actual
   expression = null,
-  // Congela la animación (Strobi oculto/tapado o mientras entra en escena)
+  // Congela la animación (Dev-i oculto/tapado o mientras entra en escena)
   paused = false,
 }) {
   const containerRef = useRef(null);
@@ -127,7 +127,7 @@ export function StrobiAvatar({
       });
       syncPlayback();
     } catch (err) {
-      console.error("[Strobi] Error al montar avatar:", err);
+      console.error("[Dev-i] Error al montar avatar:", err);
     }
     return () => {
       const instance = instanceRef.current;
@@ -156,7 +156,7 @@ export function StrobiAvatar({
     }
   }, [expression]);
 
-  // Pestaña oculta o Strobi fuera de pantalla (al hacer scroll): en pausa
+  // Pestaña oculta o Dev-i fuera de pantalla (al hacer scroll): en pausa
   useEffect(() => {
     document.addEventListener("visibilitychange", syncPlayback);
     const container = containerRef.current;
@@ -177,7 +177,7 @@ export function StrobiAvatar({
   return (
     <div
       onClick={onClick}
-      // Capa propia: redibujar a Strobi no repinta la cabecera entera
+      // Capa propia: redibujar a Dev-i no repinta la cabecera entera
       style={{ width: size, height: size, contain: "layout paint" }}
       className={`flex items-center justify-center will-change-transform ${onClick ? "cursor-pointer" : ""} ${className}`}
     >

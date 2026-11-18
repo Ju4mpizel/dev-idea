@@ -22,13 +22,16 @@ export function CloudSyncBadge({ compact = false }) {
 
   if (isTestProject) {
     return (
+      // En la barra de la estación va compacta: solo ícono (+ "Prueba" en
+      // pantallas muy anchas) para no cortar el título de la estación
       <span
         title="Proyecto de prueba: no se guarda en la nube"
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-[11px] font-mono text-amber-300 bg-amber-950/40 border border-amber-900/60 shrink-0"
+        aria-label="Proyecto de prueba: no se guarda en la nube"
+        className="flex items-center gap-1 px-1.5 py-1 rounded-lg text-[11px] font-mono text-amber-300 bg-amber-950/40 border border-amber-900/60 shrink-0"
       >
         <FlaskConical className="w-3.5 h-3.5" />
-        <span className={compact ? "hidden md:inline" : ""}>
-          Prueba · sin guardar
+        <span className={compact ? "hidden xl:inline" : ""}>
+          {compact ? "Prueba" : "Prueba · sin guardar"}
         </span>
       </span>
     );

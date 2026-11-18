@@ -241,7 +241,6 @@ const OPTIONS_SCHEMA = {
       cost: STRING,
     }),
   },
-  "ai-ecosystem": { key: "options", items: object(OPTION_FIELDS) },
 };
 
 const COMPANION_FIELDS = {

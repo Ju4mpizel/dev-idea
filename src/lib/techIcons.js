@@ -158,6 +158,9 @@ import {
   siUptimekuma,
   siGoogleplay,
   siAppstore,
+  // Herramientas de IA
+  siOpencode,
+  siDeepseek,
 } from "simple-icons";
 
 /** Alias en minúsculas y sin símbolos -> ícono. */
@@ -329,6 +332,8 @@ const ALIASES = [
   [siUptimekuma, ["uptimekuma"]],
   [siGoogleplay, ["googleplay", "playstore", "googleplaystore"]],
   [siAppstore, ["appstore", "applestore"]],
+  [siOpencode, ["opencode"]],
+  [siDeepseek, ["deepseek"]],
 ];
 
 const normalize = (name) =>

@@ -1,6 +1,6 @@
 /**
  * Guías "¿Qué es...?" de cada estación (botón de info junto al título).
- * Strobi las explica a su lado. Contenido pensado para quien empieza: concepto
+ * Dev-i las explica a su lado. Contenido pensado para quien empieza: concepto
  * en simple, una analogía, ideas clave, dónde se ve en la universidad y en la
  * industria, y un consejo práctico.
  */
@@ -9,8 +9,7 @@ export const STATION_GUIDES = {
     question: "¿Por qué importa el nombre de un proyecto?",
     concept:
       "El nombre es la primera documentación de tu software: lo usarás en el repositorio, en el dominio, en las carpetas y al presentarlo.",
-    analogy:
-      "Es como el título de un libro: si no dice nada, nadie lo abre.",
+    analogy: "Es como el título de un libro: si no dice nada, nadie lo abre.",
     keyPoints: [
       "Corto, fácil de pronunciar y de escribir sin errores.",
       "Revisa que el dominio y el nombre en GitHub estén libres.",
@@ -99,7 +98,8 @@ export const STATION_GUIDES = {
       "BaaS (Supabase, Firebase): base de datos + login + API ya hechos.",
       "ORM: librería que traduce tablas a objetos de tu lenguaje (Prisma, Eloquent).",
     ],
-    university: "Bases de Datos I y II, modelo entidad-relación, normalización.",
+    university:
+      "Bases de Datos I y II, modelo entidad-relación, normalización.",
     industry: "Postgres gestionado (Supabase, Neon), Redis como caché.",
     tip: "Si eliges base de datos, en Diagramas aparecerá el diagrama entidad-relación.",
   },
@@ -165,7 +165,8 @@ export const STATION_GUIDES = {
       "Cada carta de esta estación se ve con su propio estilo.",
     ],
     university: "Interacción Humano-Computador (IHC), diseño de interfaces.",
-    industry: "Design systems: Tailwind, shadcn/ui, Material, tokens de diseño.",
+    industry:
+      "Design systems: Tailwind, shadcn/ui, Material, tokens de diseño.",
     tip: "Elegir el estilo temprano evita rediseñar componentes después.",
   },
   layout: {
@@ -201,21 +202,22 @@ export const STATION_GUIDES = {
     tip: "Sube tu código a GitHub desde el primer día.",
   },
   "ai-ecosystem": {
-    question: "¿Qué es el ecosistema de IA de un proyecto?",
+    question: "¿Qué herramientas de IA me ayudan a programar?",
     concept:
-      "Son las herramientas de inteligencia artificial que usarás: modelos que viven DENTRO de tu producto y asistentes que te ayudan a PROGRAMARLO.",
+      "Son asistentes que te ayudan a escribir, entender y corregir el código de tu proyecto: desde un chat al que le preguntas hasta agentes que trabajan solos sobre tu repositorio.",
     analogy:
-      "Es contratar un asistente: uno atiende a tus clientes y otro te ayuda a ti en el taller.",
+      "Es elegir compañero de taller: uno te explica cómo se hace, otro te pasa las herramientas y otro arma piezas enteras mientras tú revisas.",
     keyPoints: [
-      "LLM: modelo de lenguaje (Gemini, Claude, GPT) que entiende y genera texto.",
-      "Copilot: asistente dentro de tu editor que sugiere y escribe código.",
+      "Chat: le preguntas y copias el código a mano (ChatGPT, Claude, Gemini).",
+      "Editor con IA: sugiere código mientras escribes (Cursor, Copilot).",
+      "Agente: lee tu repo, edita varios archivos y corre comandos (Claude Code, Codex, OpenCode).",
       "AGENTS.md: archivo con el contexto del proyecto para que la IA no improvise.",
     ],
     university: "Inteligencia artificial, ética y uso responsable de IA.",
-    industry: "Claude Code, Cursor, GitHub Copilot, APIs de modelos.",
+    industry:
+      "Claude Code, Codex, OpenCode, Antigravity, Cursor y GitHub Copilot.",
     tip: "La IA acelera, pero tú debes entender y revisar cada línea.",
   },
 };
 
-export const getStationGuide = (stationId) =>
-  STATION_GUIDES[stationId] || null;
+export const getStationGuide = (stationId) => STATION_GUIDES[stationId] || null;

@@ -39,6 +39,7 @@ async function saveSnapshot() {
       blueprint: state.blueprint,
       generatedOptions: state.generatedOptions,
       currentStep: state.currentStep,
+      ideaRunId: state.ideaRunId,
       isCompleted: highest >= LAST_STEP,
     });
     const latest = useDecisionStore.getState();

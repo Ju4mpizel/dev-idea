@@ -18,32 +18,76 @@ import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
 import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
 import { getStation } from "@/config/stations.config";
 import { supabase } from "@/lib/supabaseClient";
-import { signInWithGoogle, signOut } from "@/services/projectService";
-import { LogIn, LogOut, CheckCircle2 } from "lucide-react";
+import { signOut } from "@/services/projectService";
+import { LogOut } from "lucide-react";
+import { LandingPage } from "@/components/landing/LandingPage";
 
 // Espacio que el contenido cede a cada panel lateral (ancho del panel + margen)
 const INFO_PANEL_SPACE = 360;
 const MAP_PANEL_SPACE = 340;
 
+/**
+ * Puerta de sesión: sin sesión se muestra la portada (login con Google, que es
+ * requisito para generar con IA); con sesión, la app desde la Estación 0 o
+ * donde quedó el mapa. Mientras se lee la sesión, una pantalla neutra evita
+ * que la portada parpadee.
+ */
 export default function HomePage() {
+  const currentUser = useDecisionStore((state) => state.currentUser);
+  const setCurrentUser = useDecisionStore((state) => state.setCurrentUser);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    // INITIAL_SESSION llega enseguida (sesión guardada o null) y luego cada cambio
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user || null);
+      setAuthReady(true);
+    });
+
+    // Valida el token con Supabase: si fue revocado, se cierra la sesión local
+    supabase.auth.getUser().then(({ error }) => {
+      if (error?.status === 401 || error?.status === 403) {
+        supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setCurrentUser]);
+
+  if (!authReady) {
+    return (
+      <main className="min-h-[100dvh] w-full grid place-items-center bg-neutral-950">
+        <DevIdeaLogo
+          variant="icon"
+          height={40}
+          className="text-neutral-700 animate-pulse"
+          aria-label="Cargando Dev.Idea"
+        />
+      </main>
+    );
+  }
+
+  return currentUser ? <AppShell /> : <LandingPage />;
+}
+
+function AppShell() {
   const currentStep = useDecisionStore((state) => state.currentStep);
   const isRouteMapOpen = useDecisionStore((state) => state.isRouteMapOpen);
   const currentUser = useDecisionStore((state) => state.currentUser);
-  const setCurrentUser = useDecisionStore((state) => state.setCurrentUser);
   const cloudProjectId = useDecisionStore((state) => state.cloudProjectId);
   const setCloudProjectId = useDecisionStore(
     (state) => state.setCloudProjectId,
   );
-  const setCompanion = useDecisionStore((state) => state.setCompanion);
+  const setIdeaQuota = useDecisionStore((state) => state.setIdeaQuota);
   const infoStationId = useDecisionStore((state) => state.infoStationId);
   const closeStationInfo = useDecisionStore((state) => state.closeStationInfo);
   const isCategoriesOpen = useDecisionStore((state) => state.isCategoriesOpen);
   const isPlanPanelOpen = useDecisionStore((state) => state.isPlanOpen);
   const closePlan = useDecisionStore((state) => state.closePlan);
 
-  const [toastMessage, setToastMessage] = useState(null);
-
-  // Entrada de la página: navbar, logo dibujándose, Strobi con "pop"...
+  // Entrada de la página: navbar, logo dibujándose, Dev-i con "pop"...
   const intro = useIntro();
 
   // Capa de GPU solo mientras se animan (fija dejaba el texto borroso)
@@ -54,7 +98,7 @@ export default function HomePage() {
   // Con sesión iniciada, cada cambio del mapa se guarda solo en Supabase
   useCloudAutosave();
 
-  // Escape cierra la explicación de Strobi o "Mi plano"
+  // Escape cierra la explicación de Dev-i o "Mi plano"
   useEffect(() => {
     if (!infoStationId && !isPlanPanelOpen) return undefined;
     const onKey = (e) => {
@@ -66,43 +110,25 @@ export default function HomePage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [infoStationId, isPlanPanelOpen, closeStationInfo, closePlan]);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUser(user || null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [setCurrentUser]);
-
+  // Al cerrar sesión la puerta vuelve a la portada
   const handleSignOut = async () => {
     try {
       await signOut();
       setCloudProjectId(null);
-      setCompanion(
-        "idle",
-        "Sesión cerrada. Ahora estamos en modo memoria local.",
-      );
-      setToastMessage("Has cerrado sesión. Modo local activado.");
-      setTimeout(() => setToastMessage(null), 3500);
+      setIdeaQuota(null);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Paneles laterales (Strobi / mapa a la derecha, categorías a la izquierda):
+  // Paneles laterales (Dev-i / mapa a la derecha, categorías a la izquierda):
   // al abrirse, el contenido se desliza y les deja sitio (animación de empuje).
   // La cabecera mantiene su altura, así el empuje es solo horizontal.
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isWide = useMediaQuery("(min-width: 1280px)");
   const isInfoOpen = Boolean(infoStationId) && currentStep > 0;
   const isPlanOpen = isPlanPanelOpen && currentStep > 0;
-  // Strobi sale de la cabecera para ir a un panel ("¿Qué es?" o "Mi plano")
+  // Dev-i sale de la cabecera para ir a un panel ("¿Qué es?" o "Mi plano")
   const isStrobiAway = isInfoOpen || isPlanOpen;
   const sidePanelSpace =
     isStrobiAway && isWide
@@ -110,7 +136,7 @@ export default function HomePage() {
       : isRouteMapOpen && currentStep > 0 && isDesktop
         ? MAP_PANEL_SPACE
         : 0;
-  // Strobi de la cabecera oculto o tapado por un panel: se congela
+  // Dev-i de la cabecera oculto o tapado por un panel: se congela
   const isStrobiCovered =
     isStrobiAway ||
     (isRouteMapOpen && currentStep > 0 && !isDesktop) ||
@@ -138,22 +164,6 @@ export default function HomePage() {
 
       {/* Resplandor ambiental */}
       <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-[600px] lg:w-[800px] h-[300px] bg-neutral-800/15 blur-[120px] pointer-events-none rounded-full" />
-
-      {/* Toast Flotante */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-14 sm:top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 sm:px-4 py-2 rounded-2xl bg-neutral-900/90 border border-neutral-800 text-neutral-200 text-[11px] sm:text-xs font-mono shadow-2xl backdrop-blur-xl w-[90%] max-w-sm justify-center"
-          >
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="truncate">{toastMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Header Fijo */}
       <header
@@ -226,22 +236,7 @@ export default function HomePage() {
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </motion.div>
-              ) : (
-                <motion.button
-                  key="btn-login"
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={{ duration: 0.2 }}
-                  type="button"
-                  onClick={signInWithGoogle}
-                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 text-xs font-medium transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap"
-                >
-                  <LogIn className="w-3.5 h-3.5 shrink-0" />
-                  <span className="hidden xs:inline">Iniciar con Google</span>
-                  <span className="xs:hidden">Entrar</span>
-                </motion.button>
-              )}
+              ) : null}
             </AnimatePresence>
           </div>
         </div>
@@ -250,10 +245,10 @@ export default function HomePage() {
       {/* Mapa lateral modal/panel */}
       <StationBreadcrumb />
 
-      {/* Explicación "¿Qué es...?" con Strobi al lado de la estación */}
+      {/* Explicación "¿Qué es...?" con Dev-i al lado de la estación */}
       <StationInfoPanel />
 
-      {/* 💡 Mi plano: lo decidido hasta ahora, con Strobi */}
+      {/* 💡 Mi plano: lo decidido hasta ahora, con Dev-i */}
       <ProjectPlanPanel />
 
       {/* Tabla de categorías de la estación, a la izquierda */}
@@ -267,9 +262,9 @@ export default function HomePage() {
         className="relative z-10 flex-1 w-full flex flex-col"
       >
       <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-5 flex flex-col items-center justify-start gap-3 sm:gap-5">
-        {/* Cabecera: Strobi y el nombre de la estación comparten la MISMA celda
+        {/* Cabecera: Dev-i y el nombre de la estación comparten la MISMA celda
             de la grilla, así su altura no cambia al abrir "¿Qué es?" y las
-            cartas no pegan un tirón. Mientras Strobi explica a un lado, en su
+            cartas no pegan un tirón. Mientras Dev-i explica a un lado, en su
             hueco queda el nombre de la estación en gris. */}
         <section className="shrink-0 w-full grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1">
           <motion.div
@@ -284,7 +279,7 @@ export default function HomePage() {
             className={`w-full flex justify-center ${isStrobiAway ? "pointer-events-none" : ""}`}
             aria-hidden={isStrobiAway || undefined}
           >
-            {/* En las estaciones Strobi es más compacto para dejar sitio al mazo */}
+            {/* En las estaciones Dev-i es más compacto para dejar sitio al mazo */}
             <CompanionAvatar
               // Clase fija: si cambiara al volver a la estación 0, el pop se repetiría
               intro={intro}
