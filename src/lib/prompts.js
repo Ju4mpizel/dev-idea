@@ -411,8 +411,12 @@ REGLAS:
 - Cada plan soporta REALMENTE el STACK, la BASE DE DATOS y la ARQUITECTURA elegidos (runtime, base de datos, tareas en segundo plano si aplican).
 - Si la METODOLOGÍA usa iteraciones cortas, menciona preview deployments / CI con GitHub Actions.
 - En cons indica el límite concreto del free tier que más afectaría a este proyecto.
+- El repositorio SIEMPRE es GitHub (role "repo"); el resto de servicios deben ser reales y con plan gratuito vigente.
 CAMPOS:
 ${optionFields("servicios o herramientas de deploy")}
+- providers: 2-4 servicios que forman el plan, el principal primero. Cada uno con name (nombre oficial, p. ej. "Vercel", "Render", "Neon", "Supabase", "GitHub", "GitHub Actions", "Docker", "Google Cloud Run") y role: hosting (lo publica todo), frontend, backend, database, repo, ci o storage.
+- steps: 3-4 pasos cortos y en orden para publicar el proyecto la primera vez (máx. 12 palabras cada uno, empezando con un verbo: "Sube el código a GitHub", "Conecta el repo en Vercel"...).
+- cost: costo mensual estimado para este proyecto con el plan gratuito, en una frase corta (p. ej. "$0 / mes hasta 100 GB de tráfico").
 ${strobiFields("proud", "recordatorio de que el código que no está en GitHub no existe")}
 ${rulesCommon()}
 ${JSON_ONLY}

@@ -150,6 +150,33 @@ export const useDecisionStore = create(
       blueprint: createInitialBlueprint(),
       generatedOptions: {},
 
+      // Proyecto de prueba (herramientas de desarrollo): nunca se sube a la nube
+      isTestProject: false,
+      loadTestProject: ({ blueprint, generatedOptions }) => {
+        abortActiveRequest();
+        set({
+          isTestProject: true,
+          currentStep: 0,
+          currentIdeaDraft: "",
+          cloudProjectId: null,
+          cloudSyncStatus: "idle",
+          cloudSyncError: null,
+          isMapCardActive: false,
+          isRouteMapOpen: false,
+          infoStationId: null,
+          isPlanOpen: false,
+          isLoading: false,
+          apiError: null,
+          blueprint: createInitialBlueprint(blueprint),
+          generatedOptions: normalizeAllOptions(
+            toIdKeyedOptions(generatedOptions),
+          ),
+          companionMood: "proud",
+          companionDialogue:
+            "Proyecto de prueba cargado: decisiones listas hasta el Layout. Vamos al deploy.",
+        });
+      },
+
       // Control del mapa en memoria (Estación 0)
       isMapCardActive: false,
       toggleMapCard: () =>
@@ -279,6 +306,7 @@ export const useDecisionStore = create(
         );
 
         set({
+          isTestProject: false,
           cloudProjectId: project.id,
           currentStep: targetStep,
           isMapCardActive: false,
@@ -294,6 +322,7 @@ export const useDecisionStore = create(
       startNewMap: (newIdea, context = "startup") => {
         abortActiveRequest();
         set({
+          isTestProject: false,
           currentStep: 0,
           currentIdeaDraft: "",
           cloudProjectId: null,
@@ -315,6 +344,7 @@ export const useDecisionStore = create(
       clearAllMemory: () => {
         abortActiveRequest();
         set({
+          isTestProject: false,
           currentStep: 0,
           currentIdeaDraft: "",
           cloudProjectId: null,
@@ -375,6 +405,7 @@ export const useDecisionStore = create(
         generatedOptions: state.generatedOptions,
         cloudProjectId: state.cloudProjectId,
         strobiColor: state.strobiColor,
+        isTestProject: state.isTestProject,
       }),
     },
   ),

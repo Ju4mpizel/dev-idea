@@ -15,8 +15,9 @@ import { SkeletonFormStation0 } from "@/components/ui/SkeletonCard";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
 import { Cloud, HardDrive, Trash2 } from "lucide-react";
 import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
+import { TestProjectToggle } from "@/components/dev/TestProjectToggle";
 
-export function IdeaStation({ onStartNew, onResumeSaved }) {
+export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
   const blueprint = useDecisionStore((state) => state.blueprint);
   const updateBlueprint = useDecisionStore((state) => state.updateBlueprint);
   const currentIdeaDraft = useDecisionStore((state) => state.currentIdeaDraft);
@@ -440,6 +441,9 @@ export function IdeaStation({ onStartNew, onResumeSaved }) {
           </motion.aside>
         )}
       </AnimatePresence>
+
+      {/* Herramienta de desarrollo: solo cuentas autorizadas en el servidor */}
+      {onLoadTestProject && <TestProjectToggle onLoad={onLoadTestProject} />}
 
       <ConfirmModal
         isOpen={Boolean(projectToDelete)}

@@ -11,6 +11,7 @@
 import { resolveStation } from "@/config/stations.config";
 import {
   DATABASE_TYPES,
+  DEPLOY_ROLES,
   DIAGRAM_AUDIENCES,
   DIAGRAM_CATEGORIES,
   DIAGRAM_TYPES,
@@ -175,7 +176,42 @@ function normalizeOption(raw, stationId) {
     option.styleKey = str(raw.styleKey).toLowerCase();
   }
 
+  if (stationId === "deploy") {
+    option.providers = normalizeProviders(raw.providers, option.techs);
+    option.steps = strList(raw.steps).slice(0, 4);
+    option.cost = str(raw.cost, "$0 / mes");
+  }
+
   return option;
+}
+
+/**
+ * Servicios de un plan de deploy: nombre + papel, sin duplicados y como máximo 4.
+ * Si Gemini no los manda, se deducen de `techs`. GitHub siempre está: el código
+ * de todo plan vive en un repositorio (el lema de la estación).
+ */
+function normalizeProviders(rawProviders, techs = []) {
+  const seen = new Set();
+  const providers = [];
+  const add = (name, role) => {
+    const key = name.toLowerCase();
+    if (!name || seen.has(key)) return;
+    seen.add(key);
+    providers.push({ name, role: oneOf(role, DEPLOY_ROLES, "hosting") });
+  };
+
+  (Array.isArray(rawProviders) ? rawProviders : []).forEach((p) => {
+    if (isObject(p)) add(str(p.name), p.role);
+    else add(str(p), "hosting");
+  });
+  if (!providers.length) techs.slice(0, 2).forEach((t) => add(t, "hosting"));
+
+  const hasRepo = providers.some(
+    (p) => p.role === "repo" || /git(hub|lab)/i.test(p.name),
+  );
+  const list = providers.slice(0, hasRepo ? 4 : 3);
+  if (!hasRepo) list.push({ name: "GitHub", role: "repo" });
+  return list;
 }
 
 /**
@@ -201,7 +237,10 @@ function normalizeLayoutOptions(rawItems, blueprint) {
     const ranking = [];
     (Array.isArray(raw.ranking) ? raw.ranking : []).forEach((r) => {
       const layoutId = str(isObject(r) ? r.layoutId : r).toLowerCase();
-      if (catalog.includes(layoutId) && !ranking.some((x) => x.layoutId === layoutId)) {
+      if (
+        catalog.includes(layoutId) &&
+        !ranking.some((x) => x.layoutId === layoutId)
+      ) {
         ranking.push({ layoutId, reason: isObject(r) ? str(r.reason) : "" });
       }
     });
@@ -240,7 +279,10 @@ function normalizeLayoutOptions(rawItems, blueprint) {
 
   // Mismo orden que las superficies del proyecto
   const items = [...fromModel, ...missing];
-  if (allowed) items.sort((a, b) => allowed.indexOf(a.surface) - allowed.indexOf(b.surface));
+  if (allowed)
+    items.sort(
+      (a, b) => allowed.indexOf(a.surface) - allowed.indexOf(b.surface),
+    );
   return { items, provided: fromModel.length };
 }
 

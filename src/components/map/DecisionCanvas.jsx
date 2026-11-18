@@ -3,6 +3,7 @@
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStation } from "@/config/stations.config";
 import { normalizeStepResponse } from "@/lib/stepContracts";
+import { fetchTestProject } from "@/services/projectService";
 
 import { IdeaStation } from "./stations/IdeaStation";
 import { NamingStation } from "./stations/NamingStation";
@@ -12,6 +13,7 @@ import { StackStation } from "./stations/StackStation";
 import { SystemTypeStation } from "./stations/SystemTypeStation";
 import { LayoutStation } from "./stations/LayoutStation";
 import { DiagramsStation } from "./stations/DiagramsStation";
+import { DeployStation } from "./stations/DeployStation";
 import {
   DatabaseStation,
   MethodologyStation,
@@ -35,6 +37,7 @@ const STATION_COMPONENTS = {
   diagrams: DiagramsStation,
   morphism: MorphismStation,
   layout: LayoutStation,
+  deploy: DeployStation,
 };
 
 // Contador global de peticiones: permite ignorar aborts de peticiones ya
@@ -160,6 +163,13 @@ export function DecisionCanvas({ step: currentStep }) {
     requestStepAndNavigate(1, undefined, true);
   };
 
+  // Proyecto de prueba: decisiones hasta el Layout y generación real del Deploy
+  const handleLoadTestProject = async () => {
+    const project = await fetchTestProject();
+    useDecisionStore.getState().loadTestProject(project);
+    await requestStepAndNavigate(project.targetStep, {}, true);
+  };
+
   const handleResumeSaved = (targetStep) => {
     const stepToOpen =
       targetStep && targetStep > 0
@@ -210,6 +220,7 @@ export function DecisionCanvas({ step: currentStep }) {
         <IdeaStation
           onStartNew={handleStartNew}
           onResumeSaved={handleResumeSaved}
+          onLoadTestProject={handleLoadTestProject}
         />
       </div>
     );

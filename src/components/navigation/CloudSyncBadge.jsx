@@ -2,7 +2,13 @@
 
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { saveToCloudNow } from "@/hooks/useCloudAutosave";
-import { Cloud, CloudOff, RefreshCw, CheckCircle2 } from "lucide-react";
+import {
+  Cloud,
+  CloudOff,
+  RefreshCw,
+  CheckCircle2,
+  FlaskConical,
+} from "lucide-react";
 
 /**
  * Estado del autoguardado. Sin sesión indica "Solo local"; con error permite
@@ -12,6 +18,21 @@ export function CloudSyncBadge({ compact = false }) {
   const currentUser = useDecisionStore((s) => s.currentUser);
   const status = useDecisionStore((s) => s.cloudSyncStatus);
   const error = useDecisionStore((s) => s.cloudSyncError);
+  const isTestProject = useDecisionStore((s) => s.isTestProject);
+
+  if (isTestProject) {
+    return (
+      <span
+        title="Proyecto de prueba: no se guarda en la nube"
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-[11px] font-mono text-amber-300 bg-amber-950/40 border border-amber-900/60 shrink-0"
+      >
+        <FlaskConical className="w-3.5 h-3.5" />
+        <span className={compact ? "hidden md:inline" : ""}>
+          Prueba · sin guardar
+        </span>
+      </span>
+    );
+  }
 
   if (!currentUser) {
     return (

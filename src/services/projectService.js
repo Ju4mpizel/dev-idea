@@ -143,3 +143,28 @@ export async function deleteProjectFromCloud(projectId) {
 
   return true;
 }
+
+// ==========================================
+// HERRAMIENTAS DE DESARROLLO (cuentas autorizadas en el servidor)
+// ==========================================
+
+/** ¿La sesión actual puede usar las herramientas de desarrollo? */
+export async function checkDevToolsAccess() {
+  const headers = await getAuthHeaders();
+  if (!headers.Authorization) return false;
+  const res = await fetch("/api/dev-tools", { headers });
+  if (!res.ok) return false;
+  const { enabled } = await readJsonSafe(res);
+  return Boolean(enabled);
+}
+
+/** Proyecto de prueba completo hasta el Layout (403 si no está autorizado). */
+export async function fetchTestProject() {
+  const headers = await getAuthHeaders();
+  const res = await fetch("/api/dev-tools/test-project", { headers });
+  const body = await readJsonSafe(res);
+  if (!res.ok || !body.data) {
+    throw new Error(body.error || "No se pudo cargar el proyecto de prueba");
+  }
+  return body.data;
+}

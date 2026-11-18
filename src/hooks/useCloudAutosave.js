@@ -15,6 +15,8 @@ let queue = Promise.resolve();
 
 /** ¿Hay algo que valga la pena guardar? (una idea con al menos una estación) */
 function hasProgress(state) {
+  // El proyecto de prueba es solo local: nunca crea proyectos en Supabase
+  if (state.isTestProject) return false;
   return (
     Boolean(state.blueprint.idea?.trim()) &&
     Object.keys(state.generatedOptions).length > 0

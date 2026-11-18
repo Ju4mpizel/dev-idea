@@ -59,6 +59,17 @@ export const DATABASE_TYPES = [
   "embedded",
 ];
 
+/** Papel de cada servicio dentro de un plan de deploy. */
+export const DEPLOY_ROLES = [
+  "hosting",
+  "frontend",
+  "backend",
+  "database",
+  "repo",
+  "ci",
+  "storage",
+];
+
 export const STYLE_KEYS = [
   "minimalism",
   "glassmorphism",
@@ -77,7 +88,14 @@ export const STYLE_KEYS = [
  * descripciones y wireframes viven en src/data/layoutCatalog.js.
  */
 export const LAYOUT_IDS_BY_SURFACE = {
-  public: ["one-page", "zigzag", "f-pattern", "hero-media", "split-screen", "asymmetric"],
+  public: [
+    "one-page",
+    "zigzag",
+    "f-pattern",
+    "hero-media",
+    "split-screen",
+    "asymmetric",
+  ],
   content: ["magazine", "masonry", "article-sidebar"],
   store: ["product-grid", "product-detail", "checkout-steps"],
   app: ["sidebar-content", "topnav-views", "bento", "cards-grid"],
@@ -208,7 +226,21 @@ const OPTIONS_SCHEMA = {
       },
     }),
   },
-  deploy: { key: "options", items: object(OPTION_FIELDS) },
+  // Cada plan declara los servicios que lo componen (se muestran con su logo)
+  deploy: {
+    key: "options",
+    items: object({
+      ...OPTION_FIELDS,
+      providers: {
+        type: "ARRAY",
+        minItems: 2,
+        maxItems: 4,
+        items: object({ name: STRING, role: enumOf(DEPLOY_ROLES) }),
+      },
+      steps: { type: "ARRAY", items: STRING, minItems: 3, maxItems: 4 },
+      cost: STRING,
+    }),
+  },
   "ai-ecosystem": { key: "options", items: object(OPTION_FIELDS) },
 };
 
