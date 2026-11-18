@@ -210,7 +210,24 @@ const OPTIONS_SCHEMA = {
   },
   morphism: {
     key: "options",
-    items: object({ ...OPTION_FIELDS, styleKey: enumOf(STYLE_KEYS) }),
+    items: object({
+      ...OPTION_FIELDS,
+      styleKey: enumOf(STYLE_KEYS),
+      // 3 paletas pensadas para la idea y coherentes con el estilo (hex)
+      palettes: {
+        type: "ARRAY",
+        minItems: 3,
+        maxItems: 3,
+        items: object({
+          name: STRING,
+          primary: STRING,
+          secondary: STRING,
+          accent: STRING,
+          background: STRING,
+          text: STRING,
+        }),
+      },
+    }),
   },
   // Una opción por SUPERFICIE del sistema, con los layouts del catálogo ordenados
   layout: {
@@ -259,7 +276,35 @@ export function getResponseSchema(stationId, { count } = {}) {
       scaffold: object({
         projectName: STRING,
         techSummary: STRING,
-        commands: { type: "ARRAY", items: STRING, minItems: 1 },
+        commands: { type: "ARRAY", items: STRING, minItems: 3, maxItems: 6 },
+        // Árbol de carpetas inicial, coherente con stack y arquitectura
+        folders: {
+          type: "ARRAY",
+          minItems: 5,
+          maxItems: 12,
+          items: object({ path: STRING, purpose: STRING }),
+        },
+        // Entidades principales del modelo de datos (vacío si no hay base)
+        entities: {
+          type: "ARRAY",
+          minItems: 0,
+          maxItems: 6,
+          items: object({
+            name: STRING,
+            fields: { type: "ARRAY", items: STRING, minItems: 2, maxItems: 8 },
+          }),
+        },
+        // Hoja de ruta por entregas, según la metodología elegida
+        milestones: {
+          type: "ARRAY",
+          minItems: 3,
+          maxItems: 4,
+          items: object({
+            title: STRING,
+            goal: STRING,
+            tasks: { type: "ARRAY", items: STRING, minItems: 2, maxItems: 4 },
+          }),
+        },
       }),
     });
   }

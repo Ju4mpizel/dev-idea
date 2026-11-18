@@ -25,6 +25,11 @@ export function OptionStation({
   overrideDecision = null,
   // Contenido en el pie, junto a Confirmar (p. ej. "¿Ya tienes un nombre?")
   afterDeck = null,
+  // Bloque bajo el mazo según lo elegido (p. ej. las paletas del estilo)
+  belowDeck = null,
+  // Mazo más bajo ("compact") cuando hay contenido debajo
+  deckSize = "default",
+  getCardVersion,
   getKey = defaultGetKey,
   getLabel = (option) => option.title,
   // ¿La opción coincide con la decisión guardada? (para restaurar la selección)
@@ -161,6 +166,8 @@ export function OptionStation({
           onToggle={handleToggle}
           selection={station.selection}
           isLocked={isLockedHistory}
+          size={deckSize}
+          getCardVersion={getCardVersion}
           renderCard={(option, state) =>
             renderCard
               ? renderCard(option, { ...state, levelLabelOf })
@@ -186,6 +193,7 @@ export function OptionStation({
           }
         />
       )}
+      {belowDeck?.(selectedOptions, { isLocked: isLockedHistory })}
     </StationShell>
   );
 }

@@ -25,11 +25,13 @@ function swipeDirection({ offset, velocity }) {
  * el atenuado, así que no se vuelve a renderizar el contenido (que es lo caro).
  */
 const DeckCardContent = memo(
-  function DeckCardContent({ item, isSelected, isFront, isDimmed, renderCard }) {
+  // `version` no se usa al dibujar: solo invalida el memo
+  function DeckCardContent({ item, isSelected, isFront, isDimmed, renderCard, version }) {
     return renderCard(item, { isSelected, isFront, isDimmed });
   },
   (a, b) =>
     a.item === b.item &&
+    a.version === b.version &&
     a.isSelected === b.isSelected &&
     a.isFront === b.isFront &&
     a.isDimmed === b.isDimmed,
@@ -102,6 +104,9 @@ export function CardDeck({
   emptyMessage = "No hay opciones para mostrar.",
   // "compact": cartas más bajas para dejar sitio a contenido debajo del mazo
   size = "default",
+  // Cambia cuando el contenido de una carta depende de algo externo al item
+  // (p. ej. la paleta elegida para un estilo): fuerza a redibujarla
+  getCardVersion = () => "",
 }) {
   const cardSize = size === "compact" ? CARD_SIZE_COMPACT : CARD_SIZE;
   const fanHeight = size === "compact" ? FAN_HEIGHT_COMPACT : FAN_HEIGHT;
@@ -270,6 +275,7 @@ export function CardDeck({
                     isFront={isFront}
                     isDimmed={isDimmed}
                     renderCard={renderCard}
+                    version={getCardVersion(item)}
                   />
                   {/* Las laterales se oscurecen para leer solo la del centro */}
                   {!isFront && (

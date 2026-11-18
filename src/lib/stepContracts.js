@@ -9,6 +9,7 @@
  *   { companionMood, companionComment, scaffold: {...} }       (workspace)
  */
 import { resolveStation } from "@/config/stations.config";
+import { normalizePalettes } from "@/lib/palettes";
 import {
   DATABASE_TYPES,
   DEPLOY_ROLES,
@@ -173,6 +174,7 @@ function normalizeOption(raw, stationId) {
 
   if (stationId === "morphism") {
     option.styleKey = str(raw.styleKey).toLowerCase();
+    option.palettes = normalizePalettes(raw.palettes, option.styleKey);
   }
 
   if (stationId === "deploy") {
@@ -288,6 +290,7 @@ function normalizeLayoutOptions(rawItems, blueprint) {
 function normalizeScaffold(raw, blueprint = {}) {
   const scaffold = isObject(raw) ? raw : {};
   const commands = strList(scaffold.commands);
+  const list = (v) => (Array.isArray(v) ? v.filter(isObject) : []);
   return {
     ...scaffold,
     projectName:
@@ -295,6 +298,23 @@ function normalizeScaffold(raw, blueprint = {}) {
     techSummary:
       str(scaffold.techSummary) || blueprint.selectedStack?.title || "",
     commands: commands.length ? commands : ["pnpm install", "pnpm dev"],
+    // Campos nuevos: los proyectos guardados antes no los traen ([])
+    folders: list(scaffold.folders)
+      .map((f) => ({ path: str(f.path), purpose: str(f.purpose) }))
+      .filter((f) => f.path)
+      .slice(0, 14),
+    entities: list(scaffold.entities)
+      .map((e) => ({ name: str(e.name), fields: strList(e.fields).slice(0, 10) }))
+      .filter((e) => e.name)
+      .slice(0, 8),
+    milestones: list(scaffold.milestones)
+      .map((m) => ({
+        title: str(m.title),
+        goal: str(m.goal),
+        tasks: strList(m.tasks).slice(0, 5),
+      }))
+      .filter((m) => m.title)
+      .slice(0, 5),
   };
 }
 

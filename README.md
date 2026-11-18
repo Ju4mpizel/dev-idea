@@ -93,7 +93,7 @@ flowchart LR
 | 7 | **Arquitectura** | Patrones reales del stack elegido (MVC, MVT, capas, monolito modular, hexagonal...). | Única |
 | 8 | **Metodología** | Kanban, Scrum, Shape Up, XP, RUP... según equipo y contexto. | Única · ⏭️ omitible |
 | 9 | **Diagramas** | UML, C4, ERD, DFD, BPMN, wireflow, user journey... proporcionales al proyecto. | Múltiple |
-| 10 | **Estilo visual** | 6 lenguajes visuales; cada carta se ve con su propio estilo. | Única |
+| 10 | **Estilo visual** | 6 lenguajes visuales; cada carta se ve con su propio estilo y trae **3 paletas de color** pensadas para tu idea (con vista previa y contraste garantizado). | Única + paleta |
 | 11 | **Layout** | Una carta por cada parte del sistema (sitio público, panel admin, app…); al elegirla se despliegan sus **wireframes** (zig-zag, hero, tabla CRUD, maestro-detalle, bento…) con ⭐ en los que Gemini recomienda. | Uno por superficie |
 | 12 | **Deploy** | Planes con costo inicial $0 y el código en GitHub. | Única |
 | 13 | **Ecosistema IA** | Galería de herramientas para programar con IA (Claude Code, Codex, OpenCode, Antigravity, Cursor, chats...). Sin IA. | Múltiple · ⏭️ omitible |

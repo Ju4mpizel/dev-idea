@@ -53,7 +53,7 @@ const useIsClient = () =>
   );
 
 /** Logo de la herramienta: el oficial si existe, si no un ícono genérico. */
-function AiToolLogo({ tool, size }) {
+export function AiToolLogo({ tool, size }) {
   if (tool.icon && getTechIcon(tool.icon)) {
     return <TechIcon name={tool.icon} size={size} />;
   }

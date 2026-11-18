@@ -518,6 +518,11 @@ const RAW = {
         id: "morph-1",
         level: "simple",
         styleKey: "minimalism",
+        palettes: [
+          { name: "Lago sereno", primary: "#0e7490", secondary: "#0891b2", accent: "#f97316", background: "#f8fafc", text: "#0f172a" },
+          { name: "Muelle de madera", primary: "#92400e", secondary: "#b45309", accent: "#0284c7", background: "#fffbeb", text: "#1c1917" },
+          { name: "Grafito pro", primary: "#334155", secondary: "#475569", accent: "#22c55e", background: "#ffffff", text: "#0f172a" },
+        ],
         title: "Minimalismo claro",
         tag: "Confianza",
         summary: "Bordes finos, mucho aire y foco en el botón de reservar.",
@@ -530,6 +535,11 @@ const RAW = {
         id: "morph-2",
         level: "medium",
         styleKey: "aurora",
+        palettes: [
+          { name: "Laguna nocturna", primary: "#14b8a6", secondary: "#0ea5e9", accent: "#a3e635", background: "#04111d", text: "#e0f2fe" },
+          { name: "Amanecer en el agua", primary: "#f472b6", secondary: "#38bdf8", accent: "#facc15", background: "#0b1026", text: "#f8fafc" },
+          { name: "Bosque y río", primary: "#22c55e", secondary: "#0d9488", accent: "#fbbf24", background: "#06140f", text: "#ecfdf5" },
+        ],
         title: "Aurora acuática",
         tag: "Agua",
         summary: "Degradados verde agua y azul que evocan la laguna.",
@@ -542,6 +552,11 @@ const RAW = {
         id: "morph-3",
         level: "advanced",
         styleKey: "papercraft",
+        palettes: [
+          { name: "Bitácora de pesca", primary: "#2563eb", secondary: "#0d9488", accent: "#ea580c", background: "#fafaf9", text: "#1c1917" },
+          { name: "Arena y caña", primary: "#a16207", secondary: "#65a30d", accent: "#0369a1", background: "#fefce8", text: "#292524" },
+          { name: "Cuaderno azul", primary: "#1d4ed8", secondary: "#4f46e5", accent: "#e11d48", background: "#f8fafc", text: "#111827" },
+        ],
         title: "Papercraft amable",
         tag: "Cercano",
         summary: "Tarjetas apiladas con sombras suaves.",
@@ -776,6 +791,81 @@ const pickMany = (data, key, ids) =>
  * de IA) lista para armar el kit (queda sin decidir).
  * @returns {{ blueprint: object, generatedOptions: object, targetStep: number }}
  */
+/**
+ * Cierre ("¡A Trabajar!") de prueba: no forma parte de las cartas cargadas (el
+ * proyecto llega hasta la estación 13); lo sirve la generación simulada al
+ * avanzar a la estación 14.
+ */
+const WORKSPACE_RAW = {
+  companionMood: "celebrate",
+  companionComment:
+    "¡Plano terminado! Guarda el AGENTS.md en tu repo y arranca por la Semana 1.",
+  scaffold: {
+    projectName: "reservalo",
+    techSummary:
+      "Next.js con TypeScript y Supabase (Postgres + Auth + RLS), organizado como monolito modular por dominios (reservas, pagos y agenda) y publicado en Vercel desde GitHub.",
+    commands: [
+      "pnpm create next-app@latest reservalo --ts --tailwind --app --src-dir",
+      "cd reservalo",
+      "pnpm add @supabase/supabase-js zod",
+      "pnpm dlx supabase init",
+      "pnpm dev",
+    ],
+    folders: [
+      { path: "src/app/", purpose: "Rutas y páginas (App Router)" },
+      { path: "src/app/(public)/", purpose: "Sitio público y portada" },
+      { path: "src/app/reservar/", purpose: "Flujo de reserva por pasos" },
+      { path: "src/app/admin/", purpose: "Panel del dueño: agenda y cupos" },
+      { path: "src/modules/", purpose: "Lógica de negocio por dominio" },
+      { path: "src/modules/reservas/", purpose: "Turnos, cupos y comprobantes" },
+      { path: "src/modules/pagos/", purpose: "Cobro con QR y estados de pago" },
+      { path: "src/modules/agenda/", purpose: "Disponibilidad y bloqueos" },
+      { path: "src/lib/supabase.ts", purpose: "Cliente de Supabase" },
+      { path: "supabase/migrations/", purpose: "Tablas y políticas RLS" },
+    ],
+    entities: [
+      {
+        name: "Turno",
+        fields: ["id: uuid PK", "fecha: date", "hora_inicio: time", "cupo_total: int", "activo: boolean"],
+      },
+      {
+        name: "Reserva",
+        fields: ["id: uuid PK", "turno_id: uuid FK → Turno", "cliente_id: uuid FK → Cliente", "personas: int", "estado: text", "creada_en: timestamptz"],
+      },
+      {
+        name: "Pago",
+        fields: ["id: uuid PK", "reserva_id: uuid FK → Reserva", "monto: numeric", "metodo: text", "estado: text"],
+      },
+      {
+        name: "Cliente",
+        fields: ["id: uuid PK", "nombre: text", "telefono: text", "email: text"],
+      },
+    ],
+    milestones: [
+      {
+        title: "Semana 1 · Base y turnos",
+        goal: "El dueño puede cargar turnos y verlos en el panel.",
+        tasks: ["Crear tablas Turno y Cliente con RLS", "Login del dueño con Supabase Auth", "Tabla CRUD de turnos en /admin"],
+      },
+      {
+        title: "Semana 2 · Reservar",
+        goal: "Un cliente reserva un turno con cupo desde el celular.",
+        tasks: ["Flujo de reserva por pasos", "Validar cupo disponible", "Enviar comprobante de la reserva"],
+      },
+      {
+        title: "Semana 3 · Pagos QR",
+        goal: "La reserva queda confirmada al pagar con QR.",
+        tasks: ["Generar el QR de cobro", "Actualizar el estado del pago", "Liberar cupos de reservas impagas"],
+      },
+      {
+        title: "Semana 4 · Publicar",
+        goal: "Reservalo está en internet con dominio propio.",
+        tasks: ["Deploy en Vercel desde GitHub", "Variables de entorno de producción", "Prueba completa con el dueño"],
+      },
+    ],
+  },
+};
+
 export function buildTestProject() {
   const systemType = buildSystemTypeDecision("booking");
   const base = createInitialBlueprint({
@@ -820,7 +910,11 @@ export function buildTestProject() {
       "diag-2",
       "diag-3",
     ]),
-    selectedStyle: pick(options.morphism, "options", "morph-2"),
+    // El estilo se guarda con UNA paleta (la primera), como en la estación
+    selectedStyle: (({ palettes, ...style }) => ({
+      ...style,
+      palette: palettes[0],
+    }))(pick(options.morphism, "options", "morph-2")),
     selectedLayout: buildLayoutDecision({
       public: "hero-media",
       booking: "booking-steps",
@@ -833,5 +927,9 @@ export function buildTestProject() {
     blueprint,
     generatedOptions: options,
     targetStep: getStationById("ai-ecosystem").stepNumber,
+    // Solo para la generación simulada de las estaciones siguientes
+    simulatedOptions: {
+      workspace: normalizeStepResponse("workspace", WORKSPACE_RAW, blueprint).data,
+    },
   };
 }

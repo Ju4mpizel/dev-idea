@@ -2,13 +2,21 @@
 
 import { Check, Lightbulb } from "lucide-react";
 import { TechChip } from "@/components/ui/TechChip";
+import { paletteGradient } from "@/lib/palettes";
 
 /**
  * Carta del lenguaje visual: adopta el material real de su estilo (styleKey).
  * Vive dentro de `CardDeck`, así que ocupa toda su altura y desplaza el
  * contenido por dentro, igual que `SelectionCard`.
  */
-export function MorphismCard({ option, isSelected, isDimmed, levelLabel }) {
+export function MorphismCard({
+  option,
+  isSelected,
+  isDimmed,
+  levelLabel,
+  // Paleta activa de la carta: se muestra como tira de colores
+  palette = null,
+}) {
   // Normalizar para que detecte con o sin tildes, mayúsculas o styleKey
   const rawKey =
     `${option.styleKey || ""} ${option.title || ""} ${option.id || ""}`
@@ -295,6 +303,25 @@ export function MorphismCard({ option, isSelected, isDimmed, levelLabel }) {
             <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[3]" />
           </div>
         </div>
+
+        {palette && (
+          <div
+            className="flex items-center gap-1.5 mb-2"
+            title={`Paleta: ${palette.name}`}
+          >
+            <span
+              className="h-2 w-10 rounded-full"
+              style={{ backgroundImage: paletteGradient(palette) }}
+            />
+            {[palette.accent, palette.background, palette.text].map((c, i) => (
+              <span
+                key={i}
+                className="w-2.5 h-2.5 rounded-full border border-black/20"
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        )}
 
         <h3 className={`text-[15px] leading-snug mb-1.5 text-balance ${titleColor}`}>
           {option.title}

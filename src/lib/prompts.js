@@ -84,12 +84,18 @@ const DECISION_LINES = {
   methodology: (b) =>
     `METODOLOGÍA: ${describeDecision(b.selectedMethodology, "Omitida por el usuario")}`,
   diagrams: (b) => `DIAGRAMAS: ${describeDecision(b.selectedDiagrams)}`,
-  morphism: (b) =>
-    `ESTILO VISUAL: ${describeDecision(b.selectedStyle)}${
+  morphism: (b) => {
+    const p = b.selectedStyle?.palette;
+    return `ESTILO VISUAL: ${describeDecision(b.selectedStyle)}${
       b.selectedStyle?.styleKey
         ? ` [styleKey: ${b.selectedStyle.styleKey}]`
         : ""
-    }`,
+    }${
+      p?.primary
+        ? ` · paleta "${p.name}": primario ${p.primary}, secundario ${p.secondary}, acento ${p.accent}, fondo ${p.background}, texto ${p.text}`
+        : ""
+    }`;
+  },
   layout: (b) => {
     const picks = b.selectedLayout?.selections;
     return picks?.length
@@ -367,6 +373,8 @@ Elige los ${N} estilos visuales MÁS ADECUADOS para el propósito y público de 
 La tarjeta se transforma visualmente según su styleKey: usa la clave exacta y no repitas styleKey.
 CAMPOS:
 ${optionFields("tokens de diseño o recursos (paletas, tipografías, librerías de componentes compatibles con el stack)")}
+- palettes: EXACTAMENTE 3 paletas para ESA carta, inspiradas en la IDEA (su rubro, su público, su lugar: p. ej. una pesquería → agua, verdes, madera) y coherentes con el estilo (aurora/glass/cyberpunk/terminal: fondo oscuro y colores luminosos; neobrutalism: colores planos saturados, fondo claro y texto negro; clay/papercraft/neumorphism: fondos claros y suaves). Las 3 deben ser distintas: 1) la más fiel a la idea, 2) una alternativa con otro carácter, 3) una más sobria o profesional.
+  name: nombre evocador corto (2-3 palabras) · primary y secondary: forman el degradado principal y deben combinar entre sí · accent: para botones y avisos, que resalte · background: fondo de la app · text: texto principal con contraste WCAG AA (≥ 4.5:1) sobre background. Todos en hex "#RRGGBB".
 ${strobiFields("playful", "acertar con la estética según el tipo de cliente")}
 ${rulesCommon()}
 ${JSON_ONLY}
@@ -439,6 +447,9 @@ ${buildDecisionContext(b, "workspace")}
 Genera el blueprint de cierre (scaffold): resumen técnico coherente con TODAS las decisiones y los primeros comandos reales para inicializar el proyecto con el STACK y LENGUAJE elegidos (usa el gestor de paquetes propio de ese ecosistema).
 CAMPOS:
 - scaffold.projectName: kebab-case basado en ${nameHint} · scaffold.techSummary: 1-2 frases sobre stack, arquitectura y deploy · scaffold.commands: 3-6 comandos en orden de ejecución.
+- scaffold.folders: 6-12 carpetas o archivos clave del proyecto recién creado, con la convención REAL del framework elegido y organizadas según la ARQUITECTURA (p. ej. módulos por dominio en un monolito modular). path: ruta relativa terminada en "/" si es carpeta (p. ej. "src/modules/reservas/") · purpose: qué va ahí (máx. 10 palabras).
+- scaffold.entities: entidades principales del MODELO DE DATOS según los requisitos (3-6). name: en PascalCase singular · fields: 3-8 campos "nombre: tipo" con tipos de la base elegida (marca la clave primaria con "PK" y las foráneas con "FK → Entidad"). Si la base de datos es "Sin base de datos", devuelve [].
+- scaffold.milestones: 3-4 entregas en orden, al ritmo de la METODOLOGÍA elegida (o semanas si no hay). title: corto (p. ej. "Semana 1 · Base y login") · goal: resultado visible en 1 frase · tasks: 2-4 tareas concretas tomadas de los requisitos e historias.
 ${strobiFields("celebrate", "cierre animando a empezar a construir")}
 ${JSON_ONLY}
 `;

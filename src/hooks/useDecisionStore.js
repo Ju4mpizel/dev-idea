@@ -186,12 +186,13 @@ export const useDecisionStore = create(
       isTestProject: false,
       // Cartas del proyecto de prueba: la "generación simulada" las vuelve a servir
       testFixture: null,
-      loadTestProject: ({ blueprint, generatedOptions }) => {
+      loadTestProject: ({ blueprint, generatedOptions, simulatedOptions }) => {
         abortActiveRequest();
         const fixture = normalizeAllOptions(toIdKeyedOptions(generatedOptions));
         set({
           isTestProject: true,
-          testFixture: fixture,
+          // Cartas cargadas + las que solo sirve la simulación (p. ej. el cierre)
+          testFixture: { ...fixture, ...(simulatedOptions || {}) },
           simulationRequest: null,
           ideaRunId: null,
           currentStep: 0,
