@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { createAvatar } from "@bible-strong/avatar-web";
 import baseAvatarDefinition from "@/data/avatar.avatar.json";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
@@ -55,6 +55,8 @@ export function StrobiAvatar({
   onClick,
   // Expresión puntual (p. ej. al hacer clic); null = la del ánimo actual
   expression = null,
+  // Congela la animación (Strobi oculto/tapado o mientras entra en escena)
+  paused = false,
 }) {
   const containerRef = useRef(null);
   const instanceRef = useRef(null);
@@ -64,9 +66,44 @@ export function StrobiAvatar({
   const mood = moodOverride || storeMood || "idle";
 
   const moodRef = useRef(mood);
+  const pausedRef = useRef(paused);
+  const inViewRef = useRef(true);
+
+  /**
+   * El avatar redibuja su SVG en CADA fotograma mientras anima. En móvil eso
+   * compite con el resto de animaciones, así que solo corre cuando se ve:
+   * no pausado, dentro de la pantalla y con la pestaña visible.
+   */
+  const syncPlayback = useCallback(() => {
+    const instance = instanceRef.current;
+    if (!instance) return;
+    const shouldRun =
+      !pausedRef.current && inViewRef.current && !document.hidden;
+    try {
+      if (!shouldRun) {
+        instance.pause?.();
+        return;
+      }
+      // Reanuda donde se quedó, o arranca el ánimo que cambió mientras tanto
+      const state = instance.getState?.() || {};
+      if (
+        state.status === "paused" ||
+        (state.activeAnimation && state.activeAnimation !== moodRef.current)
+      )
+        instance.play?.(moodRef.current);
+    } catch {
+      // Animación no disponible: se mantiene la actual
+    }
+  }, []);
+
   useEffect(() => {
     moodRef.current = mood;
   }, [mood]);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+    syncPlayback();
+  }, [paused, syncPlayback]);
 
   const definition = useMemo(
     () => ({
@@ -86,6 +123,7 @@ export function StrobiAvatar({
         definition,
         defaultAnimation: moodRef.current,
       });
+      syncPlayback();
     } catch (err) {
       console.error("[Strobi] Error al montar avatar:", err);
     }
@@ -95,10 +133,11 @@ export function StrobiAvatar({
       else if (instance?.stop) instance.stop();
       instanceRef.current = null;
     };
-  }, [definition]);
+  }, [definition, syncPlayback]);
 
-  // Cambios de ánimo
+  // Cambios de ánimo (si está congelado, se aplicará al reanudar)
   useEffect(() => {
+    if (pausedRef.current || !inViewRef.current) return;
     try {
       instanceRef.current?.play?.(mood);
     } catch {
@@ -115,23 +154,30 @@ export function StrobiAvatar({
     }
   }, [expression]);
 
-  // Pausa la animación con la pestaña oculta (ahorra CPU)
+  // Pestaña oculta o Strobi fuera de pantalla (al hacer scroll): en pausa
   useEffect(() => {
-    const onVisibility = () => {
-      const instance = instanceRef.current;
-      if (!instance) return;
-      if (document.hidden) instance.stop?.();
-      else instance.play?.(moodRef.current);
+    document.addEventListener("visibilitychange", syncPlayback);
+    const container = containerRef.current;
+    let observer;
+    if (container && "IntersectionObserver" in window) {
+      observer = new IntersectionObserver(([entry]) => {
+        inViewRef.current = entry.isIntersecting;
+        syncPlayback();
+      });
+      observer.observe(container);
+    }
+    return () => {
+      document.removeEventListener("visibilitychange", syncPlayback);
+      observer?.disconnect();
     };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
+  }, [syncPlayback]);
 
   return (
     <div
       onClick={onClick}
-      style={{ width: size, height: size }}
-      className={`flex items-center justify-center ${onClick ? "cursor-pointer" : ""} ${className}`}
+      // Capa propia: redibujar a Strobi no repinta la cabecera entera
+      style={{ width: size, height: size, contain: "layout paint" }}
+      className={`flex items-center justify-center will-change-transform ${onClick ? "cursor-pointer" : ""} ${className}`}
     >
       <div
         ref={containerRef}

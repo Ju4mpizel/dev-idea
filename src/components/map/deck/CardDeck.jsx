@@ -1,12 +1,39 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { memo, useRef, useState } from "react";
+import { animate, motion, useMotionValue, useTransform } from "framer-motion";
 import { ChevronLeft, ChevronRight, Check, Plus, Minus } from "lucide-react";
 import { getLevelStyle } from "@/components/map/stations/levelStyles";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
-const SWIPE_THRESHOLD = 60;
+/** Distancia (px) o velocidad (px/s) a partir de la cual un gesto cambia de carta. */
+const SWIPE_DISTANCE = 45;
+const SWIPE_VELOCITY = 350;
+
+/** ¿El gesto horizontal basta para pasar de carta? -1 / 0 / 1 */
+function swipeDirection({ offset, velocity }) {
+  // Gestos sobre todo verticales: son scroll, no cambian de carta
+  if (Math.abs(offset.y) > Math.abs(offset.x) * 1.2) return 0;
+  const flick = Math.abs(velocity.x) > SWIPE_VELOCITY && Math.abs(offset.x) > 15;
+  if (offset.x < -SWIPE_DISTANCE || (flick && velocity.x < 0)) return 1;
+  if (offset.x > SWIPE_DISTANCE || (flick && velocity.x > 0)) return -1;
+  return 0;
+}
+
+/**
+ * Contenido de una carta. Memorizado: al barajar solo cambian la posición y
+ * el atenuado, así que no se vuelve a renderizar el contenido (que es lo caro).
+ */
+const DeckCardContent = memo(
+  function DeckCardContent({ item, isSelected, isFront, isDimmed, renderCard }) {
+    return renderCard(item, { isSelected, isFront, isDimmed });
+  },
+  (a, b) =>
+    a.item === b.item &&
+    a.isSelected === b.isSelected &&
+    a.isFront === b.isFront &&
+    a.isDimmed === b.isDimmed,
+);
 
 /**
  * Tamaño de carta (formato naipe, vertical). La altura se adapta a la pantalla
@@ -74,7 +101,14 @@ export function CardDeck({
     const first = items.findIndex((item) => selectedKeys.has(getKey(item)));
     return first > 0 ? first : 0;
   });
+  // Marca un gesto en curso para que el clic que lo cierra no seleccione
   const draggedRef = useRef(false);
+  // Desplazamiento del dedo: la carta del centro lo sigue (con leve giro)
+  const dragX = useMotionValue(0);
+  const dragRotate = useTransform(dragX, [-220, 0, 220], [-7, 0, 7]);
+  // Carta que se está arrastrando: conserva el desplazamiento hasta volver a
+  // 0, aunque ya haya pasado a un lado (así no pega saltos al soltar)
+  const [dragKey, setDragKey] = useState(null);
 
   if (count === 0) {
     return (
@@ -88,8 +122,31 @@ export function CardDeck({
 
   const active = ((activeIndex % count) + count) % count;
   const goTo = (index) => setActiveIndex(((index % count) + count) % count);
-  const next = () => goTo(active + 1);
-  const prev = () => goTo(active - 1);
+  // Funcional: nunca usa un índice viejo aunque el gesto empezara antes
+  const step = (delta) =>
+    setActiveIndex((i) => (((i + delta) % count) + count) % count);
+  const next = () => step(1);
+  const prev = () => step(-1);
+
+  // Un único gesto para todo el abanico (carta central o laterales)
+  const handlePanStart = () => {
+    draggedRef.current = true;
+    dragX.jump(0);
+    setDragKey(getKey(items[active]));
+  };
+  const handlePan = (_, info) => {
+    if (Math.abs(info.offset.x) > Math.abs(info.offset.y))
+      dragX.set(info.offset.x * 0.9);
+  };
+  const handlePanEnd = (_, info) => {
+    const dir = swipeDirection(info);
+    if (dir !== 0) step(dir);
+    animate(dragX, 0, { ...spring, onComplete: () => setDragKey(null) });
+    // El clic que cierra el gesto no debe seleccionar
+    setTimeout(() => {
+      draggedRef.current = false;
+    }, 0);
+  };
 
   const activeItem = items[active];
   const activeSelected = selectedKeys.has(getKey(activeItem));
@@ -114,13 +171,17 @@ export function CardDeck({
   return (
     <div className="w-full flex flex-col gap-3">
       {/* Abanico */}
-      <div
+      <motion.div
         tabIndex={0}
         onKeyDown={handleKeyDown}
         role="listbox"
         aria-label="Opciones de la estación"
         aria-multiselectable={selection === "multi" || undefined}
-        className={`${FAN_HEIGHT} relative w-full outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 rounded-3xl`}
+        // Deslizar en cualquier punto del abanico (también sobre las laterales)
+        onPanStart={count > 1 ? handlePanStart : undefined}
+        onPan={count > 1 ? handlePan : undefined}
+        onPanEnd={count > 1 ? handlePanEnd : undefined}
+        className={`deck-gesture ${FAN_HEIGHT} relative w-full outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 rounded-3xl`}
       >
         {items.map((item, index) => {
           const key = getKey(item);
@@ -158,20 +219,6 @@ export function CardDeck({
                 // Capa propia en GPU: mover la carta no obliga a repintarla
                 willChange: isNear ? "transform, opacity" : "auto",
               }}
-              drag={isFront && count > 1 ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.5}
-              onDragStart={() => {
-                draggedRef.current = true;
-              }}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -SWIPE_THRESHOLD) next();
-                else if (info.offset.x > SWIPE_THRESHOLD) prev();
-                // El clic que sigue al arrastre no debe seleccionar
-                setTimeout(() => {
-                  draggedRef.current = false;
-                }, 0);
-              }}
               onClick={() => {
                 if (draggedRef.current) return;
                 if (isFront) toggleActive();
@@ -180,13 +227,26 @@ export function CardDeck({
               role="option"
               aria-selected={isSelected}
               aria-hidden={!isFront}
-              className={`absolute top-0 left-1/2 -translate-x-1/2 origin-bottom touch-pan-y ${CARD_SIZE} ${
+              className={`absolute top-0 left-1/2 -translate-x-1/2 origin-bottom ${CARD_SIZE} ${
                 isFront && isLocked ? "cursor-grab" : "cursor-pointer"
               }`}
             >
               {isNear && (
-                <div className="relative w-full h-full">
-                  {renderCard(item, { isSelected, isFront, isDimmed })}
+                <motion.div
+                  className="relative w-full h-full"
+                  style={
+                    key === dragKey
+                      ? { x: dragX, rotate: dragRotate }
+                      : { x: 0, rotate: 0 }
+                  }
+                >
+                  <DeckCardContent
+                    item={item}
+                    isSelected={isSelected}
+                    isFront={isFront}
+                    isDimmed={isDimmed}
+                    renderCard={renderCard}
+                  />
                   {/* Las laterales se oscurecen para leer solo la del centro */}
                   {!isFront && (
                     <div
@@ -194,12 +254,12 @@ export function CardDeck({
                       style={{ opacity: Math.min(0.25 + distance * 0.2, 0.7) }}
                     />
                   )}
-                </div>
+                </motion.div>
               )}
             </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* Navegación del mazo */}
       <div className="flex items-center justify-center gap-2">

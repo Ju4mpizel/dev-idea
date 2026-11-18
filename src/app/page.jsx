@@ -90,6 +90,11 @@ export default function HomePage() {
       : isRouteMapOpen && currentStep > 0 && isDesktop
         ? MAP_PANEL_SPACE
         : 0;
+  // Strobi de la cabecera oculto o tapado por un panel: se congela
+  const isStrobiCovered =
+    isInfoOpen ||
+    (isRouteMapOpen && currentStep > 0 && !isDesktop) ||
+    (isCategoriesOpen && currentStep > 0 && !isWide);
   const leftPanelSpace =
     isCategoriesOpen && currentStep > 0 && isWide ? INFO_PANEL_SPACE : 0;
   const currentStation = getStation(currentStep);
@@ -240,13 +245,14 @@ export default function HomePage() {
                 : { opacity: 1, y: 0, scale: 1 }
             }
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className={`w-full flex justify-center ${isInfoOpen ? "pointer-events-none" : ""}`}
+            className={`w-full flex justify-center will-change-transform ${isInfoOpen ? "pointer-events-none" : ""}`}
             aria-hidden={isInfoOpen || undefined}
           >
             {/* En las estaciones Strobi es más compacto para dejar sitio al mazo */}
             <CompanionAvatar
               size={currentStep > 0 ? 76 : 105}
               compact={currentStep > 0}
+              paused={isStrobiCovered}
             />
           </motion.div>
 
@@ -254,11 +260,11 @@ export default function HomePage() {
             {isInfoOpen && currentStation && (
               <motion.div
                 key={`station-name-${currentStation.id}`}
-                initial={{ opacity: 0, y: 12, letterSpacing: "0.3em" }}
-                animate={{ opacity: 1, y: 0, letterSpacing: "0.02em" }}
+                initial={{ opacity: 0, y: 12, scale: 1.08 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 12 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="pointer-events-none select-none text-center"
+                className="pointer-events-none select-none text-center will-change-transform"
               >
                 <span className="block text-[10px] sm:text-xs font-mono uppercase tracking-[0.3em] text-neutral-600">
                   Estación {currentStation.stepNumber}
@@ -283,7 +289,7 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 90, scale: 0.97 }}
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full flex justify-center"
+              className="w-full flex justify-center will-change-transform"
             >
               <DecisionCanvas step={currentStep} />
             </motion.div>

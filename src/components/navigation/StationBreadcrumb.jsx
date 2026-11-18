@@ -98,7 +98,7 @@ export function StationBreadcrumb() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={toggleRouteMap}
-              className="lg:hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-sm cursor-pointer"
+              className="lg:hidden fixed inset-0 z-40 bg-black/75 cursor-pointer will-change-[opacity]"
             />
 
             {/* Panel de Mapa Lateral / Modal */}
@@ -110,7 +110,7 @@ export function StationBreadcrumb() {
               className="fixed z-50 
                 inset-x-4 top-[10dvh] max-h-[80dvh] mx-auto w-auto max-w-[340px]
                 lg:inset-auto lg:top-20 lg:right-8 lg:w-[310px] lg:max-h-[calc(100vh-100px)]
-                bg-neutral-900/95 border border-neutral-700/80 backdrop-blur-2xl rounded-3xl p-4 sm:p-5 flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.9)] ring-1 ring-white/10 overflow-hidden"
+                bg-neutral-900 border border-neutral-700/80 rounded-3xl will-change-transform p-4 sm:p-5 flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.9)] ring-1 ring-white/10 overflow-hidden"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-neutral-800 shrink-0">

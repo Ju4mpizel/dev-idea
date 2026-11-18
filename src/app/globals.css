@@ -99,3 +99,21 @@
     animation: none;
   }
 }
+
+/*
+ * Rendimiento en móvil y tablet: backdrop-filter obliga a recalcular el
+ * desenfoque de todo lo que hay detrás en cada fotograma de cada animación.
+ * Ahí los fondos ya son casi opacos, así que el desenfoque apenas se nota.
+ */
+@media (max-width: 1023px) {
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* Mazo: el gesto horizontal es del mazo, el vertical desplaza el contenido */
+.deck-gesture,
+.deck-gesture * {
+  touch-action: pan-y;
+}

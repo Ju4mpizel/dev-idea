@@ -16,7 +16,13 @@ const STROBI_COLORS = [
 ];
 
 /** Strobi en la cabecera: avatar + paleta de colores + burbuja de diálogo. */
-export function CompanionAvatar({ size = 110, compact = false, className = "" }) {
+export function CompanionAvatar({
+  size = 110,
+  compact = false,
+  // Strobi tapado u oculto (panel abierto): se congela para no gastar CPU
+  paused = false,
+  className = "",
+}) {
   const resetTimerRef = useRef(null);
 
   const mood = useDecisionStore((state) => state.companionMood);
@@ -91,6 +97,7 @@ export function CompanionAvatar({ size = 110, compact = false, className = "" })
             mood={isLoading ? "focused-thinking" : null}
             onClick={isLoading ? undefined : handleAvatarClick}
             expression={isLoading ? null : expression}
+            paused={paused}
           />
         </div>
 

@@ -33,7 +33,7 @@ export function StationCategoriesPanel() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={close}
-            className="xl:hidden fixed inset-0 z-40 bg-black/60"
+            className="xl:hidden fixed inset-0 z-40 bg-black/60 will-change-[opacity]"
           />
           <motion.aside
             key="categories-panel"
@@ -45,7 +45,7 @@ export function StationCategoriesPanel() {
             transition={{ type: "spring", stiffness: 260, damping: 30 }}
             className="fixed z-50 left-0 top-0 bottom-0 w-[min(340px,88vw)]
               xl:left-6 xl:top-24 xl:bottom-auto xl:max-h-[calc(100dvh-120px)]
-              flex flex-col bg-neutral-900/95 border-r xl:border border-neutral-800 xl:rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden"
+              flex flex-col will-change-transform bg-neutral-900/95 border-r xl:border border-neutral-800 xl:rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden"
           >
             <div className="flex items-start justify-between gap-2 px-4 pt-4 pb-3 border-b border-neutral-800">
               <div>

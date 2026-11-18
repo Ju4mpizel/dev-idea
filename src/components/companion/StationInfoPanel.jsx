@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStationGuide } from "@/data/stationGuides";
@@ -19,6 +20,26 @@ import {
  * una hoja inferior. Se cierra con la X, con el fondo (móvil), con Escape o al
  * confirmar la estación.
  */
+/**
+ * Strobi "llega" desde arriba y se coloca junto al panel. No anima su cara
+ * hasta aterrizar: así el vuelo solo mueve una capa ya dibujada.
+ */
+function ArrivingStrobi() {
+  const [hasLanded, setHasLanded] = useState(false);
+  return (
+    <motion.div
+      initial={{ y: -160, opacity: 0, rotate: -12 }}
+      animate={{ y: 0, opacity: 1, rotate: 0 }}
+      exit={{ y: -160, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.08 }}
+      onAnimationComplete={() => setHasLanded(true)}
+      className="self-center -mb-6 relative z-10 will-change-transform"
+    >
+      <StrobiAvatar size={84} mood="explaining" paused={!hasLanded} />
+    </motion.div>
+  );
+}
+
 export function StationInfoPanel() {
   const infoStationId = useDecisionStore((s) => s.infoStationId);
   const closeStationInfo = useDecisionStore((s) => s.closeStationInfo);
@@ -35,7 +56,7 @@ export function StationInfoPanel() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeStationInfo}
-            className="xl:hidden fixed inset-0 z-40 bg-black/60"
+            className="xl:hidden fixed inset-0 z-40 bg-black/60 will-change-[opacity]"
           />
 
           <motion.aside
@@ -48,25 +69,11 @@ export function StationInfoPanel() {
             animate={{ opacity: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, x: 60 }}
             transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            className="fixed z-50 flex flex-col
+            className="fixed z-50 flex flex-col will-change-transform
               inset-x-3 bottom-3 max-h-[78dvh]
               xl:inset-x-auto xl:bottom-auto xl:top-24 xl:right-6 xl:w-[340px] xl:max-h-[calc(100dvh-120px)]"
           >
-            {/* Strobi "llega" desde arriba y se coloca junto al panel */}
-            <motion.div
-              initial={{ y: -160, opacity: 0, rotate: -12 }}
-              animate={{ y: 0, opacity: 1, rotate: 0 }}
-              exit={{ y: -160, opacity: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 220,
-                damping: 18,
-                delay: 0.08,
-              }}
-              className="self-center -mb-6 relative z-10"
-            >
-              <StrobiAvatar size={84} mood="explaining" />
-            </motion.div>
+            <ArrivingStrobi />
 
             <div className="flex-1 min-h-0 rounded-3xl bg-neutral-900/95 border border-sky-900/60 shadow-[0_20px_60px_rgba(0,0,0,0.85)] ring-1 ring-white/5 flex flex-col overflow-hidden">
               <div className="flex items-start justify-between gap-2 px-4 sm:px-5 pt-7 pb-3 border-b border-neutral-800">
