@@ -15,6 +15,7 @@ import { StationBreadcrumb } from "@/components/navigation/StationBreadcrumb";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
+import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
 import { getStation } from "@/config/stations.config";
 import { supabase } from "@/lib/supabaseClient";
 import { signInWithGoogle, signOut } from "@/services/projectService";
@@ -44,6 +45,11 @@ export default function HomePage() {
 
   // Entrada de la página: navbar, logo dibujándose, Strobi con "pop"...
   const intro = useIntro();
+
+  // Capa de GPU solo mientras se animan (fija dejaba el texto borroso)
+  const strobiLayer = useAnimatingLayer({ startActive: false });
+  const stationNameLayer = useAnimatingLayer();
+  const canvasLayer = useAnimatingLayer({ startActive: false });
 
   // Con sesión iniciada, cada cambio del mapa se guarda solo en Supabase
   useCloudAutosave();
@@ -274,7 +280,8 @@ export default function HomePage() {
                 : { opacity: 1, y: 0, scale: 1 }
             }
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className={`w-full flex justify-center will-change-transform ${isStrobiAway ? "pointer-events-none" : ""}`}
+            {...strobiLayer}
+            className={`w-full flex justify-center ${isStrobiAway ? "pointer-events-none" : ""}`}
             aria-hidden={isStrobiAway || undefined}
           >
             {/* En las estaciones Strobi es más compacto para dejar sitio al mazo */}
@@ -295,7 +302,8 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 12 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="pointer-events-none select-none text-center will-change-transform"
+                {...stationNameLayer}
+                className="pointer-events-none select-none text-center"
               >
                 <span className="block text-[10px] sm:text-xs font-mono uppercase tracking-[0.3em] text-neutral-600">
                   Estación {currentStation.stepNumber}
@@ -320,7 +328,8 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 90, scale: 0.97 }}
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full flex justify-center will-change-transform"
+              {...canvasLayer}
+              className="w-full flex justify-center"
             >
               <DecisionCanvas step={currentStep} />
             </motion.div>

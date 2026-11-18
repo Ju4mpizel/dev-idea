@@ -282,3 +282,14 @@
   transform-box: fill-box;
   transform-origin: center;
 }
+
+/*
+ * Fila de chips desplazable en móvil: se desvanece en el borde derecho para
+ * que el último chip se lea como "hay más" y no como un corte. Desde sm los
+ * chips pasan a varias líneas y no hace falta.
+ */
+@media (max-width: 639px) {
+  .chip-scroll {
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+}

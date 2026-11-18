@@ -15,7 +15,7 @@ export function CompanionBubble({ message, isThinking = false, compact = false }
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -3 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className={`relative w-full px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 text-neutral-200 text-xs sm:text-sm font-medium shadow-xl backdrop-blur-md will-change-transform ${compact ? "text-left" : "text-center sm:text-left"}`}
+          className={`relative w-full px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 text-neutral-200 text-xs sm:text-sm font-medium shadow-xl backdrop-blur-md ${compact ? "text-left" : "text-center sm:text-left"}`}
         >
           {isThinking ? (
             <span className="inline-flex items-center justify-center sm:justify-start gap-1.5 text-neutral-400 py-1">

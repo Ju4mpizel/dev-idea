@@ -50,7 +50,7 @@ export function IdeaStation({ onStartNew, onResumeSaved }) {
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
   const hasSavedBlueprint = Boolean(
-    blueprint?.idea && (blueprint?.selectedName || generatedOptions[1]),
+    blueprint?.idea && (blueprint?.selectedName || generatedOptions.naming),
   );
 
   // Sin sesión se fuerza la vista local (derivado, sin setState en el efecto)

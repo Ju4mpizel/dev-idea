@@ -10,6 +10,7 @@ import { RequirementsStation } from "./stations/RequirementsStations";
 import { UserStoriesStation } from "./stations/UserStoriesStation";
 import { StackStation } from "./stations/StackStation";
 import { SystemTypeStation } from "./stations/SystemTypeStation";
+import { LayoutStation } from "./stations/LayoutStation";
 import { DiagramsStation } from "./stations/DiagramsStation";
 import {
   DatabaseStation,
@@ -33,6 +34,7 @@ const STATION_COMPONENTS = {
   methodology: MethodologyStation,
   diagrams: DiagramsStation,
   morphism: MorphismStation,
+  layout: LayoutStation,
 };
 
 // Contador global de peticiones: permite ignorar aborts de peticiones ya
@@ -73,8 +75,9 @@ export function DecisionCanvas({ step: currentStep }) {
     extraFields = {},
     forceNew = false,
   ) => {
+    const targetStation = getStation(targetStep);
     const { generatedOptions: cachedOptions } = useDecisionStore.getState();
-    const existingData = cachedOptions[targetStep];
+    const existingData = cachedOptions[targetStation?.id];
 
     if (!forceNew && existingData && Object.keys(existingData).length > 0) {
       if (existingData.companionComment) {
@@ -88,10 +91,9 @@ export function DecisionCanvas({ step: currentStep }) {
     }
 
     // Estaciones de catálogo fijo: se resuelven al instante, sin Gemini
-    const targetStation = getStation(targetStep);
     if (targetStation?.local) {
-      const data = normalizeStepResponse(targetStep, {}).data;
-      setStepOptions(targetStep, data);
+      const data = normalizeStepResponse(targetStation.id, {}).data;
+      setStepOptions(targetStation.id, data);
       setCompanion(data.companionMood, data.companionComment);
       goToStep(targetStep);
       return;
@@ -132,7 +134,7 @@ export function DecisionCanvas({ step: currentStep }) {
       }
 
       const data = json.data;
-      setStepOptions(targetStep, data);
+      setStepOptions(targetStation.id, data);
 
       // La API ya normaliza el contrato (src/lib/stepContracts.js)
       setCompanion(data.companionMood, data.companionComment);
@@ -217,7 +219,7 @@ export function DecisionCanvas({ step: currentStep }) {
     return (
       <div className="w-full max-w-5xl flex flex-col gap-4 sm:gap-6">
         <BlueprintShowcase
-          data={generatedOptions[currentStep]}
+          data={generatedOptions[station.id]}
           blueprint={blueprint}
         />
       </div>
@@ -231,7 +233,7 @@ export function DecisionCanvas({ step: currentStep }) {
       <StationComponent
         key={station.id}
         station={station}
-        data={generatedOptions[currentStep]}
+        data={generatedOptions[station.id]}
         onNext={(extraFields) =>
           requestStepAndNavigate(currentStep + 1, extraFields)
         }

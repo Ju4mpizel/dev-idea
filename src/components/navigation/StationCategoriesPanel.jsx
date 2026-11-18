@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStation } from "@/config/stations.config";
 import { getStationCategories } from "@/data/stationCategories";
@@ -17,6 +18,7 @@ const LEVEL_ORDER = ["simple", "medium", "advanced"];
 export function StationCategoriesPanel() {
   const isOpen = useDecisionStore((s) => s.isCategoriesOpen);
   const close = useDecisionStore((s) => s.closeCategories);
+  const panelLayer = useAnimatingLayer();
   const currentStep = useDecisionStore((s) => s.currentStep);
 
   const station = getStation(currentStep);
@@ -37,6 +39,7 @@ export function StationCategoriesPanel() {
           />
           <motion.aside
             key="categories-panel"
+            {...panelLayer}
             role="dialog"
             aria-label={categories.title}
             initial={{ x: -380, opacity: 0 }}
@@ -45,7 +48,7 @@ export function StationCategoriesPanel() {
             transition={{ type: "spring", stiffness: 260, damping: 30 }}
             className="fixed z-50 left-0 top-0 bottom-0 w-[min(340px,88vw)]
               xl:left-6 xl:top-24 xl:bottom-auto xl:max-h-[calc(100dvh-120px)]
-              flex flex-col will-change-transform bg-neutral-900/95 border-r xl:border border-neutral-800 xl:rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden"
+              flex flex-col bg-neutral-900/95 border-r xl:border border-neutral-800 xl:rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden"
           >
             <div className="flex items-start justify-between gap-2 px-4 pt-4 pb-3 border-b border-neutral-800">
               <div>

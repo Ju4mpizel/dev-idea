@@ -1,6 +1,7 @@
 "use client";
 
 import { useDecisionStore } from "@/hooks/useDecisionStore";
+import { highestStepOf, optionsForStep } from "@/config/stations.config";
 
 /**
  * Selectores únicos de navegación (antes había 7 variantes distintas por estación).
@@ -10,14 +11,11 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
  *   siguiente generada; para cambiarla hay que "Reescribir desde aquí".
  */
 export function selectHighestStep(state) {
-  const generated = Object.keys(state.generatedOptions)
-    .map(Number)
-    .filter((n) => Number.isInteger(n));
-  return Math.max(state.currentStep, ...generated);
+  return Math.max(state.currentStep, highestStepOf(state.generatedOptions));
 }
 
 export function isStepLocked(state, stepNumber) {
-  return Boolean(state.generatedOptions[stepNumber + 1]);
+  return Boolean(optionsForStep(state.generatedOptions, stepNumber + 1));
 }
 
 /** Estado de navegación de una estación + acciones de Modo Consulta. */

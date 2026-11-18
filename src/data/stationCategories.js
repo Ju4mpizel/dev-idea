@@ -7,6 +7,8 @@
  * estación tiene un catálogo cerrado, todas las opciones posibles (`catalog`).
  */
 import { SYSTEM_FAMILIES, getTypesOfFamily } from "./systemTypes";
+import { getSurfaceLayouts, surfaceLabel } from "./layoutCatalog";
+import { LAYOUT_SURFACE_IDS } from "@/lib/stepSchemas";
 
 export const STATION_CATEGORIES = {
   // Catálogo fijo de la estación "Tipo de sistema" (sale de src/data/systemTypes.js)
@@ -282,26 +284,16 @@ export const STATION_CATEGORIES = {
     ],
   },
 
+  // Catálogo fijo de layouts por superficie (sale de src/data/layoutCatalog.js)
   layout: {
-    title: "Niveles de layout",
-    levels: {
-      simple: "Directo: una columna o pocas pantallas, navegación evidente.",
-      medium: "Equilibrado: menú persistente y áreas de contenido bien definidas.",
-      advanced: "Rico en vistas: paneles, cuadrículas y múltiples zonas interactivas.",
-    },
-    catalog: [
-      {
-        group: "Patrones",
-        items: [
-          { name: "Una columna", desc: "Landing o lectura: todo de arriba abajo." },
-          { name: "App Shell", desc: "Menú lateral fijo + contenido." },
-          { name: "Pestañas inferiores", desc: "Navegación típica de apps móviles." },
-          { name: "Master-detail", desc: "Lista a la izquierda, detalle a la derecha." },
-          { name: "Bento Grid", desc: "Tarjetas de distintos tamaños en cuadrícula." },
-          { name: "Canvas", desc: "Lienzo libre e inmersivo (editores, mapas)." },
-        ],
-      },
-    ],
+    title: "Catálogo de layouts por superficie",
+    catalog: LAYOUT_SURFACE_IDS.map((surface) => ({
+      group: surfaceLabel(surface),
+      items: getSurfaceLayouts(surface).map((layout) => ({
+        name: layout.title,
+        desc: layout.summary,
+      })),
+    })),
   },
 
   deploy: {

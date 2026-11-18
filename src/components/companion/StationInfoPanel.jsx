@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStationGuide } from "@/data/stationGuides";
 import { ArrivingStrobi } from "./ArrivingStrobi";
+import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
 import {
   X,
   Lightbulb,
@@ -23,6 +24,7 @@ export function StationInfoPanel() {
   const infoStationId = useDecisionStore((s) => s.infoStationId);
   const closeStationInfo = useDecisionStore((s) => s.closeStationInfo);
   const guide = infoStationId ? getStationGuide(infoStationId) : null;
+  const panelLayer = useAnimatingLayer();
 
   return (
     <AnimatePresence>
@@ -48,7 +50,8 @@ export function StationInfoPanel() {
             animate={{ opacity: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, x: 60 }}
             transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            className="fixed z-50 flex flex-col will-change-transform
+            {...panelLayer}
+            className="fixed z-50 flex flex-col
               inset-x-3 bottom-3 max-h-[78dvh]
               xl:inset-x-auto xl:bottom-auto xl:top-24 xl:right-6 xl:w-[340px] xl:max-h-[calc(100dvh-120px)]"
           >

@@ -9,8 +9,9 @@
  * - selection:    "single" (una carta) o "multi" (varias cartas; se guarda un array).
  * - legend:       etiquetas de los 3 niveles (simple / medium / advanced) de sus cartas.
  *
- * `generatedOptions` se indexa ÚNICAMENTE por `stepNumber`.
- * Prompts, esquemas y contratos se indexan por `id` (no dependen del orden).
+ * Todo se indexa por el `id` de la estación (cartas generadas, prompts,
+ * esquemas y contratos): reordenar o insertar estaciones no rompe datos
+ * guardados. `stepNumber` solo define el orden del recorrido.
  */
 export const STATIONS = [
   {
@@ -236,7 +237,7 @@ export const STATIONS = [
     stepNumber: 11,
     title: "Maquetación / Layout",
     navLabel: "Layout",
-    subtitle: "Distribución espacial del producto",
+    subtitle: "¿Cómo se verá cada parte de tu producto?",
     skippable: false,
     defaultMood: "thinking",
     defaultDialogue:
@@ -433,21 +434,78 @@ export function dbRowToBlueprint(row = {}) {
   return blueprint;
 }
 
+/** Estación por id ("stack") o por número de paso (5 / "5"). */
+export function resolveStation(ref) {
+  if (typeof ref === "number" || /^\d+$/.test(String(ref))) {
+    return getStation(ref);
+  }
+  return getStationById(ref);
+}
+
+/**
+ * Orden de las estaciones cuando `generatedOptions` se indexaba por número
+ * (versión 4 del mapa, con "Tipo de sistema" como estación 2). Congelado: solo
+ * sirve para convertir datos antiguos, no cambia aunque se reordene el mapa.
+ */
+const LEGACY_STEP_IDS_V4 = [
+  "idea",
+  "naming",
+  "system-type",
+  "requirements",
+  "user-stories",
+  "stack",
+  "database",
+  "architecture",
+  "methodology",
+  "diagrams",
+  "morphism",
+  "layout",
+  "deploy",
+  "ai-ecosystem",
+  "workspace",
+];
+
+/** Versión 3 del mapa: igual que la 4 pero sin "Tipo de sistema". */
+const LEGACY_STEP_IDS_V3 = LEGACY_STEP_IDS_V4.filter(
+  (id) => id !== "system-type",
+);
+
+const isPlainObject = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
+/**
+ * Cartas generadas indexadas por id. Acepta datos antiguos con claves
+ * numéricas (se traducen con el orden congelado de `legacyVersion`) y
+ * descarta claves desconocidas o valores que no sean objetos.
+ */
+export function toIdKeyedOptions(options, legacyVersion = 4) {
+  if (!isPlainObject(options)) return {};
+  const legacyIds = legacyVersion === 3 ? LEGACY_STEP_IDS_V3 : LEGACY_STEP_IDS_V4;
+  const result = {};
+  Object.entries(options).forEach(([key, value]) => {
+    const id = /^\d+$/.test(key) ? legacyIds[Number(key)] : key;
+    if (id && getStationById(id) && isPlainObject(value)) result[id] = value;
+  });
+  return result;
+}
+
+/** Paso más avanzado con cartas generadas (0 si no hay ninguna). */
+export function highestStepOf(options = {}) {
+  return Object.keys(options).reduce(
+    (max, id) => Math.max(max, getStationById(id)?.stepNumber ?? 0),
+    0,
+  );
+}
+
+/** Cartas de la estación en el paso `stepNumber`. */
+export const optionsForStep = (options = {}, stepNumber) =>
+  options[getStation(stepNumber)?.id];
+
 /**
  * Cartas generadas listas para guardar en `blueprints.generated_options`:
- * solo claves de estaciones válidas y objetos (descarta basura del cliente).
+ * indexadas por id, solo estaciones válidas y objetos (descarta basura del
+ * cliente).
  */
 export function sanitizeGeneratedOptions(options) {
-  if (!options || typeof options !== "object" || Array.isArray(options)) {
-    return {};
-  }
-  return Object.fromEntries(
-    Object.entries(options).filter(
-      ([key, value]) =>
-        getStation(key) &&
-        value !== null &&
-        typeof value === "object" &&
-        !Array.isArray(value),
-    ),
-  );
+  return toIdKeyedOptions(options);
 }

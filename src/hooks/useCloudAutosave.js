@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { syncProjectToCloud } from "@/services/projectService";
-import { LAST_STEP } from "@/config/stations.config";
+import { LAST_STEP, highestStepOf } from "@/config/stations.config";
 
 // Espera tras el último cambio antes de guardar (agrupa ráfagas de cambios)
 const DEBOUNCE_MS = 1500;
@@ -27,7 +27,7 @@ async function saveSnapshot() {
 
   const highest = Math.max(
     state.currentStep,
-    ...Object.keys(state.generatedOptions).map(Number),
+    highestStepOf(state.generatedOptions),
   );
 
   state.setCloudSync("saving");

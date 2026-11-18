@@ -242,7 +242,7 @@ export function SystemTypeStation({ station, onNext }) {
           <div
             role="tablist"
             aria-label="Familias de sistemas"
-            className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1"
+            className="chip-scroll flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1 sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0"
           >
             {SYSTEM_FAMILIES.map((family) => {
               const Icon = FAMILY_ICONS[family.icon] || Globe;
@@ -313,7 +313,7 @@ export function SystemTypeStation({ station, onNext }) {
             <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500">
               Complementos opcionales
             </span>
-            <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
+            <div className="chip-scroll flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1 sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0">
               {availableComplements.map((c) => {
                 const isOn = complements.includes(c.id);
                 return (

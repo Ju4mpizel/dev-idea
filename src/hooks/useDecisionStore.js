@@ -5,30 +5,34 @@ import {
   createInitialBlueprint,
   dbRowToBlueprint,
   getEmptyValue,
+  getStationById,
   hasDecisionValue,
+  highestStepOf,
+  resolveStation,
+  toIdKeyedOptions,
 } from "@/config/stations.config";
 import { normalizeStepResponse } from "@/lib/stepContracts";
 
 // Versión del esquema persistido en localStorage (ver `migrate` al final).
-const STORE_VERSION = 4;
+const STORE_VERSION = 5;
 const STORAGE_KEY = "dev-idea-blueprint-cache";
 
 /** Normaliza todas las opciones cacheadas al contrato vigente. */
 function normalizeAllOptions(options = {}) {
   return Object.fromEntries(
-    Object.entries(options).map(([step, data]) => [
-      step,
-      normalizeStepResponse(step, data).data,
+    Object.entries(options).map(([stationId, data]) => [
+      stationId,
+      normalizeStepResponse(stationId, data).data,
     ]),
   );
 }
 
-/** Conserva solo las claves numéricas de generatedOptions que cumplan `keep`. */
-function filterNumericOptions(options = {}, keep = () => true) {
+/** Conserva las cartas de las estaciones cuyo paso cumple `keep(stepNumber)`. */
+function filterOptionsByStep(options = {}, keep = () => true) {
   return Object.fromEntries(
-    Object.entries(options).filter(([key]) => {
-      const step = Number(key);
-      return key !== "" && Number.isInteger(step) && keep(step);
+    Object.entries(options).filter(([id]) => {
+      const station = getStationById(id);
+      return station && keep(station.stepNumber);
     }),
   );
 }
@@ -47,14 +51,14 @@ function rebuildOptionsFromDecisions(blueprint) {
     // Estaciones de catálogo fijo (sin cartas): basta con la decisión
     if (station.local) {
       if (!hasDecisionValue(value)) break;
-      options[stepNumber] = normalizeStepResponse(stepNumber, {}).data;
+      options[station.id] = normalizeStepResponse(station.id, {}).data;
       continue;
     }
     if (!optionsKey) continue;
 
     if (!hasDecisionValue(value)) {
       if (!skippable) break;
-      options[stepNumber] = normalizeStepResponse(stepNumber, {
+      options[station.id] = normalizeStepResponse(station.id, {
         [optionsKey]: [],
         skipped: true,
       }).data;
@@ -75,7 +79,7 @@ function rebuildOptionsFromDecisions(blueprint) {
           ? value
           : [value];
 
-    options[stepNumber] = normalizeStepResponse(stepNumber, {
+    options[station.id] = normalizeStepResponse(station.id, {
       [optionsKey]: items,
     }).data;
   }
@@ -178,13 +182,15 @@ export const useDecisionStore = create(
 
       clearApiError: () => set({ apiError: null }),
 
-      setStepOptions: (stepKey, options) =>
-        set((state) => ({
-          generatedOptions: {
-            ...state.generatedOptions,
-            [stepKey]: options,
-          },
-        })),
+      // `stationRef`: id de la estación ("stack"); también acepta su número
+      setStepOptions: (stationRef, options) =>
+        set((state) => {
+          const id = resolveStation(stationRef)?.id;
+          if (!id) return {};
+          return {
+            generatedOptions: { ...state.generatedOptions, [id]: options },
+          };
+        }),
 
       updateBlueprint: (fields) =>
         set((state) => ({
@@ -215,7 +221,7 @@ export const useDecisionStore = create(
 
           return {
             currentStep: fromStep,
-            generatedOptions: filterNumericOptions(
+            generatedOptions: filterOptionsByStep(
               state.generatedOptions,
               (step) => step <= fromStep,
             ),
@@ -260,13 +266,13 @@ export const useDecisionStore = create(
         restoredBlueprint.idea = restoredBlueprint.idea || project.title || "";
 
         // Proyectos nuevos guardan todas las cartas; los antiguos se reconstruyen
-        const savedOptions = filterNumericOptions(row.generated_options || {});
+        // Filas antiguas guardaban las cartas por número de paso: se traducen a id
+        const savedOptions = toIdKeyedOptions(row.generated_options || {});
         const restoredOptions = Object.keys(savedOptions).length
           ? normalizeAllOptions(savedOptions)
           : rebuildOptionsFromDecisions(restoredBlueprint);
 
-        const steps = Object.keys(restoredOptions).map(Number);
-        const lastStep = steps.length ? Math.max(...steps) : 0;
+        const lastStep = highestStepOf(restoredOptions);
         const targetStep = Math.max(
           1,
           Math.min(Number(project.current_step) || lastStep, lastStep || 1),
@@ -331,35 +337,26 @@ export const useDecisionStore = create(
       name: STORAGE_KEY,
       version: STORE_VERSION,
       storage: createJSONStorage(() => localStorage),
-      // v0/v1/v2 -> v3: el mapa pasó de 11 a 14 estaciones (requisitos, historias
-      // y base de datos se insertaron antes del stack). Las decisiones antiguas ya
-      // no encajan en la nueva cadena, así que se conserva la idea, el contexto y el
-      // nombre (estación 1, sin cambios) y el usuario retoma desde Requisitos.
-      // v3 -> v4: se insertó "Tipo de sistema" como estación 2, así que las
-      // cartas de la estación 2 en adelante se corren un puesto.
+      // Migraciones del localStorage:
+      // - v0/v1/v2: el mapa pasó de 11 a 14 estaciones; las decisiones antiguas ya
+      //   no encajan, así que se conserva la idea, el contexto y el nombre.
+      // - v3: cartas por número de paso, sin "Tipo de sistema".
+      // - v4: cartas por número de paso, con "Tipo de sistema" en el paso 2.
+      // - v5 (actual): cartas indexadas por id de estación; reordenar ya no
+      //   obliga a migrar.
       migrate: (persisted, version) => {
         if (!persisted || version >= STORE_VERSION) return persisted;
-        if (version === 3) {
+        if (version === 3 || version === 4) {
           return {
             ...persisted,
-            generatedOptions: Object.fromEntries(
-              Object.entries(persisted.generatedOptions || {}).map(
-                ([key, value]) => {
-                  const step = Number(key);
-                  return [
-                    Number.isInteger(step) && step >= 2 ? String(step + 1) : key,
-                    value,
-                  ];
-                },
-              ),
+            generatedOptions: toIdKeyedOptions(
+              persisted.generatedOptions,
+              version,
             ),
           };
         }
         const old = persisted.blueprint || {};
-        const naming = filterNumericOptions(
-          persisted.generatedOptions,
-          (step) => step === 1,
-        );
+        const naming = toIdKeyedOptions(persisted.generatedOptions, 3);
         return {
           ...persisted,
           cloudProjectId: null,
@@ -368,7 +365,9 @@ export const useDecisionStore = create(
             context: old.context || "startup",
             selectedName: old.selectedName || "",
           }),
-          generatedOptions: normalizeAllOptions(naming),
+          generatedOptions: normalizeAllOptions(
+            naming.naming ? { naming: naming.naming } : {},
+          ),
         };
       },
       partialize: (state) => ({

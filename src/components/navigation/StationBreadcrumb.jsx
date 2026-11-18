@@ -10,6 +10,7 @@ import {
   getPhase,
 } from "@/config/stations.config";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
+import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
 import { X, Check, Lightbulb, Flag, Lock, Sparkles } from "lucide-react";
 
 // Geometría del recorrido: el SVG y los nodos comparten estas medidas, así la
@@ -36,6 +37,7 @@ export function StationBreadcrumb() {
     (state) => state.setIsResumingPreviousMap,
   );
   const isRouteMapOpen = useDecisionStore((state) => state.isRouteMapOpen);
+  const panelLayer = useAnimatingLayer();
   const toggleRouteMap = useDecisionStore((state) => state.toggleRouteMap);
 
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -87,7 +89,7 @@ export function StationBreadcrumb() {
   const checkIsCompleted = (station) => {
     if (station.stepNumber === 0) return true;
 
-    const data = generatedOptions[station.stepNumber];
+    const data = generatedOptions[station.id];
 
     return Boolean(data && Object.keys(data).length > 0);
   };
@@ -108,6 +110,7 @@ export function StationBreadcrumb() {
 
             {/* Panel de Mapa Lateral / Modal */}
             <motion.aside
+              {...panelLayer}
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -115,7 +118,7 @@ export function StationBreadcrumb() {
               className="fixed z-50 
                 inset-x-4 top-[10dvh] max-h-[80dvh] mx-auto w-auto max-w-[340px]
                 lg:inset-auto lg:top-20 lg:right-8 lg:w-[310px] lg:max-h-[calc(100vh-100px)]
-                bg-neutral-900 border border-neutral-700/80 rounded-3xl will-change-transform p-4 sm:p-5 flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.9)] ring-1 ring-white/10 overflow-hidden"
+                bg-neutral-900 border border-neutral-700/80 rounded-3xl p-4 sm:p-5 flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.9)] ring-1 ring-white/10 overflow-hidden"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-neutral-800 shrink-0">

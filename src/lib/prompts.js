@@ -12,6 +12,11 @@
 import { STATIONS } from "@/config/stations.config";
 import { OPTIONS_PER_STATION as N, getOptionCount } from "@/lib/stepSchemas";
 import { SYSTEM_COMPLEMENTS, describeSurfaces } from "@/data/systemTypes";
+import {
+  getSurfaceLayouts,
+  layoutSurfacesFor,
+  surfaceLabel,
+} from "@/data/layoutCatalog";
 
 const MAX_IDEA_LENGTH = 600;
 
@@ -83,7 +88,12 @@ const DECISION_LINES = {
     `ESTILO VISUAL: ${describeDecision(b.selectedStyle)}${
       b.selectedStyle?.styleKey ? ` [styleKey: ${b.selectedStyle.styleKey}]` : ""
     }`,
-  layout: (b) => `LAYOUT: ${describeDecision(b.selectedLayout)}`,
+  layout: (b) => {
+    const picks = b.selectedLayout?.selections;
+    return picks?.length
+      ? `LAYOUT: ${picks.map((x) => `${x.surfaceTitle} → ${x.layoutTitle}`).join(" | ")}`
+      : `LAYOUT: ${describeDecision(b.selectedLayout)}`;
+  },
   deploy: (b) => `DEPLOY: ${describeDecision(b.selectedDeploy)}`,
   "ai-ecosystem": (b) =>
     `ECOSISTEMA IA: ${describeDecision(b.selectedAiEcosystem)}`,
@@ -360,23 +370,36 @@ ${rulesCommon()}
 ${JSON_ONLY}
 `,
 
-  layout: (b) => `
+  layout: (b) => {
+    const surfaces = layoutSurfacesFor(b);
+    const catalog = surfaces
+      .map(
+        (surface) =>
+          `- ${surface} (${surfaceLabel(surface)}): ${getSurfaceLayouts(surface)
+            .map((l) => `${l.id} = ${l.title}: ${l.summary}`)
+            .join(" | ")}`,
+      )
+      .join("\n");
+    return `
 ${header("el diseñador de UX", b)}
 DECISIONES PREVIAS:
 ${buildDecisionContext(b, "layout")}
 
-Propón ${N} patrones de maquetación (distribución espacial de pantallas) para ESTE producto, 2 por nivel: p. ej. landing de una columna, App Shell con sidebar, dashboard Bento Grid, master-detail, navegación por pestañas inferiores (mobile-first), canvas inmersivo, layout de documentación con índice lateral, feed.
+El producto tiene ${surfaces.length} superficie(s) con pantallas. Para CADA una, ordena los layouts de SU catálogo (no inventes otros):
+${catalog}
+
+Devuelve EXACTAMENTE ${surfaces.length} opción(es) en "options", una por superficie y en ese orden:
+- surface: el id exacto de la superficie.
+- summary: qué necesita esa parte en ESTE proyecto y qué debe destacar su pantalla principal (1-2 frases concretas).
+- beginnerTip: cómo debería sentirse para quien la usa, en lenguaje simple (máx. 20 palabras).
+- ranking: TODOS los layouts de esa superficie, del más al menos recomendado. Cada uno con layoutId y reason: 1 frase aplicada a esta idea (qué contenido iría dónde), coherente con los REQUISITOS, el ESTILO VISUAL y el STACK.
 REGLAS:
-- Coherente con el TIPO DE SISTEMA: si tiene varias superficies (p. ej. sitio público + panel admin), reparte las opciones entre ellas e indica en el tag a cuál pertenece cada layout.
-- Coherente con el ESTILO VISUAL elegido, con los módulos de los REQUISITOS y con el tipo de usuario.
-- Implementable con el STACK elegido; en techs menciona piezas reales de ese stack (componentes, utilidades CSS, librerías).
-- No propongas patrones genéricos sin justificarlos para esta idea.
-CAMPOS:
-${optionFields("piezas de layout del stack")}
-${strobiFields("thinking", "cómo el layout encaja con el estilo elegido")}
-${rulesCommon()}
+- Los 2 primeros de cada ranking son los que se marcarán como recomendados: elígelos con criterio, no por el orden del catálogo.
+- Escribe en español neutro y claro, sin jerga innecesaria.
+${strobiFields("thinking", "cómo la distribución de pantallas ayuda a usar el producto")}
 ${JSON_ONLY}
-`,
+`;
+  },
 
   deploy: (b) => `
 ${header("el DevOps Lead", b)}

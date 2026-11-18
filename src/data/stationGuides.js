@@ -175,8 +175,9 @@ export const STATION_GUIDES = {
     analogy:
       "Es la distribución de los muebles: con los mismos muebles puedes tener una sala cómoda o un caos.",
     keyPoints: [
-      "App Shell: menú lateral fijo + área de contenido.",
-      "Bento Grid: tarjetas de distintos tamaños en una cuadrícula.",
+      "Cada parte de tu sistema tiene su propio layout: una landing no se arma igual que un panel de admin.",
+      "Wireframe = boceto de la pantalla con cajas y líneas, sin colores ni detalles.",
+      "Sitio público: zig-zag, hero, one-page. Gestión: tabla CRUD, maestro-detalle.",
       "Mobile-first: diseñar primero para el celular.",
     ],
     university: "IHC, prototipado, wireframes y mockups.",

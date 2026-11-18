@@ -4,6 +4,7 @@ import { buildStepPrompt } from "@/lib/prompts";
 import { normalizeStepResponse, parseModelJson } from "@/lib/stepContracts";
 import { getResponseSchema } from "@/lib/stepSchemas";
 import { STATIONS } from "@/config/stations.config";
+import { layoutSurfacesFor } from "@/data/layoutCatalog";
 
 export const maxDuration = 90;
 // Margen de 10 s respecto a maxDuration para serializar y responder
@@ -25,7 +26,7 @@ function validateStepText(station, rawText, blueprint, minOptions) {
   }
 
   const { data, validCount } = normalizeStepResponse(
-    station.stepNumber,
+    station.id,
     parsed,
     blueprint,
   );
@@ -89,7 +90,13 @@ export async function POST(request) {
   const safeBlueprint =
     blueprint && typeof blueprint === "object" ? blueprint : {};
   const extras = sanitizeExtras(station.id, rawExtras);
-  const minOptions = Math.min(MIN_VALID_OPTIONS, extras.count || Infinity);
+  // Layout: una opción por superficie del proyecto (1, 2 o 3), no 6 cartas
+  const layoutCount =
+    station.id === "layout" ? layoutSurfacesFor(safeBlueprint).length : null;
+  const schemaCount = layoutCount || extras.count;
+  const minOptions = layoutCount
+    ? 1
+    : Math.min(MIN_VALID_OPTIONS, extras.count || Infinity);
 
   try {
     // El validador convierte una respuesta ilegible o incompleta en un fallo del
@@ -109,7 +116,7 @@ export async function POST(request) {
           // Restringe la salida a la forma del contrato (prevención); el
           // validador de abajo sigue siendo la segunda barrera.
           responseSchema: getResponseSchema(station.id, {
-            count: extras.count,
+            count: schemaCount,
           }),
         },
       },

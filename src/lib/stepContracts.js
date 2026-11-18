@@ -8,14 +8,16 @@
  *   { companionMood, companionComment, [optionsKey]: [...] }   (estaciones con cartas)
  *   { companionMood, companionComment, scaffold: {...} }       (workspace)
  */
-import { getStation } from "@/config/stations.config";
+import { resolveStation } from "@/config/stations.config";
 import {
   DATABASE_TYPES,
   DIAGRAM_AUDIENCES,
   DIAGRAM_CATEGORIES,
   DIAGRAM_TYPES,
+  LAYOUT_IDS_BY_SURFACE,
   LEVELS,
 } from "@/lib/stepSchemas";
+import { layoutSurfacesFor, surfaceLabel } from "@/data/layoutCatalog";
 
 const ID_PREFIX = {
   naming: "name",
@@ -176,6 +178,72 @@ function normalizeOption(raw, stationId) {
   return option;
 }
 
+/**
+ * Layout: una opción por superficie con el catálogo de esa superficie ordenado.
+ * Si Gemini omite layouts, se completan en el orden del catálogo; si omite una
+ * superficie del proyecto (y se conoce el blueprint), se añade con su orden de
+ * serie. `provided` cuenta solo lo que vino de Gemini (para validar).
+ */
+function normalizeLayoutOptions(rawItems, blueprint) {
+  const knowsProject = Boolean(
+    blueprint?.idea || blueprint?.selectedSystemType,
+  );
+  const allowed = knowsProject ? layoutSurfacesFor(blueprint) : null;
+  const seen = new Set();
+
+  const fromModel = rawItems.filter(isObject).flatMap((raw) => {
+    const surface = str(raw.surface || raw.id).toLowerCase();
+    const catalog = LAYOUT_IDS_BY_SURFACE[surface];
+    if (!catalog || seen.has(surface)) return [];
+    if (allowed && !allowed.includes(surface)) return [];
+    seen.add(surface);
+
+    const ranking = [];
+    (Array.isArray(raw.ranking) ? raw.ranking : []).forEach((r) => {
+      const layoutId = str(isObject(r) ? r.layoutId : r).toLowerCase();
+      if (catalog.includes(layoutId) && !ranking.some((x) => x.layoutId === layoutId)) {
+        ranking.push({ layoutId, reason: isObject(r) ? str(r.reason) : "" });
+      }
+    });
+    catalog.forEach((layoutId) => {
+      if (!ranking.some((x) => x.layoutId === layoutId))
+        ranking.push({ layoutId, reason: "" });
+    });
+
+    return [
+      {
+        id: surface,
+        surface,
+        level: "medium",
+        title: surfaceLabel(surface),
+        summary: str(raw.summary),
+        beginnerTip: str(raw.beginnerTip),
+        ranking,
+      },
+    ];
+  });
+
+  const missing = (allowed || [])
+    .filter((surface) => !seen.has(surface))
+    .map((surface) => ({
+      id: surface,
+      surface,
+      level: "medium",
+      title: surfaceLabel(surface),
+      summary: "",
+      beginnerTip: "",
+      ranking: LAYOUT_IDS_BY_SURFACE[surface].map((layoutId) => ({
+        layoutId,
+        reason: "",
+      })),
+    }));
+
+  // Mismo orden que las superficies del proyecto
+  const items = [...fromModel, ...missing];
+  if (allowed) items.sort((a, b) => allowed.indexOf(a.surface) - allowed.indexOf(b.surface));
+  return { items, provided: fromModel.length };
+}
+
 function normalizeScaffold(raw, blueprint = {}) {
   const scaffold = isObject(raw) ? raw : {};
   const commands = strList(scaffold.commands);
@@ -196,8 +264,9 @@ function normalizeScaffold(raw, blueprint = {}) {
  * @returns {{ data: object, validCount: number }}
  *   validCount = opciones utilizables (o 1 para el workspace si hay scaffold).
  */
-export function normalizeStepResponse(stepNumber, raw, blueprint = {}) {
-  const station = getStation(stepNumber);
+export function normalizeStepResponse(stationRef, raw, blueprint = {}) {
+  // Acepta el id de la estación ("stack") o su número de paso
+  const station = resolveStation(stationRef);
   const stationId = station?.id;
   const source = isObject(raw) ? raw : {};
 
@@ -224,6 +293,13 @@ export function normalizeStepResponse(stepNumber, raw, blueprint = {}) {
   if (!optionsKey) return { data, validCount: 0 };
 
   const rawItems = Array.isArray(source[optionsKey]) ? source[optionsKey] : [];
+
+  if (stationId === "layout") {
+    const { items, provided } = normalizeLayoutOptions(rawItems, blueprint);
+    data[optionsKey] = items;
+    return { data, validCount: provided };
+  }
+
   const normalizer =
     stationId === "naming"
       ? normalizeName
@@ -233,7 +309,7 @@ export function normalizeStepResponse(stepNumber, raw, blueprint = {}) {
 
   const items = withUniqueIds(
     rawItems.filter(isObject).map(normalizer).filter(Boolean),
-    ID_PREFIX[stationId] || `opt${stepNumber}`,
+    ID_PREFIX[stationId] || `opt-${stationId || "x"}`,
   );
 
   data[optionsKey] = items;

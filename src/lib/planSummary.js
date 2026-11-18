@@ -7,6 +7,7 @@ import {
   LAST_STEP,
   STATIONS,
   hasDecisionValue,
+  highestStepOf,
 } from "@/config/stations.config";
 import {
   SURFACES,
@@ -38,6 +39,10 @@ function chipsFor(station, value) {
       return [String(value)];
     case "system-type":
       return [value.title, ...(value.surfaces || []).map((s) => SURFACES[s] || s)];
+    case "layout":
+      if (value.selections?.length)
+        return value.selections.map((s) => `${s.surfaceTitle}: ${s.layoutTitle}`);
+      return asList(value).map(titleOf).filter(Boolean);
     case "stack":
       return [
         value.title,
@@ -63,8 +68,7 @@ function chipsFor(station, value) {
  * @returns {Array<{ station, status: "decided"|"skipped"|"pending", value, chips }>}
  */
 export function buildPlanEntries(blueprint = {}, generatedOptions = {}) {
-  const generatedSteps = Object.keys(generatedOptions).map(Number);
-  const highestStep = generatedSteps.length ? Math.max(...generatedSteps) : 0;
+  const highestStep = highestStepOf(generatedOptions);
 
   return PLAN_STATIONS.map((station) => {
     const value = blueprint[station.blueprintKey];
@@ -72,7 +76,7 @@ export function buildPlanEntries(blueprint = {}, generatedOptions = {}) {
       return { station, status: "decided", value, chips: chipsFor(station, value) };
     }
     const wasSkipped =
-      generatedOptions[station.stepNumber]?.skipped ||
+      generatedOptions[station.id]?.skipped ||
       (station.skippable && station.stepNumber < highestStep);
     return {
       station,
@@ -124,6 +128,12 @@ function stationMarkdown(station, value) {
         .filter(Boolean)
         .join("\n");
     }
+    case "layout":
+      if (value.selections?.length)
+        return value.selections
+          .map((s) => `- **${s.surfaceTitle}:** ${s.layoutTitle}`)
+          .join("\n");
+      return asList(value).map(mdItem).join("\n");
     case "requirements":
       return asList(value)
         .map((m) =>

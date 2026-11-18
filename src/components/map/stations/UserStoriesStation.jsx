@@ -152,8 +152,8 @@ export function UserStoriesStation({ station, data, onNext, onGenerate }) {
         id: `story-${stamp}-${i + 1}`,
       }));
       const current =
-        useDecisionStore.getState().generatedOptions[stepNumber] || data || {};
-      setStepOptions(stepNumber, {
+        useDecisionStore.getState().generatedOptions[station.id] || data || {};
+      setStepOptions(station.id, {
         ...current,
         [optionsKey]: [...(current[optionsKey] || []), ...fresh],
       });

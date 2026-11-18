@@ -72,6 +72,22 @@ export const STYLE_KEYS = [
   "papercraft",
 ];
 
+/**
+ * Layouts del catálogo agrupados por superficie (ids estables). Los títulos,
+ * descripciones y wireframes viven en src/data/layoutCatalog.js.
+ */
+export const LAYOUT_IDS_BY_SURFACE = {
+  public: ["one-page", "zigzag", "f-pattern", "hero-media", "split-screen", "asymmetric"],
+  content: ["magazine", "masonry", "article-sidebar"],
+  store: ["product-grid", "product-detail", "checkout-steps"],
+  app: ["sidebar-content", "topnav-views", "bento", "cards-grid"],
+  admin: ["crud-table", "master-detail", "wizard-form", "pos-split"],
+  booking: ["calendar", "booking-steps"],
+  mobile: ["bottom-tabs", "list-detail", "stack-nav"],
+};
+export const LAYOUT_SURFACE_IDS = Object.keys(LAYOUT_IDS_BY_SURFACE);
+export const LAYOUT_IDS = Object.values(LAYOUT_IDS_BY_SURFACE).flat();
+
 const STRING = { type: "STRING" };
 const STRING_LIST = { type: "ARRAY", items: STRING };
 const LEVEL = { type: "STRING", enum: LEVELS };
@@ -178,7 +194,20 @@ const OPTIONS_SCHEMA = {
     key: "options",
     items: object({ ...OPTION_FIELDS, styleKey: enumOf(STYLE_KEYS) }),
   },
-  layout: { key: "options", items: object(OPTION_FIELDS) },
+  // Una opción por SUPERFICIE del sistema, con los layouts del catálogo ordenados
+  layout: {
+    key: "options",
+    items: object({
+      surface: enumOf(LAYOUT_SURFACE_IDS),
+      summary: STRING,
+      beginnerTip: STRING,
+      ranking: {
+        type: "ARRAY",
+        minItems: 2,
+        items: object({ layoutId: enumOf(LAYOUT_IDS), reason: STRING }),
+      },
+    }),
+  },
   deploy: { key: "options", items: object(OPTION_FIELDS) },
   "ai-ecosystem": { key: "options", items: object(OPTION_FIELDS) },
 };

@@ -45,6 +45,12 @@ const CARD_SIZE =
 /** Altura del área del abanico (carta + caída de las cartas laterales). */
 const FAN_HEIGHT = "h-[calc(clamp(296px,calc(100dvh-460px),430px)+24px)]";
 
+/** Variante compacta: deja sitio a contenido debajo (p. ej. los wireframes). */
+const CARD_SIZE_COMPACT =
+  "w-[min(270px,72vw)] sm:w-[280px] lg:w-[290px] h-[clamp(210px,calc(100dvh-640px),270px)]";
+const FAN_HEIGHT_COMPACT =
+  "h-[calc(clamp(210px,calc(100dvh-640px),270px)+24px)]";
+
 /**
  * Geometría del abanico según el ancho de pantalla:
  * - spread: separación horizontal entre cartas.
@@ -94,7 +100,11 @@ export function CardDeck({
   isLocked = false,
   renderCard,
   emptyMessage = "No hay opciones para mostrar.",
+  // "compact": cartas más bajas para dejar sitio a contenido debajo del mazo
+  size = "default",
 }) {
+  const cardSize = size === "compact" ? CARD_SIZE_COMPACT : CARD_SIZE;
+  const fanHeight = size === "compact" ? FAN_HEIGHT_COMPACT : FAN_HEIGHT;
   const count = items.length;
   const { spread, reach, tilt, drop, spring } = useFanLayout();
   const [activeIndex, setActiveIndex] = useState(() => {
@@ -103,6 +113,8 @@ export function CardDeck({
   });
   // Marca un gesto en curso para que el clic que lo cierra no seleccione
   const draggedRef = useRef(false);
+  // Nodos de las cartas, para activar/quitar su capa de GPU sin renders
+  const cardNodesRef = useRef(new Map());
   // Desplazamiento del dedo: la carta del centro lo sigue (con leve giro)
   const dragX = useMotionValue(0);
   const dragRotate = useTransform(dragX, [-220, 0, 220], [-7, 0, 7]);
@@ -113,7 +125,7 @@ export function CardDeck({
   if (count === 0) {
     return (
       <div
-        className={`${FAN_HEIGHT} w-full rounded-3xl border border-dashed border-neutral-800 bg-neutral-950/40 flex items-center justify-center text-center p-6 text-xs font-mono text-neutral-500`}
+        className={`${fanHeight} w-full rounded-3xl border border-dashed border-neutral-800 bg-neutral-950/40 flex items-center justify-center text-center p-6 text-xs font-mono text-neutral-500`}
       >
         {emptyMessage}
       </div>
@@ -181,7 +193,7 @@ export function CardDeck({
         onPanStart={count > 1 ? handlePanStart : undefined}
         onPan={count > 1 ? handlePan : undefined}
         onPanEnd={count > 1 ? handlePanEnd : undefined}
-        className={`deck-gesture ${FAN_HEIGHT} relative w-full outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 rounded-3xl`}
+        className={`deck-gesture ${fanHeight} relative w-full outline-none focus-visible:ring-2 focus-visible:ring-neutral-700 rounded-3xl`}
       >
         {items.map((item, index) => {
           const key = getKey(item);
@@ -216,8 +228,20 @@ export function CardDeck({
                 zIndex: 20 - distance,
                 pointerEvents: isVisible ? "auto" : "none",
                 visibility: isNear ? "visible" : "hidden",
-                // Capa propia en GPU: mover la carta no obliga a repintarla
-                willChange: isNear ? "transform, opacity" : "auto",
+              }}
+              // Capa propia en GPU solo mientras se mueve (fluido en móvil); al
+              // asentarse se quita para que el texto no quede borroso
+              ref={(node) => {
+                if (node) cardNodesRef.current.set(key, node);
+                else cardNodesRef.current.delete(key);
+              }}
+              onAnimationStart={() => {
+                const node = cardNodesRef.current.get(key);
+                if (node && isNear) node.style.willChange = "transform, opacity";
+              }}
+              onAnimationComplete={() => {
+                const node = cardNodesRef.current.get(key);
+                if (node) node.style.willChange = "auto";
               }}
               onClick={() => {
                 if (draggedRef.current) return;
@@ -227,7 +251,7 @@ export function CardDeck({
               role="option"
               aria-selected={isSelected}
               aria-hidden={!isFront}
-              className={`absolute top-0 left-1/2 -translate-x-1/2 origin-bottom ${CARD_SIZE} ${
+              className={`absolute top-0 inset-x-0 mx-auto origin-bottom ${cardSize} ${
                 isFront && isLocked ? "cursor-grab" : "cursor-pointer"
               }`}
             >
@@ -355,18 +379,20 @@ export function CardDeck({
 }
 
 /** Esqueleto de carga con la misma forma de abanico. */
-export function DeckSkeleton() {
+export function DeckSkeleton({ size = "default" } = {}) {
+  const cardSize = size === "compact" ? CARD_SIZE_COMPACT : CARD_SIZE;
+  const fanHeight = size === "compact" ? FAN_HEIGHT_COMPACT : FAN_HEIGHT;
   const { spread, reach, tilt, drop } = useFanLayout();
   const offsets = Array.from({ length: reach * 2 + 1 }, (_, i) => i - reach);
   return (
     <div className="w-full flex flex-col gap-3">
-      <div className={`${FAN_HEIGHT} relative w-full`}>
+      <div className={`${fanHeight} relative w-full`}>
         {offsets.map((d) => {
           const distance = Math.abs(d);
           return (
             <div
               key={d}
-              className={`absolute top-0 left-1/2 origin-bottom rounded-2xl border border-neutral-800/80 bg-neutral-900 overflow-hidden ${CARD_SIZE}`}
+              className={`absolute top-0 left-1/2 origin-bottom rounded-2xl border border-neutral-800/80 bg-neutral-900 overflow-hidden ${cardSize}`}
               style={{
                 transform: `translateX(calc(-50% + ${d * spread}px)) translateY(${distance * drop}px) rotate(${d * tilt}deg) scale(${1 - distance * 0.07})`,
                 zIndex: 20 - distance,

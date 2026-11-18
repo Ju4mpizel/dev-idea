@@ -13,6 +13,9 @@ import {
 import { SURFACES, SYSTEM_COMPLEMENTS } from "@/data/systemTypes";
 import { TechChip } from "@/components/ui/TechChip";
 import { ArrivingStrobi } from "./ArrivingStrobi";
+import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
+import { LayoutWireframe } from "@/components/map/stations/LayoutWireframe";
+import { getLayout } from "@/data/layoutCatalog";
 import {
   X,
   Lightbulb,
@@ -34,6 +37,7 @@ export function ProjectPlanPanel() {
   const currentStep = useDecisionStore((s) => s.currentStep);
   const closePlan = useDecisionStore((s) => s.closePlan);
   const visible = isPlanOpen && currentStep > 0;
+  const panelLayer = useAnimatingLayer();
 
   return (
     <AnimatePresence>
@@ -55,7 +59,8 @@ export function ProjectPlanPanel() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 60 }}
             transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            className="fixed z-50 flex flex-col will-change-transform
+            {...panelLayer}
+            className="fixed z-50 flex flex-col
               inset-x-3 bottom-3 max-h-[85dvh]
               xl:inset-x-auto xl:bottom-auto xl:top-24 xl:right-6 xl:w-[340px] xl:max-h-[calc(100dvh-120px)]"
           >
@@ -433,6 +438,36 @@ function StationDetail({ station, value }) {
           <Text>{value.summary}</Text>
           <ProsCons pros={value.pros} cons={value.cons} />
         </>
+      );
+
+    case "layout":
+      // Formato antiguo (sin superficies): solo el título
+      if (!value.selections?.length)
+        return asList(value).map((item) => (
+          <Text key={item.title}>{item.title}</Text>
+        ));
+      return (
+        <ul className="flex flex-col gap-2">
+          {value.selections.map((s) => (
+            <li key={s.surface} className="flex items-center gap-2.5">
+              <LayoutWireframe
+                id={s.layoutId}
+                className="w-16 shrink-0 text-neutral-500"
+              />
+              <span className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-[10px] font-mono text-neutral-500">
+                  {s.surfaceTitle}
+                </span>
+                <span className="text-[11px] font-semibold text-white">
+                  {s.layoutTitle}
+                </span>
+                <span className="text-[10px] text-neutral-400 leading-snug">
+                  {getLayout(s.layoutId)?.summary}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
       );
 
     case "diagrams":

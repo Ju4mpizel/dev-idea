@@ -94,7 +94,7 @@ flowchart LR
 | 8 | **Metodología** | Kanban, Scrum, Shape Up, XP, RUP... según equipo y contexto. | Única · ⏭️ omitible |
 | 9 | **Diagramas** | UML, C4, ERD, DFD, BPMN, wireflow, user journey... proporcionales al proyecto. | Múltiple |
 | 10 | **Estilo visual** | 6 lenguajes visuales; cada carta se ve con su propio estilo. | Única |
-| 11 | **Layout** | Distribución de pantallas coherente con el estilo y los requisitos. | Única |
+| 11 | **Layout** | Una carta por cada parte del sistema (sitio público, panel admin, app…); al elegirla se despliegan sus **wireframes** (zig-zag, hero, tabla CRUD, maestro-detalle, bento…) con ⭐ en los que Gemini recomienda. | Uno por superficie |
 | 12 | **Deploy** | Planes con costo inicial $0 y el código en GitHub. | Única |
 | 13 | **Ecosistema IA** | Modelos para el producto y copilots para programar. | Única |
 | ⭐ | **¡A Trabajar!** | Blueprint final (en desarrollo). | — |
