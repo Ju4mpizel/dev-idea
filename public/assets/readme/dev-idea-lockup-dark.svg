@@ -1,0 +1,22 @@
+<svg width="452" height="100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 452 100" fill="none" role="img" aria-label="Dev.Idea">
+  <title>Dev.Idea</title>
+  <g transform="translate(7.1 23.6) scale(6.6)" stroke="#E6EDF3" stroke-width="0.8">
+    <path d="M0 8A8 8 0 0 1 8 0" stroke-linecap="round" stroke-dasharray="0 1.5708"/>
+    <path d="M8 0A5 5 0 0 1 13 5" stroke-dasharray="1.1 0.5885"/>
+    <path d="M13 5A3 3 0 0 1 10 8A2 2 0 0 1 8 6A1 1 0 0 1 9 5A1 1 0 0 1 10 6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g stroke="#E6EDF3" stroke-width="9" stroke-linejoin="miter">
+    <path d="M124.5 26.5H138A23.5 23.5 0 0 1 138 73.5H124.5Z"/>
+    <path d="M178.5 58H209.5A15.5 15.5 0 1 0 205 69"/>
+    <circle cx="329" cy="58" r="15.5"/>
+    <path d="M363.5 58H394.5A15.5 15.5 0 1 0 390 69"/>
+    <circle cx="427" cy="58" r="15.5"/>
+  </g>
+  <g fill="#E6EDF3">
+    <polygon points="222,38 232.5,38 239,58.8 245.5,38 256,38 243.5,78 234.5,78"/>
+    <rect x="288" y="22" width="9" height="56"/>
+    <rect x="340" y="22" width="9" height="56"/>
+    <rect x="438" y="38" width="9" height="40"/>
+  </g>
+  <circle cx="270" cy="72.5" r="5.5" fill="#71717A"/>
+</svg>
