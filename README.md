@@ -155,7 +155,7 @@ La última estación reúne todo en un **bento** organizado por fases (Definici�
 
 - **Login con Google** (Supabase Auth), obligatorio para generar.
 - **Autoguardado en la nube** del mapa completo, cartas incluidas, para retomarlo en otro dispositivo.
-- **Cupo de ideas:** cada cuenta abre hasta **2 ideas cada 3 horas** y cada idea admite **40 generaciones**. Los límites viven en funciones SQL y el texto de la idea se fija en el servidor.
+- **Cupo de ideas:** cada cuenta abre hasta **2 ideas cada 8 horas** y cada idea admite **40 generaciones**. Los límites viven en funciones SQL y el texto de la idea se fija en el servidor.
 - **Seguridad:** las rutas API actúan con el JWT del usuario y RLS en todas las tablas; nunca se usa la service key.
 - **Herramientas de desarrollo** (proyecto de prueba sin gastar IA) solo para las cuentas de `DEV_TOOLS_EMAILS`.
 
@@ -221,6 +221,7 @@ DEV_TOOLS_EMAILS=tu@correo.com
 | [`20261118_tipo_sistema.sql`](supabase/migrations/20261118_tipo_sistema.sql) | Estación Tipo de sistema y renumeración de pasos guardados. |
 | [`20261119_limite_ideas.sql`](supabase/migrations/20261119_limite_ideas.sql) | Cupo de ideas (tabla `idea_runs` y funciones SQL). |
 | [`20261120_modos.sql`](supabase/migrations/20261120_modos.sql) | Columna `mode` de los modos Rápido / Estándar / Completo. |
+| [`20261121_cupo_8_horas.sql`](supabase/migrations/20261121_cupo_8_horas.sql) | Cupo de ideas: de 2 cada 3 horas a 2 cada 8 horas. |
 
 > ⚠️ Corre cada migración **antes** de desplegar el código que la usa: el autoguardado escribe esas columnas.
 

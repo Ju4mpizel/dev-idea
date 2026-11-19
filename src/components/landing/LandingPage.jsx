@@ -138,7 +138,7 @@ export function LandingPage() {
               : "Iniciar sesión con Google para comenzar"}
           </button>
           <p className="text-[10px] sm:text-[11px] font-mono text-neutral-500">
-            Gratis · 2 ideas cada 3 horas · Tus mapas se guardan en tu cuenta
+            Gratis · 2 ideas cada 8 horas · Tus mapas se guardan en tu cuenta
           </p>
           {error && (
             <p role="alert" className="text-xs text-red-400">

@@ -69,7 +69,7 @@ export function IdeaQuota() {
     return (
       <span
         className={`${base} border-amber-500/30 bg-amber-500/10 text-amber-300`}
-        title="Puedes abrir 2 ideas cada 3 horas. Tus mapas ya empezados siguen disponibles."
+        title="Puedes abrir 2 ideas cada 8 horas. Tus mapas ya empezados siguen disponibles."
       >
         <Clock className="w-3.5 h-3.5" aria-hidden="true" />
         Próxima idea a las {formatQuotaTime(quota.nextFreeAt)}
@@ -80,7 +80,7 @@ export function IdeaQuota() {
   return (
     <span
       className={`${base} border-neutral-800 bg-neutral-950/60 text-neutral-400`}
-      title="Cada idea es una ruta completa por todas las estaciones. El cupo se renueva cada 3 horas."
+      title="Cada idea es una ruta completa por todas las estaciones. El cupo se renueva cada 8 horas."
     >
       <Lightbulb className="w-3.5 h-3.5 text-amber-300" aria-hidden="true" />
       Te {left === 1 ? "queda" : "quedan"} {left} de {quota.limit}{" "}

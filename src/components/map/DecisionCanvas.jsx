@@ -266,7 +266,7 @@ export function DecisionCanvas({ step: currentStep }) {
 
   /**
    * Empieza una idea nueva: primero el servidor abre su ticket (cupo de 2 ideas
-   * cada 3 horas). Lanza ApiError 429 si no queda cupo (lo muestra la Estación 0).
+   * cada 8 horas). Lanza ApiError 429 si no queda cupo (lo muestra la Estación 0).
    */
   const handleStartNew = async (newIdea, context) => {
     const ticket = await claimIdeaRun(newIdea, context);

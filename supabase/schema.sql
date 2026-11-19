@@ -142,7 +142,7 @@ CREATE POLICY "CRUD propio en blueprints"
     )
   );
 
--- 7. LÍMITE DE IDEAS (2 ideas cada 3 horas; 40 generaciones por idea)
+-- 7. LÍMITE DE IDEAS (2 ideas cada 8 horas; 40 generaciones por idea)
 -- Las cuentas de DEV_TOOLS_EMAILS (variable de servidor) no pasan por aquí.
 -- 7.1 Tickets de idea (uno por ruta)
 CREATE TABLE IF NOT EXISTS public.idea_runs (
@@ -184,7 +184,7 @@ DECLARE
   v_used INTEGER;
   v_oldest TIMESTAMPTZ;
   c_limit CONSTANT INTEGER := 2;
-  c_window CONSTANT INTERVAL := interval '3 hours';
+  c_window CONSTANT INTERVAL := interval '8 hours';
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'No autenticado' USING ERRCODE = '28000';
@@ -216,7 +216,7 @@ DECLARE
   v_oldest TIMESTAMPTZ;
   v_id UUID;
   c_limit CONSTANT INTEGER := 2;
-  c_window CONSTANT INTERVAL := interval '3 hours';
+  c_window CONSTANT INTERVAL := interval '8 hours';
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'No autenticado' USING ERRCODE = '28000';

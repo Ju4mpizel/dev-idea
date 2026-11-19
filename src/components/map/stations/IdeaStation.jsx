@@ -18,6 +18,11 @@ import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
 import { TestProjectToggle } from "@/components/dev/TestProjectToggle";
 import { IdeaQuota, formatQuotaTime, hasIdeaSlot } from "./IdeaQuota";
 import { ModeSelector } from "./ModeSelector";
+import {
+  TOO_SHORT_QUOTE,
+  randomOffTopicQuote,
+  screenIdea,
+} from "@/lib/ideaGuard";
 
 export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
   const blueprint = useDecisionStore((state) => state.blueprint);
@@ -155,6 +160,18 @@ export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
       return;
     }
     if (!currentIdeaDraft.trim() || isStarting) return;
+
+    // Filtro local (sin IA ni cupo): Dev.Idea solo planifica software
+    const screen = screenIdea(currentIdeaDraft);
+    if (screen.verdict === "off-topic") {
+      setCompanion("angry", randomOffTopicQuote());
+      return;
+    }
+    if (screen.verdict === "too-short") {
+      setCompanion("confused", TOO_SHORT_QUOTE);
+      return;
+    }
+
     setIsStarting(true);
     try {
       await onStartNew(currentIdeaDraft.trim(), blueprint.context || "startup");
@@ -172,6 +189,18 @@ export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
           "bored",
           `Ya usaste tus ${quota.limit || 2} ideas por ahora. La próxima se libera a las ${formatQuotaTime(quota.nextFreeAt)}. Mientras, puedes seguir con tus mapas ya empezados.`,
         );
+      } else if (err?.status === 422) {
+        // El servidor (con ayuda de la IA) decidió que no es un proyecto de software
+        if (err.code === "IDEA_TOO_SHORT") {
+          setCompanion("confused", TOO_SHORT_QUOTE);
+        } else {
+          setCompanion(
+            "angry",
+            err.body?.reason
+              ? `${randomOffTopicQuote()} (${err.body.reason})`
+              : randomOffTopicQuote(),
+          );
+        }
       } else if (err?.status !== 401) {
         console.error(err);
         setCompanion(
