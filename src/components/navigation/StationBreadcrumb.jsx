@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import {
-  STATIONS,
+  stationsInMode,
   LAST_STEP,
   PHASES,
   getPhase,
@@ -30,6 +30,9 @@ const nodeCenter = (index) => ({
 
 export function StationBreadcrumb() {
   const currentStep = useDecisionStore((state) => state.currentStep);
+  // El recorrido muestra solo las estaciones del modo del mapa
+  const mode = useDecisionStore((state) => state.blueprint.mode);
+  const STATIONS = stationsInMode(mode);
   const goToStep = useDecisionStore((state) => state.goToStep);
   const generatedOptions = useDecisionStore((state) => state.generatedOptions);
   const isLoading = useDecisionStore((state) => state.isLoading);
@@ -50,13 +53,15 @@ export function StationBreadcrumb() {
     const frame = requestAnimationFrame(() => {
       const container = scrollRef.current;
       if (!container) return;
-      const index = STATIONS.findIndex((s) => s.stepNumber === currentStep);
+      const index = stationsInMode(mode).findIndex(
+        (s) => s.stepNumber === currentStep,
+      );
       const top =
         index * ROW_HEIGHT + NODE_SIZE / 2 - container.clientHeight / 2 + 16;
       container.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     });
     return () => cancelAnimationFrame(frame);
-  }, [currentStep, isRouteMapOpen]);
+  }, [currentStep, isRouteMapOpen, mode]);
 
   if (currentStep === 0) return null;
 

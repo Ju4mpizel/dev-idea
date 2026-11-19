@@ -354,10 +354,77 @@ export const getPhase = (station) =>
 
 export const LAST_STEP = STATIONS[STATIONS.length - 1].stepNumber;
 
+// ---------- Modos del recorrido ----------
+
+/**
+ * Modos del recorrido: cuántas estaciones recorre el usuario. Un modo corto no
+ * se salta lo esencial (qué es, qué hace, con qué se hace y dónde se guardan
+ * los datos); lo omitido lo completa el cierre como "Sugerido por Dev-i".
+ * `stations: null` = todas.
+ */
+export const MODES = {
+  quick: {
+    id: "quick",
+    label: "Rápido",
+    tagline: "Lo esencial para empezar a programar ya",
+    stations: ["idea", "system-type", "requirements", "stack", "database", "workspace"],
+  },
+  standard: {
+    id: "standard",
+    label: "Estándar",
+    tagline: "Estructura, diseño y deploy sin teoría de más",
+    stations: [
+      "idea", "naming", "system-type", "requirements", "stack", "database",
+      "architecture", "morphism", "layout", "deploy", "workspace",
+    ],
+  },
+  complete: {
+    id: "complete",
+    label: "Completo",
+    tagline: "Todo el plano, ideal para la universidad",
+    stations: null,
+  },
+};
+
+export const DEFAULT_MODE = "complete";
+
+/** Modo válido (los proyectos anteriores a los modos son "complete"). */
+export const resolveMode = (mode) => (MODES[mode] ? mode : DEFAULT_MODE);
+
+/** ¿La estación (id u objeto) forma parte del modo? */
+export function isStationInMode(stationRef, mode) {
+  const id = typeof stationRef === "string" ? stationRef : stationRef?.id;
+  const list = MODES[resolveMode(mode)].stations;
+  return !list || list.includes(id);
+}
+
+/** Estaciones del recorrido en ese modo, en orden. */
+export const stationsInMode = (mode) =>
+  STATIONS.filter((s) => isStationInMode(s, mode));
+
+/** Estaciones que el modo deja fuera (para el cierre y los prompts). */
+export const stationsOutOfMode = (mode) =>
+  STATIONS.filter((s) => !isStationInMode(s, mode));
+
+/** Siguiente paso del modo después de `step` (o null si es el último). */
+export function nextStepInMode(step, mode) {
+  return (
+    stationsInMode(mode).find((s) => s.stepNumber > Number(step))?.stepNumber ??
+    null
+  );
+}
+
+/** Paso anterior del modo antes de `step` (mínimo 0). */
+export function prevStepInMode(step, mode) {
+  const before = stationsInMode(mode).filter((s) => s.stepNumber < Number(step));
+  return before.length ? before[before.length - 1].stepNumber : 0;
+}
+
 // Campos base del blueprint que no pertenecen a una estación de decisión.
 const BASE_FIELDS = [
   { blueprintKey: "idea", dbColumn: "idea", empty: "" },
   { blueprintKey: "context", dbColumn: "context", empty: "startup" },
+  { blueprintKey: "mode", dbColumn: "mode", empty: DEFAULT_MODE },
 ];
 
 // Valor vacío de cada decisión (arrays para selecciones múltiples, "" para texto).

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
-import { LAST_STEP } from "@/config/stations.config";
+import { LAST_STEP, nextStepInMode } from "@/config/stations.config";
 import { CloudSyncBadge } from "@/components/navigation/CloudSyncBadge";
 import { selectHighestStep } from "@/hooks/useStationNavigation";
 import {
@@ -33,9 +33,15 @@ export function TopBarControls() {
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const maxStepReached = useDecisionStore(selectHighestStep);
+  const mode = useDecisionStore((state) => state.blueprint.mode);
+  // Siguiente estación DEL MODO (en Rápido, de Requisitos se salta a Stack)
+  const nextStep = nextStepInMode(currentStep, mode);
 
   const canGoNext =
-    currentStep > 0 && currentStep < maxStepReached && currentStep < LAST_STEP;
+    currentStep > 0 &&
+    nextStep !== null &&
+    nextStep <= maxStepReached &&
+    currentStep < LAST_STEP;
 
   return (
     <>
@@ -129,7 +135,7 @@ export function TopBarControls() {
         {canGoNext && (
           <button
             type="button"
-            onClick={() => goToStep(currentStep + 1)}
+            onClick={() => goToStep(nextStep)}
             disabled={isLoading}
             aria-label="Estación siguiente"
             className="min-h-9 min-w-9 flex items-center justify-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl hover:bg-neutral-800/80 text-neutral-400 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-mono transition-colors cursor-pointer shrink-0"

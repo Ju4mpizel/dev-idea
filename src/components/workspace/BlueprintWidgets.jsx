@@ -24,7 +24,12 @@ import {
   Workflow,
   Layers,
 } from "lucide-react";
-import { getStationById, PHASES } from "@/config/stations.config";
+import {
+  getStationById,
+  MODES,
+  PHASES,
+  resolveMode,
+} from "@/config/stations.config";
 import { SURFACES, SYSTEM_COMPLEMENTS } from "@/data/systemTypes";
 import { getAiTool } from "@/data/aiTools";
 import { TechIcon } from "@/components/ui/TechChip";
@@ -781,7 +786,10 @@ export function DiagramsWidget({ blueprint, scaffold, isGenerating, className })
   const chosen = asList(blueprint.selectedDiagrams);
   const fromScaffold = asList(scaffold?.diagrams);
   // Código del cierre (completo) o, mientras tanto, el ejemplo de la carta
-  const diagrams = chosen.map((d, i) => {
+  // Sin diagramas elegidos (modo que omite la estación): los que sugirió el cierre
+  const isSuggested = chosen.length === 0;
+  const base = isSuggested ? fromScaffold : chosen;
+  const diagrams = base.map((d, i) => {
     const full =
       fromScaffold.find((s) => s.id && s.id === d.id) ||
       fromScaffold.find((s) => s.diagramType && s.diagramType === d.diagramType) ||
@@ -789,7 +797,7 @@ export function DiagramsWidget({ blueprint, scaffold, isGenerating, className })
     return {
       key: d.id || `${d.title}-${i}`,
       title: d.title,
-      category: d.category,
+      category: isSuggested ? "Sugerido" : d.category,
       mermaid: cleanMermaid(full?.mermaid || d.sampleMermaid),
       isSample: !full?.mermaid || full.isSample,
     };
@@ -1188,3 +1196,49 @@ export function AgentsMdWidget({ markdown, actions, className }) {
   );
 }
 
+
+// ---------- Estaciones fuera del modo ----------
+
+/** Acento e ícono del widget al que reemplaza cada sugerencia. */
+const SUGGESTION_META = {
+  "user-stories": { accent: "rose", icon: Users },
+  architecture: { accent: "indigo", icon: Network },
+  morphism: { accent: "fuchsia", icon: Palette },
+  layout: { accent: "purple", icon: LayoutTemplate },
+  deploy: { accent: "emerald", icon: Rocket },
+  "ai-ecosystem": { accent: "teal", icon: Sparkles },
+};
+
+/**
+ * Celda de una estación que el modo omitió: muestra la sugerencia del cierre
+ * ("Sugerido por Dev-i") en el mismo lugar del widget, así el bento no queda
+ * con huecos y el usuario ve qué haría Dev-i.
+ */
+export function SuggestionWidget({ stationId, blueprint, scaffold, isGenerating, className }) {
+  const station = getStationById(stationId);
+  const meta = SUGGESTION_META[stationId] || { accent: "sky", icon: Sparkles };
+  const suggestion = asList(scaffold?.suggestions).find((s) => s.stationId === stationId);
+  const modeLabel = MODES[resolveMode(blueprint?.mode)].label;
+  return (
+    <BentoCard
+      accent={meta.accent}
+      icon={meta.icon}
+      title={suggestion?.title || station?.title}
+      stationId={stationId}
+      label={`Fuera del modo ${modeLabel}`}
+      actions={<Chip accent={meta.accent}>Sugerido por Dev-i</Chip>}
+      className={className}
+    >
+      {isGenerating && !scaffold ? (
+        <SkeletonLines rows={2} />
+      ) : suggestion ? (
+        <Summary>{suggestion.detail}</Summary>
+      ) : (
+        <EmptyNote>
+          No pasaste por {station?.title} en el modo {modeLabel}. Puedes decidirlo
+          cuando empieces a construir.
+        </EmptyNote>
+      )}
+    </BentoCard>
+  );
+}

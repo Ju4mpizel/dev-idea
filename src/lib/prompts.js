@@ -9,7 +9,12 @@
  * Público objetivo: personas que empiezan (estudiantes y "vibe coders"). Todas las
  * cartas deben poder entenderse sin experiencia previa, sin perder rigor técnico.
  */
-import { STATIONS } from "@/config/stations.config";
+import {
+  MODES,
+  STATIONS,
+  isStationInMode,
+  resolveMode,
+} from "@/config/stations.config";
 import { OPTIONS_PER_STATION as N, getOptionCount } from "@/lib/stepSchemas";
 import { SYSTEM_COMPLEMENTS, describeSurfaces } from "@/data/systemTypes";
 import {
@@ -132,7 +137,11 @@ function buildDecisionContext(blueprint, stationId) {
   const upto = target ? target.stepNumber : Infinity;
   const lines = STATIONS.filter(
     (s) => s.stepNumber > 0 && s.stepNumber < upto && DECISION_LINES[s.id],
-  ).map((s) => `- ${DECISION_LINES[s.id](blueprint)}`);
+  ).map((s) =>
+    isStationInMode(s, blueprint.mode)
+      ? `- ${DECISION_LINES[s.id](blueprint)}`
+      : `- ${s.title.toUpperCase()}: NO SE DECIDIÓ (fuera del modo ${MODES[resolveMode(blueprint.mode)].label}). No la presentes como decisión del usuario; elige lo más simple y estándar para el resto.`,
+  );
   if (!lines.length) return "- (aún no hay decisiones previas)";
 
   // El tipo de sistema acota TODO lo que viene después
@@ -263,6 +272,12 @@ function stackProfilesFor(blueprint) {
     ],
   };
 }
+
+/** Estaciones que el cierre puede sugerir cuando el modo las omite. */
+const SUGGESTABLE = [
+  "user-stories", "architecture", "methodology", "morphism", "layout",
+  "deploy", "ai-ecosystem",
+];
 
 /** Reglas de deploy según qué se publica: app móvil, bot/API o web. */
 function deployTargetRules(blueprint) {
@@ -585,6 +600,12 @@ ${JSON_ONLY}
     const diagrams = (Array.isArray(b.selectedDiagrams) ? b.selectedDiagrams : [])
       .map((d) => `${d.title} (${d.diagramType || "flowchart"})`)
       .join(", ");
+    const diagramsOmitted = !isStationInMode("diagrams", b.mode);
+    const hasDb = Boolean(b.selectedDatabase) && b.selectedDatabase.dbType !== "none";
+    // Estaciones que el modo saltó: el cierre deja una sugerencia para cada una
+    const omitted = STATIONS.filter(
+      (st) => SUGGESTABLE.includes(st.id) && !isStationInMode(st, b.mode),
+    );
     return `
 ${header("el Lead Architect", b)}
 DECISIONES DEL USUARIO:
@@ -597,7 +618,14 @@ CAMPOS:
 - scaffold.diagrams: ${
       diagrams
         ? `UNO por cada diagrama elegido (${diagrams}), en el mismo orden. diagramType: el del diagrama · title: su nombre · mermaid: código Mermaid VÁLIDO y COMPLETO (10-30 líneas) con los actores, entidades, pantallas y flujos REALES de este proyecto según requisitos e historias. Si Mermaid no tiene ese tipo, usa el equivalente más cercano (casos de uso -> flowchart LR con actores y casos; C4 -> flowchart con subgraph; BPMN y DFD -> flowchart). Sin comillas tipográficas ni acentos en los ids de los nodos.`
-        : "[] (el usuario no eligió diagramas)."
+        : diagramsOmitted
+          ? `2 diagramas básicos sugeridos (el modo omitió la estación Diagramas): use-case (casos de uso con los actores reales)${hasDb ? " y erd (entidades de la base)" : " y flowchart (flujo principal)"}. Mismo formato: diagramType, title y mermaid VÁLIDO de 10-30 líneas.`
+          : "[] (el usuario no eligió diagramas)."
+    }
+- scaffold.suggestions: ${
+      omitted.length
+        ? `el usuario NO pasó por estas estaciones (modo ${MODES[resolveMode(b.mode)].label}): ${omitted.map((st) => `${st.id} (${st.title})`).join(", ")}. Devuelve UNA sugerencia por cada una, coherente con lo que sí decidió: stationId (el id exacto) · title (la elección concreta, p. ej. "MVC de Laravel", "Vercel gratis + GitHub", "Kanban personal") · detail (1-2 frases: por qué encaja y qué hacer primero).`
+        : "[] (el usuario recorrió todas las estaciones)."
     }
 - scaffold.folders: 6-12 carpetas o archivos clave del proyecto recién creado, con la convención REAL del framework elegido y organizadas según la ARQUITECTURA (p. ej. módulos por dominio en un monolito modular). path: ruta relativa terminada en "/" si es carpeta (p. ej. "src/modules/reservas/") · purpose: qué va ahí (máx. 10 palabras).
 - scaffold.entities: entidades principales del MODELO DE DATOS según los requisitos (3-6). name: en PascalCase singular · fields: 3-8 campos "nombre: tipo" con tipos de la base elegida (marca la clave primaria con "PK" y las foráneas con "FK → Entidad"). Si la BASE DE DATOS es NINGUNA (tipo none), devuelve []; si es documental, cada entidad es una colección.

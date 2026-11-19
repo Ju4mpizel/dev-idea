@@ -8,7 +8,11 @@
  *   { companionMood, companionComment, [optionsKey]: [...] }   (estaciones con cartas)
  *   { companionMood, companionComment, scaffold: {...} }       (workspace)
  */
-import { resolveStation } from "@/config/stations.config";
+import {
+  getStationById,
+  isStationInMode,
+  resolveStation,
+} from "@/config/stations.config";
 import { normalizePalettes } from "@/lib/palettes";
 import {
   DATABASE_TYPES,
@@ -345,6 +349,29 @@ function normalizeScaffoldDiagrams(raw, blueprint = {}) {
   });
 }
 
+/**
+ * Sugerencias del cierre para las estaciones que el modo omitió: una por
+ * estación, solo de estaciones reales y fuera del modo del mapa.
+ */
+function normalizeSuggestions(raw, blueprint = {}) {
+  const seen = new Set();
+  return (Array.isArray(raw) ? raw : [])
+    .filter(isObject)
+    .map((s) => ({
+      stationId: str(s.stationId),
+      title: str(s.title),
+      detail: str(s.detail),
+    }))
+    .filter((s) => {
+      const station = getStationById(s.stationId);
+      if (!station || !s.title || seen.has(s.stationId)) return false;
+      if (blueprint.mode && isStationInMode(station, blueprint.mode)) return false;
+      seen.add(s.stationId);
+      return true;
+    })
+    .slice(0, 8);
+}
+
 function normalizeScaffold(raw, blueprint = {}) {
   const scaffold = isObject(raw) ? raw : {};
   const stack = isObject(blueprint.selectedStack) ? blueprint.selectedStack : null;
@@ -366,6 +393,7 @@ function normalizeScaffold(raw, blueprint = {}) {
       str(scaffold.techSummary) || blueprint.selectedStack?.title || "",
     commands: commands.length ? commands : defaultCommands(fallbackPreferences),
     diagrams: normalizeScaffoldDiagrams(scaffold.diagrams, blueprint),
+    suggestions: normalizeSuggestions(scaffold.suggestions, blueprint),
     // Campos nuevos: los proyectos guardados antes no los traen ([])
     folders: list(scaffold.folders)
       .map((f) => ({ path: str(f.path), purpose: str(f.purpose) }))

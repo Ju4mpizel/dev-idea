@@ -17,6 +17,7 @@ import { Cloud, HardDrive, Trash2 } from "lucide-react";
 import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
 import { TestProjectToggle } from "@/components/dev/TestProjectToggle";
 import { IdeaQuota, formatQuotaTime, hasIdeaSlot } from "./IdeaQuota";
+import { ModeSelector } from "./ModeSelector";
 
 export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
   const blueprint = useDecisionStore((state) => state.blueprint);
@@ -311,8 +312,11 @@ export function IdeaStation({ onStartNew, onResumeSaved, onLoadTestProject }) {
           </div>
         </div>
 
+        {/* Modo del recorrido: Rápido, Estándar o Completo */}
+        <ModeSelector intro={intro} isResuming={hasSavedBlueprint} />
+
         <div
-          style={introDelay(intro, 1400)}
+          style={introDelay(intro, 1520)}
           className={`flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-1 ${introClass(intro, "intro-rise")}`}
         >
           <div className="flex justify-center sm:justify-start">

@@ -8,6 +8,8 @@ import {
   getStationById,
   hasDecisionValue,
   highestStepOf,
+  prevStepInMode,
+  resolveMode,
   resolveStation,
   toIdKeyedOptions,
 } from "@/config/stations.config";
@@ -151,6 +153,10 @@ export const useDecisionStore = create(
       companionMood: "idle",
       companionDialogue: "Cuéntame qué quieres armar y calibramos el camino.",
       strobiColor: "#5b7fe5",
+      // Modo elegido en la Estación 0 para el PRÓXIMO mapa (el del mapa actual
+      // vive en blueprint.mode y no cambia a mitad de camino)
+      preferredMode: "complete",
+      setPreferredMode: (mode) => set({ preferredMode: resolveMode(mode) }),
       setStrobiColor: (hex) => set({ strobiColor: hex }),
 
       // Panel "¿Qué es...?" de la estación (Dev-i se mueve a su lado)
@@ -266,7 +272,7 @@ export const useDecisionStore = create(
 
       previousStep: () =>
         set((state) => ({
-          currentStep: Math.max(state.currentStep - 1, 0),
+          currentStep: prevStepInMode(state.currentStep, state.blueprint.mode),
           apiError: null,
           infoStationId: null,
         })),
@@ -363,7 +369,7 @@ export const useDecisionStore = create(
       },
 
       // `ideaRunId`: ticket de la idea que emite el servidor (null = sin límite)
-      startNewMap: (newIdea, context = "startup", ideaRunId = null) => {
+      startNewMap: (newIdea, context = "startup", ideaRunId = null, mode) => {
         abortActiveRequest();
         set({
           isTestProject: false,
@@ -383,7 +389,11 @@ export const useDecisionStore = create(
           companionMood: "idle",
           ideaRunId,
           companionDialogue: `Iniciando nuevo análisis para: "${newIdea}".`,
-          blueprint: createInitialBlueprint({ idea: newIdea, context }),
+          blueprint: createInitialBlueprint({
+            idea: newIdea,
+            context,
+            mode: resolveMode(mode ?? useDecisionStore.getState().preferredMode),
+          }),
           generatedOptions: {},
         });
       },
@@ -456,6 +466,7 @@ export const useDecisionStore = create(
         cloudProjectId: state.cloudProjectId,
         ideaRunId: state.ideaRunId,
         strobiColor: state.strobiColor,
+        preferredMode: state.preferredMode,
         isTestProject: state.isTestProject,
         testFixture: state.testFixture,
       }),

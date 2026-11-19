@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.blueprints (
   project_id UUID UNIQUE REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
   idea TEXT NOT NULL DEFAULT '',
   context TEXT NOT NULL DEFAULT 'startup' CHECK (context IN ('academic', 'startup', 'personal')),
+  mode TEXT NOT NULL DEFAULT 'complete' CHECK (mode IN ('quick', 'standard', 'complete')),
   selected_name TEXT DEFAULT '',
   selected_system_type JSONB DEFAULT NULL,
   selected_requirements JSONB DEFAULT '[]'::jsonb,

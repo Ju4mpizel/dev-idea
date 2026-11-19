@@ -316,6 +316,13 @@ export function getResponseSchema(stationId, { count } = {}) {
           maxItems: 8,
           items: object({ diagramType: STRING, title: STRING, mermaid: STRING }),
         },
+        // Sugerencias para las estaciones que el modo omitió (vacío en Completo)
+        suggestions: {
+          type: "ARRAY",
+          minItems: 0,
+          maxItems: 8,
+          items: object({ stationId: STRING, title: STRING, detail: STRING }),
+        },
       }),
     });
   }

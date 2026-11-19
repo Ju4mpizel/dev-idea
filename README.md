@@ -154,7 +154,7 @@ DEV_TOOLS_EMAILS=tu@correo.com
 ### 3️⃣ Base de datos (Supabase)
 
 - **Proyecto nuevo:** ejecuta [`supabase/schema.sql`](supabase/schema.sql) en el SQL Editor.
-- **Proyecto existente:** ejecuta una vez, en orden, [`supabase/migrations/20261116_estaciones_v3.sql`](supabase/migrations/20261116_estaciones_v3.sql) (columnas de requisitos, historias, base de datos y cartas generadas) y [`supabase/migrations/20261118_tipo_sistema.sql`](supabase/migrations/20261118_tipo_sistema.sql) (estación Tipo de sistema: nueva columna y renumeración de los pasos guardados) y [`supabase/migrations/20261119_limite_ideas.sql`](supabase/migrations/20261119_limite_ideas.sql) (cupo de ideas; córrela **antes** de desplegar el código).
+- **Proyecto existente:** ejecuta una vez, en orden, [`supabase/migrations/20261116_estaciones_v3.sql`](supabase/migrations/20261116_estaciones_v3.sql) (columnas de requisitos, historias, base de datos y cartas generadas) y [`supabase/migrations/20261118_tipo_sistema.sql`](supabase/migrations/20261118_tipo_sistema.sql) (estación Tipo de sistema: nueva columna y renumeración de los pasos guardados) y [`supabase/migrations/20261119_limite_ideas.sql`](supabase/migrations/20261119_limite_ideas.sql) (cupo de ideas; córrela **antes** de desplegar el código) y [`supabase/migrations/20261120_modos.sql`](supabase/migrations/20261120_modos.sql) (columna `mode` de los modos Rápido / Estándar / Completo; también **antes** de desplegar).
 - Activa el proveedor **Google** en *Authentication → Providers*.
 
 ### 4️⃣ Iniciar en local

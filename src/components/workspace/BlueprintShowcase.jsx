@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Copy, Download, FileText } from "lucide-react";
 import { TopBarControls } from "@/components/navigation/TopBarControls";
-import { LAST_STEP, PHASES } from "@/config/stations.config";
+import { LAST_STEP, PHASES, isStationInMode } from "@/config/stations.config";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { buildPlanEntries, buildPlanMarkdown } from "@/lib/planSummary";
 import { buildAgentsMd } from "@/lib/agentsMd";
@@ -25,6 +25,7 @@ import {
   StatsWidget,
   StoriesWidget,
   StyleWidget,
+  SuggestionWidget,
   SystemTypeWidget,
   WorkPlanWidget,
 } from "./BlueprintWidgets";
@@ -122,6 +123,18 @@ export function BlueprintShowcase({ data, blueprint }) {
 
   const props = { blueprint, scaffold, isGenerating };
 
+  // Estación fuera del modo: en su celda va la sugerencia de Dev-i
+  const forStation = (stationId, widget) =>
+    isStationInMode(stationId, blueprint?.mode) ? (
+      widget
+    ) : (
+      <SuggestionWidget
+        stationId={stationId}
+        {...props}
+        className={widget.props.className}
+      />
+    );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -187,27 +200,45 @@ export function BlueprintShowcase({ data, blueprint }) {
         <StatsWidget {...props} entries={entries} className="md:col-span-6 lg:col-span-5" />
         <SystemTypeWidget {...props} className="md:col-span-6 lg:col-span-4" />
         <RequirementsWidget {...props} className="md:col-span-6 lg:col-span-8" />
-        <StoriesWidget {...props} className="md:col-span-6 lg:col-span-12" />
+        {forStation(
+          "user-stories",
+          <StoriesWidget {...props} className="md:col-span-6 lg:col-span-12" />,
+        )}
       </PhaseBlock>
 
       <PhaseBlock phase="technical" delay={0.12}>
         <StackWidget {...props} className="md:col-span-6 lg:col-span-6" />
         <DatabaseWidget {...props} className="md:col-span-3 lg:col-span-3" />
-        <ArchitectureWidget {...props} className="md:col-span-3 lg:col-span-3" />
+        {forStation(
+          "architecture",
+          <ArchitectureWidget {...props} className="md:col-span-3 lg:col-span-3" />,
+        )}
         <DataModelWidget {...props} className="md:col-span-6 lg:col-span-7" />
         <FoldersWidget {...props} className="md:col-span-6 lg:col-span-5" />
         <WorkPlanWidget {...props} className="md:col-span-6 lg:col-span-12" />
       </PhaseBlock>
 
       <PhaseBlock phase="design" delay={0.19}>
-        <StyleWidget {...props} className="md:col-span-6 lg:col-span-5" />
-        <LayoutWidget {...props} className="md:col-span-6 lg:col-span-7" />
+        {forStation(
+          "morphism",
+          <StyleWidget {...props} className="md:col-span-6 lg:col-span-5" />,
+        )}
+        {forStation(
+          "layout",
+          <LayoutWidget {...props} className="md:col-span-6 lg:col-span-7" />,
+        )}
         <DiagramsWidget {...props} className="md:col-span-6 lg:col-span-12" />
       </PhaseBlock>
 
       <PhaseBlock phase="delivery" delay={0.26}>
-        <DeployWidget {...props} className="md:col-span-6 lg:col-span-5" />
-        <AiKitWidget {...props} className="md:col-span-3 lg:col-span-3" />
+        {forStation(
+          "deploy",
+          <DeployWidget {...props} className="md:col-span-6 lg:col-span-5" />,
+        )}
+        {forStation(
+          "ai-ecosystem",
+          <AiKitWidget {...props} className="md:col-span-3 lg:col-span-3" />,
+        )}
         <CommandsWidget
           {...props}
           className="md:col-span-3 lg:col-span-4"

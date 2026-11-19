@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { getStation } from "@/config/stations.config";
+import { getStation, nextStepInMode } from "@/config/stations.config";
 import { normalizeStepResponse } from "@/lib/stepContracts";
 import { layoutSurfacesFor } from "@/data/layoutCatalog";
 import { recommendDataStorage } from "@/data/databases";
@@ -273,7 +273,12 @@ export function DecisionCanvas({ step: currentStep }) {
     const { ideaRunId, ...quota } = ticket;
     useDecisionStore.getState().setIdeaQuota(quota);
     startNewMap(newIdea, context, ideaRunId);
-    requestStepAndNavigate(1, undefined, true);
+    // Primera estación del modo (en Rápido no hay Nombre: va a Tipo de sistema)
+    requestStepAndNavigate(
+      nextStepInMode(0, useDecisionStore.getState().blueprint.mode) ?? 1,
+      undefined,
+      true,
+    );
   };
 
   // Proyecto de prueba: todo viene listo del servidor (sin Gemini), carga al instante
@@ -359,7 +364,10 @@ export function DecisionCanvas({ step: currentStep }) {
         station={station}
         data={generatedOptions[station.id]}
         onNext={(extraFields) =>
-          requestStepAndNavigate(currentStep + 1, extraFields)
+          requestStepAndNavigate(
+            nextStepInMode(currentStep, blueprint.mode) ?? currentStep + 1,
+            extraFields,
+          )
         }
         onGenerate={() => requestStepAndNavigate(currentStep, {}, true)}
         // Genera con datos que la estación junta antes (p. ej. la base favorita)

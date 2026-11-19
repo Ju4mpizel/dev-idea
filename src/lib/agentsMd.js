@@ -4,6 +4,7 @@
  * cliente con lo decidido en el blueprint y el scaffold del cierre: no gasta IA.
  */
 import { contextLabel } from "@/lib/planSummary";
+import { getStationById } from "@/config/stations.config";
 import { SYSTEM_COMPLEMENTS, describeSurfaces } from "@/data/systemTypes";
 import { PALETTE_ROLES } from "@/lib/palettes";
 import {
@@ -171,6 +172,12 @@ export function buildAgentsMd(blueprint = {}, scaffold = {}) {
         ...asList(m.tasks).map((t) => `  - [ ] ${t}`),
       ]),
     ]),
+    ...section(
+      "Sugerencias de Dev-i (decisiones que aún no tomaste)",
+      asList(scaffold.suggestions).map(
+        (s) => `- **${getStationById(s.stationId)?.title || s.stationId}:** ${s.title}${s.detail ? ` — ${s.detail}` : ""}`,
+      ),
+    ),
     ...section("Reglas para la IA", AGENT_RULES),
     "",
   ];

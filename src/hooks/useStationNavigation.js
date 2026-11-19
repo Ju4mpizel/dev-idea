@@ -1,7 +1,11 @@
 "use client";
 
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { highestStepOf, optionsForStep } from "@/config/stations.config";
+import {
+  highestStepOf,
+  nextStepInMode,
+  optionsForStep,
+} from "@/config/stations.config";
 
 /**
  * Selectores únicos de navegación (antes había 7 variantes distintas por estación).
@@ -15,7 +19,9 @@ export function selectHighestStep(state) {
 }
 
 export function isStepLocked(state, stepNumber) {
-  return Boolean(optionsForStep(state.generatedOptions, stepNumber + 1));
+  // La siguiente estación DEL MODO (las que el modo omite no cuentan)
+  const next = nextStepInMode(stepNumber, state.blueprint?.mode);
+  return next !== null && Boolean(optionsForStep(state.generatedOptions, next));
 }
 
 /** Estado de navegación de una estación + acciones de Modo Consulta. */

@@ -4,6 +4,7 @@
  * texto copiable y, más adelante, en el Workspace.
  */
 import {
+  isStationInMode,
   LAST_STEP,
   STATIONS,
   hasDecisionValue,
@@ -70,7 +71,8 @@ function chipsFor(station, value) {
 export function buildPlanEntries(blueprint = {}, generatedOptions = {}) {
   const highestStep = highestStepOf(generatedOptions);
 
-  return PLAN_STATIONS.map((station) => {
+  // Solo las estaciones del modo del mapa (las omitidas las sugiere el cierre)
+  return PLAN_STATIONS.filter((s) => isStationInMode(s, blueprint.mode)).map((station) => {
     const value = blueprint[station.blueprintKey];
     if (hasDecisionValue(value)) {
       return { station, status: "decided", value, chips: chipsFor(station, value) };
