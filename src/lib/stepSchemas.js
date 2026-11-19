@@ -59,6 +59,9 @@ export const DATABASE_TYPES = [
   "embedded",
 ];
 
+/** Franja de costo de un plan de deploy: gratis, económico o profesional. */
+export const COST_TIERS = ["free", "low", "premium"];
+
 /** Papel de cada servicio dentro de un plan de deploy. */
 export const DEPLOY_ROLES = [
   "hosting",
@@ -256,6 +259,7 @@ const OPTIONS_SCHEMA = {
       },
       steps: { type: "ARRAY", items: STRING, minItems: 3, maxItems: 4 },
       cost: STRING,
+      costTier: enumOf(COST_TIERS),
     }),
   },
 };
@@ -304,6 +308,13 @@ export function getResponseSchema(stationId, { count } = {}) {
             goal: STRING,
             tasks: { type: "ARRAY", items: STRING, minItems: 2, maxItems: 4 },
           }),
+        },
+        // Código Mermaid completo de cada diagrama elegido (vacío si no hay)
+        diagrams: {
+          type: "ARRAY",
+          minItems: 0,
+          maxItems: 8,
+          items: object({ diagramType: STRING, title: STRING, mermaid: STRING }),
         },
       }),
     });

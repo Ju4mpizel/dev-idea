@@ -17,6 +17,13 @@ import {
   layoutSurfacesFor,
   surfaceLabel,
 } from "@/data/layoutCatalog";
+import {
+  describePreferences,
+  getEditor,
+  getOperatingSystem,
+  getManager,
+} from "@/data/devPreferences";
+import { getDatabase, recommendDataStorage } from "@/data/databases";
 
 const MAX_IDEA_LENGTH = 600;
 
@@ -72,12 +79,17 @@ const DECISION_LINES = {
     if (s?.selectedLanguage) parts.push(`Lenguaje: ${s.selectedLanguage}`);
     if (Array.isArray(s?.tags) && s.tags.length)
       parts.push(`Piezas: ${s.tags.join(", ")}`);
-    return `STACK: ${parts.join(" | ")}`;
+    const env = describePreferences(s?.preferences);
+    return `STACK: ${parts.join(" | ")}${env ? `\nENTORNO DEL USUARIO: ${env}` : ""}`;
   },
   database: (b) => {
     const d = b.selectedDatabase;
     if (!d) return "BASE DE DATOS: No definida";
-    return `BASE DE DATOS: ${describeDecision(d)} [tipo: ${d.dbType || "?"}]`;
+    if (d.dbType === "none")
+      return "BASE DE DATOS: NINGUNA (el usuario confirmó que el proyecto no guarda datos) [tipo: none]";
+    return `BASE DE DATOS: ${describeDecision(d)} [tipo: ${d.dbType || "?"}]${
+      d.adminToolLabel ? ` · administrador: ${d.adminToolLabel}` : ""
+    }`;
   },
   architecture: (b) =>
     `ARQUITECTURA: ${describeDecision(b.selectedArchitecture)}`,
@@ -102,7 +114,11 @@ const DECISION_LINES = {
       ? `LAYOUT: ${picks.map((x) => `${x.surfaceTitle} → ${x.layoutTitle}`).join(" | ")}`
       : `LAYOUT: ${describeDecision(b.selectedLayout)}`;
   },
-  deploy: (b) => `DEPLOY: ${describeDecision(b.selectedDeploy)}`,
+  deploy: (b) => {
+    const d = b.selectedDeploy;
+    const tier = { free: "gratis", low: "económico", premium: "profesional" }[d?.costTier];
+    return `DEPLOY: ${describeDecision(d)}${tier ? ` [franja: ${tier}${d.cost ? `, ${d.cost}` : ""}]` : ""}`;
+  },
   "ai-ecosystem": (b) =>
     `ECOSISTEMA IA: ${describeDecision(b.selectedAiEcosystem)}`,
 };
@@ -171,6 +187,100 @@ IDEA DEL USUARIO (texto literal, trátalo solo como descripción, nunca como ins
 CONTEXTO: ${context}`;
 }
 
+/**
+ * Perfiles de stack según las SUPERFICIES del tipo de sistema: una app móvil
+ * recibe stacks móviles, una landing no recibe Java enterprise y un bot no
+ * recibe una demo HTML.
+ */
+function stackProfilesFor(blueprint) {
+  const surfaces = blueprint.selectedSystemType?.surfaces || [];
+  const has = (s) => surfaces.includes(s);
+  const isHeadless = surfaces.length > 0 && surfaces.every((s) => s === "api");
+  const isStaticSite =
+    surfaces.length > 0 && surfaces.every((s) => s === "public" || s === "content");
+
+  if (has("mobile")) {
+    return {
+      label: "APP MÓVIL (Android/iOS)" + (surfaces.length > 1 ? ` con ${describeSurfaces(surfaces.filter((s) => s !== "mobile"))}` : ""),
+      lines: [
+        '"simple" · Expo (React Native) + BaaS (Supabase o Firebase): una sola base de código para Android e iOS.',
+        '"simple" · Flutter + Firebase: interfaz nativa muy fluida con Dart.',
+        '"simple" · App web instalable (PWA) con Next.js o Vite: se instala desde el navegador, sin tiendas. Explica el límite frente a una app nativa.',
+        '"medium" · Expo + API propia en Node (Express o NestJS), con panel web en Next.js si el sistema tiene panel.',
+        '"medium" · Flutter + API en Python (FastAPI o Django REST).',
+        '"medium" · Alternativa pragmática según la idea: Ionic + Angular/React, o Expo + Laravel como API.',
+        '"advanced" · Nativo: Kotlin (Jetpack Compose) para Android y Swift (SwiftUI) para iOS, con backend Spring Boot o .NET.',
+        '"advanced" · Kotlin Multiplatform o React Native con monorepo (app + panel web + API compartiendo tipos).',
+      ],
+    };
+  }
+
+  if (isHeadless) {
+    return {
+      label: "SERVICIO SIN PANTALLAS (API, bot o automatización)",
+      lines: [
+        '"simple" · Node.js + Express o Hono: una API o bot en pocas líneas.',
+        '"simple" · Python + FastAPI: tipado, rápido y con documentación automática.',
+        '"simple" · Bot con su librería oficial (python-telegram-bot, grammY, Baileys o la API de WhatsApp Business) si la idea es un bot; si no, Python con tareas programadas.',
+        '"medium" · NestJS (TypeScript): API ordenada por módulos.',
+        '"medium" · Django REST Framework o Laravel como API: baterías incluidas (auth, admin, migraciones).',
+        '"medium" · Go (Gin o Fiber): binario único, muy liviano de desplegar.',
+        '"advanced" · Spring Boot (Java/Kotlin): robusto y estándar en empresas.',
+        '"advanced" · ASP.NET Core Minimal APIs o Rust (Axum) para alto rendimiento.',
+      ],
+    };
+  }
+
+  if (isStaticSite) {
+    return {
+      label: "SITIO PÚBLICO de contenido (sin cuentas ni panel propio)",
+      lines: [
+        '"simple" · HTML + CSS + JavaScript (opcional Tailwind por CDN): para una landing o web chica es un producto final válido, no solo una demo.',
+        '"simple" · Astro: sitios rápidos de contenido, con Markdown y cero JavaScript de más.',
+        '"simple" · Next.js (exportación estática o SSR) con Tailwind: escala si luego suman funciones.',
+        '"medium" · Vite + React o Vue (SPA) con Tailwind y animaciones.',
+        '"medium" · WordPress o un CMS headless (Sanity, Strapi, Decap) si el contenido cambia seguido.',
+        '"medium" · SvelteKit o Nuxt: alternativa moderna con SSR.',
+        '"advanced" · Next.js + CMS headless + i18n y analítica: para un sitio grande o multilenguaje.',
+        '"advanced" · Astro + islas de React/Svelte + CMS headless: máximo rendimiento con partes interactivas.',
+      ],
+    };
+  }
+
+  return {
+    label: surfaces.length
+      ? `SISTEMA WEB con ${describeSurfaces(surfaces)}`
+      : "SISTEMA WEB",
+    lines: [
+      '"simple" · DEMO / MOCK ultra básico: HTML + CSS + JavaScript vanilla (opcional Tailwind por CDN), sin backend, para validar la idea en un día. Explica en summary que es un prototipo, no el producto final.',
+      '"simple" · Next.js full-stack (App Router, Server Actions) con Tailwind.',
+      '"simple" · Frontend + BaaS: React o Vue con Supabase o Firebase (auth y datos sin servidor propio).',
+      '"simple" · Clásico web: Laravel (PHP) o Django (Python) con sus plantillas.',
+      '"medium" · SPA + API: React + Node (Express o NestJS) con un ORM (Prisma o Drizzle).',
+      '"medium" · Alternativa pragmática según la idea: Vue/Svelte + FastAPI, Laravel + Inertia, etc.',
+      '"advanced" · Enterprise Java: Angular o React + Spring Boot.',
+      '"advanced" · Enterprise .NET u otro de alto rendimiento: React/Angular + ASP.NET Core, o Go si la idea lo pide.',
+    ],
+  };
+}
+
+/** Reglas de deploy según qué se publica: app móvil, bot/API o web. */
+function deployTargetRules(blueprint) {
+  const surfaces = blueprint.selectedSystemType?.surfaces || [];
+  const rules = [];
+  if (surfaces.includes("mobile")) {
+    rules.push(
+      "- Es una APP MÓVIL: cada plan incluye cómo se publica la app (Expo EAS Build/Submit o Codemagic; Google Play cobra US$25 una vez y Apple US$99 al año: dilo en cost) además del backend o panel. La franja free puede usar builds de prueba (APK, TestFlight) sin publicar en tiendas.",
+    );
+  }
+  if (surfaces.length > 0 && surfaces.every((s) => s === "api")) {
+    rules.push(
+      "- Es un SERVICIO SIN PANTALLAS (API o bot): necesita un proceso siempre encendido o webhooks. No uses hosting solo estático (GitHub Pages, Netlify sin funciones). Si un plan gratuito se duerme por inactividad (Render free), dilo en cons.",
+    );
+  }
+  return rules.join("\n");
+}
+
 // ========================================================
 // PROMPTS POR ESTACIÓN (indexados por id)
 // ========================================================
@@ -235,48 +345,48 @@ ${JSON_ONLY}
 
   stack: (b) => {
     const n = getOptionCount("stack");
+    const profiles = stackProfilesFor(b);
     return `
 ${header("el arquitecto senior", b)}
 DECISIONES PREVIAS:
 ${buildDecisionContext(b, "stack")}
 
-Genera ${n} STACKS tecnológicos que puedan construir los requisitos elegidos, ordenados de lo más simple a lo más robusto. Cubre OBLIGATORIAMENTE estos perfiles (uno por carta, adaptados a la idea):
-1. "simple" · DEMO / MOCK ultra básico: HTML + CSS + JavaScript vanilla (opcional Bootstrap o Tailwind por CDN), sin backend, para maquetar o validar la idea en un día. Explica en summary que sirve como prototipo, no como producto final.
-2. "simple" · Next.js full-stack (App Router) con BaaS: Next.js + Supabase (Postgres, Auth y Storage incluidos).
-3. "simple" · Frontend + Firebase: React o Vue con Firebase (Firestore + Auth), cero servidores propios.
-4. "simple" · Clásico web con MySQL: PHP/Laravel o Django con MySQL, mencionando MySQL Workbench para diseñar y administrar la base de datos visualmente.
-5. "medium" · SPA + API: React + Node/Express (o NestJS) con PostgreSQL/MySQL y un ORM (Prisma, Sequelize).
-6. "medium" · Alternativa pragmática según la idea: Vue/Svelte + FastAPI, MERN (MongoDB, Express, React, Node), Laravel + Inertia, etc.
-7. "advanced" · Enterprise Java: Angular o React + Spring Boot + PostgreSQL/MySQL.
-8. "advanced" · Enterprise .NET u otro de alto rendimiento: React/Angular + ASP.NET Core + SQL Server, o Go/Rust si la idea lo pide.
-Ajusta al CONTEXTO: "academic" valora lo que se enseña en la universidad (Java, C#, PHP, Python, MySQL); "personal" prioriza lo gratuito y rápido.
-LENGUAJES: si el stack usa React, Next.js, Vue, Svelte, Angular o Node, availableLanguages DEBE incluir "TypeScript" y "JavaScript" (Angular y NestJS: TypeScript por defecto). Para la demo HTML: "JavaScript".
+Genera ${n} STACKS tecnológicos que puedan construir los requisitos elegidos, ordenados de lo más simple a lo más robusto.
+PERFIL DEL PRODUCTO: ${profiles.label}. Cubre estos perfiles (uno por carta, adaptados a la idea):
+${profiles.lines.map((line, i) => `${i + 1}. ${line}`).join("\n")}
+Ajusta al CONTEXTO: "academic" valora lo que se enseña en la universidad (Java, C#, PHP, Python); "personal" prioriza lo gratuito y rápido.
+BASE DE DATOS: NO la elijas aquí (se decide en la estación siguiente, y puede que el proyecto no necesite una). No pongas motores de base de datos (PostgreSQL, MySQL, MongoDB...) en tags ni en title. Excepción: un BaaS (Supabase, Firebase, Appwrite) sí puede ir como pieza de backend; aclara en summary que la base se confirma después.
+LENGUAJES: si el stack usa React, Next.js, Vue, Svelte, Angular, Astro, Expo/React Native o Node, availableLanguages DEBE incluir "TypeScript" y "JavaScript" (Angular y NestJS: TypeScript por defecto). Para la web HTML pura: "JavaScript". Flutter: "Dart".
 CAMPOS:
-- Por stack: id · level · title · badge en mayúsculas (ej. "DEMO RÁPIDA", "ÁGIL / VELOZ", "CLÁSICO ACADÉMICO") · summary: para qué tipo de proyecto brilla · beginnerTip: qué es este stack en palabras simples · tags: 4-6 piezas con su nombre oficial (framework frontend, backend, lenguaje, CSS, base de datos, ORM o herramienta como MySQL Workbench) · defaultLanguage y availableLanguages · pros y cons.
+- Por stack: id · level · title · badge en mayúsculas (ej. "DEMO RÁPIDA", "ÁGIL / VELOZ", "CLÁSICO ACADÉMICO") · summary: para qué tipo de proyecto brilla · beginnerTip: qué es este stack en palabras simples · tags: 4-6 piezas con su nombre oficial (framework frontend, backend, lenguaje, CSS, librería de UI o ORM; sin motor de base de datos) · defaultLanguage y availableLanguages · pros y cons.
 ${strobiFields("curious", "consejo sobre no complicar las dependencias más de lo necesario")}
 ${rulesCommon(n)}
 ${JSON_ONLY}
 `;
   },
 
-  database: (b) => `
+  database: (b) => {
+    const favorite = getDatabase(b.databasePreference?.favorite);
+    const storage = recommendDataStorage(b);
+    return `
 ${header("el arquitecto de datos", b)}
 DECISIONES PREVIAS:
 ${buildDecisionContext(b, "database")}
 
-Propón ${N} formas de guardar los datos de ESTE proyecto, compatibles con el STACK elegido:
-1. OBLIGATORIO: 1 opción SIN base de datos (dbType "none"): contenido estático, archivos JSON/Markdown, localStorage o un CMS headless, explicando en qué casos alcanza.
-2. 2-3 opciones relacionales (dbType "relational" o "baas"): p. ej. PostgreSQL, MySQL, SQLite (dbType "embedded"), Supabase, Neon. Si el STACK ya sugiere una base de datos, inclúyela.
-3. 1-2 opciones no relacionales (dbType "document" o "key-value"): p. ej. MongoDB, Firebase Firestore, Redis como caché.
-level: "simple" = sin servidor o cero configuración · "medium" = base de datos gestionada estándar · "advanced" = requiere más diseño u operación.
-En techs incluye el motor y el ORM / cliente adecuado al stack (Prisma, Drizzle, Eloquent, Django ORM, Hibernate, Entity Framework, Mongoose...).
+El usuario CONFIRMÓ que su proyecto guardará datos. Propón ${N} bases de datos para ESTE proyecto, compatibles con el STACK elegido (todas con base de datos: no incluyas la opción "sin base de datos").
+${favorite ? `- FAVORITA DEL USUARIO: ${favorite.label}. Ponla PRIMERA, aplicada a este proyecto, y que las demás sean alternativas razonables (no la contradigas en los cons).` : "- Si el STACK ya trae un BaaS (Supabase, Firebase...), ponlo primero."}
+${storage.staticStack ? "- El STACK no tiene backend propio: propone SOLO servicios que se usen desde el navegador (BaaS como Supabase, Firebase, Appwrite o PocketBase hospedado). Nada de motores que necesiten un servidor propio." : "- Mezcla 3-4 relacionales (dbType relational, baas o embedded: PostgreSQL, MySQL, SQLite, Supabase, Neon, SQL Server si el stack es .NET) y 1-2 no relacionales (document o key-value: MongoDB, Firestore, Redis solo como caché)."}
+- Cada opción debe encajar con el lenguaje y el ORM del stack (Prisma, Drizzle, Eloquent, Django ORM, SQLAlchemy, Hibernate, Entity Framework, Mongoose...).
+level: "simple" = cero configuración o gestionada gratis · "medium" = base de datos estándar que configuras · "advanced" = requiere más diseño u operación.
+En techs incluye el motor, el ORM / cliente adecuado al stack y dónde hospedarla.
 CAMPOS:
 ${optionFields("piezas (motor, ORM, hosting de la base)")}
-- dbType: none | relational | document | key-value | baas | embedded.
+- dbType: relational | document | key-value | baas | embedded.
 ${strobiFields("thinking", "elegir la base de datos según la forma de los datos y no por moda")}
 ${rulesCommon()}
 ${JSON_ONLY}
-`,
+`;
+  },
 
   architecture: (b) => `
 ${header("el arquitecto de software", b)}
@@ -319,6 +429,13 @@ ${JSON_ONLY}
   diagrams: (b) => {
     const db = b.selectedDatabase;
     const hasDb = Boolean(db) && db.dbType !== "none";
+    // Firestore o MongoDB: colecciones, no tablas (un BaaS Firebase también)
+    const isDocumentDb =
+      hasDb &&
+      (db.dbType === "document" ||
+        db.dbType === "key-value" ||
+        (db.dbType === "baas" &&
+          /firebase|firestore|mongo/i.test(`${db.title} ${(db.techs || []).join(" ")}`)));
     const isAcademic = b.context === "academic";
     return `
 ${header("el arquitecto visual de sistemas", b)}
@@ -336,7 +453,13 @@ Catálogo (diagramType):
 - UX: wireflow (pantallas y navegación), user-journey (experiencia del usuario).
 - Infraestructura: architecture (diagrama de arquitectura cloud/despliegue).
 REGLAS ESTRICTAS:
-1. ${hasDb ? "HAY base de datos: incluye OBLIGATORIAMENTE el erd con las entidades clave de los requisitos." : "NO hay base de datos: PROHIBIDO recomendar erd o dfd centrado en tablas."}
+1. ${
+      !hasDb
+        ? "NO hay base de datos: PROHIBIDO recomendar erd o dfd centrado en tablas."
+        : isDocumentDb
+          ? "La base es DOCUMENTAL (colecciones, sin tablas): NO uses erd; en su lugar incluye un class (diagramType class) que muestre las colecciones, sus campos y documentos anidados."
+          : "HAY base de datos relacional: incluye OBLIGATORIAMENTE el erd con las entidades clave de los requisitos."
+    }
 2. ${isAcademic ? "Contexto académico: incluye al menos use-case, class y sequence (UML formal para la defensa)." : "Contexto no académico: prioriza C4 y diagramas que ayuden a construir y comunicar, con al menos 1 UML clásico."}
 3. Proporcionalidad: si el tamaño es PEQUEÑO, NO recomiendes components, deployment ni c4-container; prefiere wireflow, user-journey, flowchart y use-case. Si es GRANDE, incluye c4-container o components y deployment.
 4. No repitas el mismo diagramType.
@@ -416,22 +539,25 @@ ${header("el DevOps Lead", b)}
 DECISIONES PREVIAS:
 ${buildDecisionContext(b, "deploy")}
 
-Propón ${N} planes de despliegue con costo inicial $0 (free tier) y el código respaldado en GitHub, 2 por nivel:
-- simple (un clic): Vercel, Cloudflare (Pages o Workers), Netlify, GitHub Pages.
-- medium (PaaS configurable): Render, Koyeb, Deno Deploy, Netlify con funciones.
-- advanced (contenedores o cloud): Docker en Google Cloud Run, Koyeb o un VPS con Coolify.
+Propón ${N} planes de despliegue con el código respaldado en GitHub, EXACTAMENTE 2 por franja de costo (costTier):
+- free · Gratis ($0/mes con planes gratuitos vigentes): Vercel, Cloudflare (Pages o Workers), Netlify, GitHub Pages, Render free, Koyeb.
+- low · Económico (aprox. US$5-25/mes): VPS con Coolify o Dokploy (Hetzner, DigitalOcean), Render o Railway de pago, Vercel Pro, base gestionada básica.
+- premium · Profesional (US$50+/mes, escala y soporte): AWS (Amplify, ECS, RDS), Google Cloud Run + Cloud SQL, Azure App Service, con backups, CDN y monitoreo.
+level es la DIFICULTAD de operar el plan, independiente del costo: "simple" = un clic · "medium" = configuras algo · "advanced" = contenedores, redes o cloud.
+${deployTargetRules(b)}
 REGLAS:
 - Cloudflare es de las opciones más usadas hoy: incluye al menos un plan con Cloudflare si el stack lo admite (Pages para sitios estáticos, SPA, Astro o Vite; Workers con el adaptador OpenNext para Next.js; Workers para APIs ligeras).
-- Railway y Fly.io ya no tienen plan gratuito permanente (solo crédito de prueba o pago por uso): no los presentes como gratis; si los propones, dilo claramente en cost.
-- Cada plan soporta REALMENTE el STACK, la BASE DE DATOS y la ARQUITECTURA elegidos (runtime, base de datos, tareas en segundo plano si aplican).
+- Railway y Fly.io no tienen plan gratuito permanente: nunca van en la franja free.
+- Cada plan soporta REALMENTE el STACK, la BASE DE DATOS y la ARQUITECTURA elegidos (runtime, base de datos, tareas en segundo plano si aplican). Si la BASE DE DATOS es NINGUNA, no agregues servicios de base de datos.
 - Si la METODOLOGÍA usa iteraciones cortas, menciona preview deployments / CI con GitHub Actions.
-- En cons indica el límite concreto del free tier que más afectaría a este proyecto.
-- El repositorio SIEMPRE es GitHub (role "repo"); el resto de servicios deben ser reales y con plan gratuito vigente.
+- En cons indica el límite concreto (del plan gratuito o del precio) que más afectaría a este proyecto.
+- El repositorio SIEMPRE es GitHub (role "repo"); el resto de servicios deben ser reales y vigentes.
 CAMPOS:
 ${optionFields("servicios o herramientas de deploy")}
 - providers: 2-4 servicios que forman el plan, el principal primero. Cada uno con name (nombre oficial, p. ej. "Vercel", "Render", "Neon", "Supabase", "GitHub", "GitHub Actions", "Docker", "Google Cloud Run") y role: hosting (lo publica todo), frontend, backend, database, repo, ci o storage.
 - steps: 3-4 pasos cortos y en orden para publicar el proyecto la primera vez (máx. 12 palabras cada uno, empezando con un verbo: "Sube el código a GitHub", "Conecta el repo en Vercel"...).
-- cost: costo mensual estimado para este proyecto con el plan gratuito, en una frase corta (p. ej. "$0 / mes hasta 100 GB de tráfico").
+- costTier: free | low | premium (la franja del plan).
+- cost: costo mensual estimado para este proyecto, en una frase corta coherente con su franja (p. ej. "$0 / mes hasta 100 GB de tráfico" o "≈ US$12 / mes con VPS de 4 GB").
 ${strobiFields("proud", "recordatorio de que el código que no está en GitHub no existe")}
 ${rulesCommon()}
 ${JSON_ONLY}
@@ -439,16 +565,42 @@ ${JSON_ONLY}
 
   workspace: (b) => {
     const nameHint = b.selectedName ? `"${b.selectedName}"` : "la idea";
+    const prefs = b.selectedStack?.preferences;
+    const managers = Object.entries(prefs?.managers || {})
+      .map(([eco, id]) => getManager(eco, id)?.label || id)
+      .join(" y ");
+    const os = getOperatingSystem(prefs?.os);
+    const editor = getEditor(prefs?.editor);
+    const commandRules = [
+      managers
+        ? `usa SOLO ${managers} como gestor de paquetes (nunca otro, aunque sea el habitual del framework)`
+        : "usa el gestor de paquetes propio del ecosistema del stack",
+      os
+        ? `comandos que funcionen en ${os.label} (${os.shell}); evita sintaxis de otra terminal`
+        : null,
+      editor?.open
+        ? `si sobra lugar, el último comando abre el proyecto en ${editor.label} con "${editor.open}"`
+        : null,
+    ].filter(Boolean);
+    const diagrams = (Array.isArray(b.selectedDiagrams) ? b.selectedDiagrams : [])
+      .map((d) => `${d.title} (${d.diagramType || "flowchart"})`)
+      .join(", ");
     return `
 ${header("el Lead Architect", b)}
 DECISIONES DEL USUARIO:
 ${buildDecisionContext(b, "workspace")}
 
-Genera el blueprint de cierre (scaffold): resumen técnico coherente con TODAS las decisiones y los primeros comandos reales para inicializar el proyecto con el STACK y LENGUAJE elegidos (usa el gestor de paquetes propio de ese ecosistema).
+Genera el blueprint de cierre (scaffold): resumen técnico coherente con TODAS las decisiones y los primeros comandos reales para inicializar el proyecto con el STACK y LENGUAJE elegidos.
+COMANDOS: ${commandRules.join(" · ")}.
 CAMPOS:
 - scaffold.projectName: kebab-case basado en ${nameHint} · scaffold.techSummary: 1-2 frases sobre stack, arquitectura y deploy · scaffold.commands: 3-6 comandos en orden de ejecución.
+- scaffold.diagrams: ${
+      diagrams
+        ? `UNO por cada diagrama elegido (${diagrams}), en el mismo orden. diagramType: el del diagrama · title: su nombre · mermaid: código Mermaid VÁLIDO y COMPLETO (10-30 líneas) con los actores, entidades, pantallas y flujos REALES de este proyecto según requisitos e historias. Si Mermaid no tiene ese tipo, usa el equivalente más cercano (casos de uso -> flowchart LR con actores y casos; C4 -> flowchart con subgraph; BPMN y DFD -> flowchart). Sin comillas tipográficas ni acentos en los ids de los nodos.`
+        : "[] (el usuario no eligió diagramas)."
+    }
 - scaffold.folders: 6-12 carpetas o archivos clave del proyecto recién creado, con la convención REAL del framework elegido y organizadas según la ARQUITECTURA (p. ej. módulos por dominio en un monolito modular). path: ruta relativa terminada en "/" si es carpeta (p. ej. "src/modules/reservas/") · purpose: qué va ahí (máx. 10 palabras).
-- scaffold.entities: entidades principales del MODELO DE DATOS según los requisitos (3-6). name: en PascalCase singular · fields: 3-8 campos "nombre: tipo" con tipos de la base elegida (marca la clave primaria con "PK" y las foráneas con "FK → Entidad"). Si la base de datos es "Sin base de datos", devuelve [].
+- scaffold.entities: entidades principales del MODELO DE DATOS según los requisitos (3-6). name: en PascalCase singular · fields: 3-8 campos "nombre: tipo" con tipos de la base elegida (marca la clave primaria con "PK" y las foráneas con "FK → Entidad"). Si la BASE DE DATOS es NINGUNA (tipo none), devuelve []; si es documental, cada entidad es una colección.
 - scaffold.milestones: 3-4 entregas en orden, al ritmo de la METODOLOGÍA elegida (o semanas si no hay). title: corto (p. ej. "Semana 1 · Base y login") · goal: resultado visible en 1 frase · tasks: 2-4 tareas concretas tomadas de los requisitos e historias.
 ${strobiFields("celebrate", "cierre animando a empezar a construir")}
 ${JSON_ONLY}

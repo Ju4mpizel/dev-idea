@@ -6,13 +6,14 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { isStepLocked } from "@/hooks/useStationNavigation";
 import { CardDeck, DeckSkeleton } from "@/components/map/deck/CardDeck";
 import {
+  NO_LAYOUT_DECISION,
   buildLayoutDecision,
   getLayout,
 } from "@/data/layoutCatalog";
 import { SelectionCard } from "./SelectionCard";
 import { StationShell } from "./StationShell";
 import { LayoutWireframe } from "./LayoutWireframe";
-import { Check, ChevronDown, Star } from "lucide-react";
+import { Check, ChevronDown, ServerCog, Star } from "lucide-react";
 
 /** Los 2 primeros del ranking de Gemini se marcan como recomendados. */
 const RECOMMENDED_COUNT = 2;
@@ -92,7 +93,12 @@ export function LayoutStation({ station, data, onNext, onGenerate }) {
     }
   };
 
-  const decision = allDone
+  // Sistema sin pantallas (API, bot): se confirma sin elegir nada
+  const isHeadless = Boolean(data?.headless);
+
+  const decision = isHeadless
+    ? NO_LAYOUT_DECISION
+    : allDone
     ? buildLayoutDecision(
         Object.fromEntries(
           surfaces.map((s) => [s.surface, selections[s.surface]]),
@@ -152,14 +158,28 @@ export function LayoutStation({ station, data, onNext, onGenerate }) {
       station={station}
       onConfirm={handleConfirm}
       confirmDisabled={!decision}
-      confirmLabel="Confirmar layouts"
+      confirmLabel={isHeadless ? "Continuar sin layout" : "Confirmar layouts"}
       selectionSummary={
         surfaces.length ? `${doneCount} de ${surfaces.length} elegidos` : null
       }
       rewriteTitle="¿Cambiar los layouts?"
       rewriteDescription="Se desbloqueará la elección de layouts. Deploy y todo lo calculado después se descartará."
     >
-      {isLoading && surfaces.length === 0 ? (
+      {isHeadless ? (
+        <div className="w-full rounded-3xl border border-neutral-800 bg-neutral-950/70 p-5 sm:p-6 flex flex-col items-center text-center gap-2.5">
+          <span className="w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center">
+            <ServerCog className="w-5 h-5 text-sky-400" />
+          </span>
+          <h3 className="text-sm sm:text-base font-semibold text-white">
+            Tu sistema no tiene pantallas propias
+          </h3>
+          <p className="max-w-md text-xs text-neutral-400 leading-relaxed">
+            Una API o un bot lo usan otras apps o se maneja por chat, así que no
+            hay layout que diseñar. Si más adelante sumas un panel de admin,
+            cambia el tipo de sistema y aquí aparecerán sus wireframes.
+          </p>
+        </div>
+      ) : isLoading && surfaces.length === 0 ? (
         <DeckSkeleton size="compact" />
       ) : isSingle ? null : (
         // Con una sola superficie el mazo sobra: la cabecera va en el panel
@@ -191,7 +211,7 @@ export function LayoutStation({ station, data, onNext, onGenerate }) {
         />
       )}
 
-      {active && (
+      {active && !isHeadless && (
         <div
           ref={panelRef}
           className="w-full rounded-3xl border border-neutral-800 bg-neutral-950/70 p-3 sm:p-4 flex flex-col gap-3 scroll-mt-4"

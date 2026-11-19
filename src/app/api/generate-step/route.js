@@ -104,6 +104,11 @@ export async function POST(request) {
       ? { ...blueprint }
       : {};
 
+  // Un sistema sin pantallas (API, bot) no tiene layout: no se gasta cupo
+  if (station.id === "layout" && layoutSurfacesFor(safeBlueprint).length === 0) {
+    return fail(400, "Este sistema no tiene pantallas: no hay layout que generar.");
+  }
+
   // 3. Cupo: cada generación gasta una del ticket de la idea. La idea y el
   //    contexto salen del ticket (no del navegador), así no se recicla una idea
   //    para otra. Las cuentas sin límite no usan ticket.

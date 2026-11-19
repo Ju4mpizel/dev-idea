@@ -5,10 +5,10 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { isStepLocked } from "@/hooks/useStationNavigation";
 import {
   SURFACES,
-  SYSTEM_COMPLEMENTS,
   SYSTEM_FAMILIES,
   buildSystemTypeDecision,
   detectSystemType,
+  getComplementsFor,
   getSystemFamily,
   getSystemType,
   getTypesOfFamily,
@@ -31,6 +31,8 @@ import {
   Files,
   Globe,
   GraduationCap,
+  Headset,
+  LayoutGrid,
   LayoutTemplate,
   Lightbulb,
   MessageCircle,
@@ -74,6 +76,7 @@ const TYPE_ICONS = {
   "erp-lite": Building2,
   crm: Contact,
   records: Database,
+  helpdesk: Headset,
   booking: CalendarCheck,
   events: Ticket,
   saas: AppWindow,
@@ -131,11 +134,24 @@ export function SystemTypeStation({ station, onNext }) {
   const complements = pickedComplements ?? saved?.complements ?? [];
   const selectedType = getSystemType(selectedId);
 
+  // Idea clara -> solo lo que encaja; el catálogo completo queda a un toque.
+  // Si lo guardado no está entre lo enfocado, se abre el catálogo completo.
+  const focusedIds = detection.focused;
+  const [showAll, setShowAll] = useState(
+    () => !focusedIds || Boolean(saved?.id && !focusedIds.includes(saved.id)),
+  );
+  const isFocused = Boolean(focusedIds) && !showAll;
+
   // Dev-i explica qué leyó en la idea (solo al llegar a la estación)
   useEffect(() => {
     if (saved) return;
     const family = getSystemFamily(detection.familyId);
-    if (family && detection.matched.length) {
+    if (detection.focused && detection.matched.length) {
+      setCompanion(
+        "curious",
+        `Leí «${detection.matched.join("», «")}» en tu idea: te muestro solo lo que encaja. Si buscabas otra cosa, abre «Ver todos los tipos».`,
+      );
+    } else if (family && detection.matched.length) {
       setCompanion(
         "curious",
         `Leí «${detection.matched.join("», «")}» en tu idea: te muestro opciones de «${family.title}» y marqué con ⭐ lo que mejor encaja.`,
@@ -150,29 +166,31 @@ export function SystemTypeStation({ station, onNext }) {
   }, []);
 
   const isDetectedFamily = familyId === detection.familyId;
-  const recommended = isDetectedFamily ? detection.recommended : [];
+  const recommended =
+    isFocused || isDetectedFamily ? detection.recommended : [];
   const familyTypes = getTypesOfFamily(familyId);
-  const orderedTypes = [
-    ...recommended.map(getSystemType).filter(Boolean),
-    ...familyTypes.filter((t) => !recommended.includes(t.id)),
-  ];
+  const orderedTypes = isFocused
+    ? [
+        ...recommended,
+        ...focusedIds.filter((id) => !recommended.includes(id)),
+      ]
+        .map(getSystemType)
+        .filter(Boolean)
+    : [
+        ...recommended.map(getSystemType).filter(Boolean),
+        ...familyTypes.filter((t) => !recommended.includes(t.id)),
+      ];
   const crossType =
-    isDetectedFamily && detection.crossId
+    !isFocused && isDetectedFamily && detection.crossId
       ? getSystemType(detection.crossId)
       : null;
 
   const selectType = (type) => {
     if (isLocked) return;
     setPickedId(type.id);
-    // Los complementos ya incluidos en el tipo no tienen sentido
-    setPickedComplements(
-      complements.filter(
-        (id) =>
-          !type.surfaces.includes(
-            SYSTEM_COMPLEMENTS.find((c) => c.id === id)?.surface,
-          ),
-      ),
-    );
+    // Se quitan los complementos que el nuevo tipo ya trae o que no le sirven
+    const allowed = getComplementsFor(type).map((c) => c.id);
+    setPickedComplements(complements.filter((id) => allowed.includes(id)));
     setCompanion(
       "happy",
       `"${type.title}" anotado. Si le falta algo, súmale un complemento abajo.`,
@@ -198,11 +216,7 @@ export function SystemTypeStation({ station, onNext }) {
     onNext({ [blueprintKey]: decision });
   };
 
-  const availableComplements = selectedType
-    ? SYSTEM_COMPLEMENTS.filter(
-        (c) => !selectedType.surfaces.includes(c.surface),
-      )
-    : [];
+  const availableComplements = getComplementsFor(selectedType);
 
   const detectedFamily = getSystemFamily(detection.familyId);
 
@@ -226,7 +240,16 @@ export function SystemTypeStation({ station, onNext }) {
         <div className="shrink-0 px-3 sm:px-4 pt-3 pb-2.5 border-b border-neutral-800/80 flex flex-col gap-2.5">
           <p className="text-[11px] sm:text-xs text-neutral-400 flex items-start gap-1.5">
             <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-px" />
-            {detectedFamily ? (
+            {isFocused ? (
+              <span>
+                Por tu idea («{detection.matched.join("», «")}») te muestro
+                solo lo que encaja con{" "}
+                <b className="text-neutral-200">
+                  {detectedFamily?.title.toLowerCase()}
+                </b>
+                .
+              </span>
+            ) : detectedFamily ? (
               <span>
                 Por tu idea parece{" "}
                 <b className="text-neutral-200">
@@ -239,6 +262,7 @@ export function SystemTypeStation({ station, onNext }) {
             )}
           </p>
 
+          {!isFocused && (
           <div
             role="tablist"
             aria-label="Familias de sistemas"
@@ -272,6 +296,7 @@ export function SystemTypeStation({ station, onNext }) {
               );
             })}
           </div>
+          )}
         </div>
 
         {/* Lista de tipos */}
@@ -304,6 +329,30 @@ export function SystemTypeStation({ station, onNext }) {
                 familyLabel={getSystemFamily(crossType.family)?.title}
               />
             </div>
+          )}
+
+          {/* Salida de la vista enfocada (o vuelta a ella) */}
+          {focusedIds && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowAll(isFocused);
+                if (isFocused && detection.familyId) setFamilyId(detection.familyId);
+              }}
+              className="mt-1 self-center flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-neutral-700 text-[11px] text-neutral-400 hover:text-neutral-100 hover:border-neutral-500 transition-colors cursor-pointer"
+            >
+              {isFocused ? (
+                <>
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  ¿Tu idea es otra cosa? Ver todos los tipos
+                </>
+              ) : (
+                <>
+                  <Star className="w-3.5 h-3.5 text-amber-400" />
+                  Ver solo lo que encaja con tu idea
+                </>
+              )}
+            </button>
           )}
         </div>
 

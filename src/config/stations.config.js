@@ -259,7 +259,7 @@ export const STATIONS = [
     stepNumber: 12,
     title: "Infraestructura & Deploy",
     navLabel: "Deploy",
-    subtitle: "Hosting costo cero y respaldo en GitHub",
+    subtitle: "¿Dónde vivirá tu proyecto y cuánto costará?",
     skippable: false,
     defaultMood: "proud",
     defaultDialogue:

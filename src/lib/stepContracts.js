@@ -12,6 +12,7 @@ import { resolveStation } from "@/config/stations.config";
 import { normalizePalettes } from "@/lib/palettes";
 import {
   DATABASE_TYPES,
+  COST_TIERS,
   DEPLOY_ROLES,
   DIAGRAM_AUDIENCES,
   DIAGRAM_CATEGORIES,
@@ -20,6 +21,15 @@ import {
   LEVELS,
 } from "@/lib/stepSchemas";
 import { layoutSurfacesFor, surfaceLabel } from "@/data/layoutCatalog";
+import {
+  adaptNodeCommands,
+  defaultCommands,
+  nodeManagerOf,
+  resolvePreferences,
+} from "@/data/devPreferences";
+
+/** Tope del código Mermaid de un diagrama (evita respuestas desbocadas). */
+const MAX_MERMAID_LENGTH = 4000;
 
 const ID_PREFIX = {
   naming: "name",
@@ -181,9 +191,21 @@ function normalizeOption(raw, stationId) {
     option.providers = normalizeProviders(raw.providers, option.techs);
     option.steps = strList(raw.steps).slice(0, 4);
     option.cost = str(raw.cost, "$0 / mes");
+    option.costTier = oneOf(raw.costTier, COST_TIERS, inferCostTier(option.cost));
   }
 
   return option;
+}
+
+/** Franja de un plan sin costTier (proyectos anteriores): se deduce del costo. */
+function inferCostTier(cost = "") {
+  // Montos en dólares del texto ("$0 / mes", "≈ US$12 / mes", "US$80/mes")
+  const amounts = (cost.match(/\$\s*\d+(?:[.,]\d+)?/g) || []).map((m) =>
+    Number(m.replace(/[^\d.,]/g, "").replace(",", ".")),
+  );
+  const max = amounts.length ? Math.max(...amounts) : 0;
+  if (max === 0) return "free";
+  return max >= 50 ? "premium" : "low";
 }
 
 /**
@@ -287,9 +309,54 @@ function normalizeLayoutOptions(rawItems, blueprint) {
   return { items, provided: fromModel.length };
 }
 
+/**
+ * Un diagrama del cierre por cada diagrama elegido: el código completo de la
+ * IA o, si no vino, el ejemplo corto que trajo la carta de la estación.
+ */
+function normalizeScaffoldDiagrams(raw, blueprint = {}) {
+  const fromModel = (Array.isArray(raw) ? raw : [])
+    .filter(isObject)
+    .map((d) => ({
+      diagramType: str(d.diagramType),
+      title: str(d.title),
+      mermaid: str(d.mermaid).slice(0, MAX_MERMAID_LENGTH),
+    }))
+    .filter((d) => d.mermaid);
+  const chosen = Array.isArray(blueprint.selectedDiagrams)
+    ? blueprint.selectedDiagrams.filter(isObject)
+    : [];
+  if (!chosen.length) return fromModel.slice(0, 8);
+
+  const used = new Set();
+  return chosen.slice(0, 8).map((d, i) => {
+    const sameType = (m, idx) =>
+      !used.has(idx) && m.diagramType && m.diagramType === d.diagramType;
+    let index = fromModel.findIndex(sameType);
+    if (index < 0 && !used.has(i) && fromModel[i]) index = i;
+    if (index >= 0) used.add(index);
+    const match = index >= 0 ? fromModel[index] : null;
+    return {
+      id: str(d.id) || `diagram-${i + 1}`,
+      diagramType: str(d.diagramType) || match?.diagramType || "flowchart",
+      title: str(d.title) || match?.title || "Diagrama",
+      mermaid: match?.mermaid || str(d.sampleMermaid),
+      isSample: !match,
+    };
+  });
+}
+
 function normalizeScaffold(raw, blueprint = {}) {
   const scaffold = isObject(raw) ? raw : {};
-  const commands = strList(scaffold.commands);
+  const stack = isObject(blueprint.selectedStack) ? blueprint.selectedStack : null;
+  const preferences = stack?.preferences;
+  // La IA a veces usa el gestor "de moda": se reescribe al que eligió el usuario
+  // (solo si lo eligió; los proyectos anteriores conservan sus comandos)
+  const commands = adaptNodeCommands(
+    strList(scaffold.commands),
+    nodeManagerOf(preferences),
+  );
+  const fallbackPreferences =
+    preferences || (stack ? resolvePreferences(stack) : null);
   const list = (v) => (Array.isArray(v) ? v.filter(isObject) : []);
   return {
     ...scaffold,
@@ -297,7 +364,8 @@ function normalizeScaffold(raw, blueprint = {}) {
       str(scaffold.projectName) || blueprint.selectedName || "mi-proyecto",
     techSummary:
       str(scaffold.techSummary) || blueprint.selectedStack?.title || "",
-    commands: commands.length ? commands : ["pnpm install", "pnpm dev"],
+    commands: commands.length ? commands : defaultCommands(fallbackPreferences),
+    diagrams: normalizeScaffoldDiagrams(scaffold.diagrams, blueprint),
     // Campos nuevos: los proyectos guardados antes no los traen ([])
     folders: list(scaffold.folders)
       .map((f) => ({ path: str(f.path), purpose: str(f.purpose) }))

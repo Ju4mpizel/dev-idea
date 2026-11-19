@@ -72,7 +72,7 @@ export const STATION_GUIDES = {
   stack: {
     question: "¿Qué es un stack tecnológico?",
     concept:
-      "Es el conjunto de tecnologías con las que construyes tu software: lenguaje, framework de frontend y backend, base de datos y herramientas.",
+      "Es el conjunto de tecnologías con las que construyes tu software: lenguaje, framework de frontend y backend y herramientas. La base de datos se decide en la estación siguiente.",
     analogy:
       "Es la caja de herramientas de un carpintero: no importa tener todas, sino las adecuadas para el mueble que vas a hacer.",
     keyPoints: [
@@ -193,7 +193,7 @@ export const STATION_GUIDES = {
       "Es mudar tu tienda del garaje a un local con dirección: ahora cualquiera puede visitarla.",
     keyPoints: [
       "Hosting: el servidor donde corre tu app (Vercel, Render, Railway...).",
-      "Free tier: plan gratuito con límites (horas, memoria, peticiones).",
+      "Costo: hay planes gratis (con límites), económicos (≈ US$5-25/mes) y profesionales.",
       "CI/CD: cada push a GitHub despliega automáticamente.",
       "Variables de entorno: claves secretas que nunca se suben al repositorio.",
     ],

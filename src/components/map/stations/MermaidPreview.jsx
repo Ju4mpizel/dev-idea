@@ -70,7 +70,11 @@ function MermaidSvg({ source }) {
 }
 
 /** Botón + modal que dibuja el ejemplo Mermaid de un diagrama. */
-export function MermaidPreviewButton({ title, source }) {
+export function MermaidPreviewButton({
+  title,
+  source,
+  label = "Ver ejemplo dibujado",
+}) {
   const [open, setOpen] = useState(false);
   if (!source) return null;
 
@@ -88,7 +92,7 @@ export function MermaidPreviewButton({ title, source }) {
         className="w-full py-1.5 px-3 rounded-xl border border-neutral-800 bg-neutral-900/70 hover:bg-neutral-800 text-[11px] font-mono text-neutral-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
       >
         <Eye className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-        <span>Ver ejemplo dibujado</span>
+        <span className="whitespace-nowrap">{label}</span>
       </button>
 
       {typeof document !== "undefined" &&

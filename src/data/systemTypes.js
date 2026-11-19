@@ -26,14 +26,14 @@ export const SYSTEM_FAMILIES = [
     title: "Página web",
     hint: "Presencia e información",
     icon: "globe",
-    words: ["pagina", "web", "sitio", "landing", "website", "presencia"],
+    words: ["pagina", "pagina web", "web", "sitio", "sitio web", "landing", "website", "presencia online"],
   },
   {
     id: "sell",
     title: "Vender online",
     hint: "Catálogo, pedidos y pagos",
     icon: "shopping",
-    words: ["tienda", "vender", "venta online", "ecommerce", "e-commerce", "carrito", "comprar"],
+    words: ["tienda", "tienda online", "vender", "venta online", "ventas online", "ecommerce", "e-commerce", "carrito", "comprar online"],
   },
   {
     id: "management",
@@ -41,8 +41,9 @@ export const SYSTEM_FAMILIES = [
     hint: "Uso interno del negocio",
     icon: "briefcase",
     words: [
-      "sistema", "gestion", "gestionar", "control", "administrar", "administracion",
-      "inventario", "stock", "caja", "facturacion", "punto de venta", "registro", "erp", "crm",
+      "sistema", "gestion", "gestionar", "control de", "administrar", "administracion",
+      "inventario", "stock", "caja", "facturacion", "punto de venta", "registros", "erp", "crm",
+      "soporte", "mesa de ayuda", "helpdesk",
     ],
   },
   {
@@ -50,28 +51,28 @@ export const SYSTEM_FAMILIES = [
     title: "Reservas y turnos",
     hint: "Agenda, citas y eventos",
     icon: "calendar",
-    words: ["reserva", "reservar", "turno", "cita", "agenda", "agendar"],
+    words: ["reserva", "reservar", "turno", "cita", "agenda", "agendar", "agendamiento"],
   },
   {
     id: "platform",
     title: "Plataforma con usuarios",
     hint: "Cuentas, dashboard y comunidad",
     icon: "users",
-    words: ["plataforma", "usuarios", "comunidad", "red social", "saas", "suscripcion", "cursos", "dashboard", "foro"],
+    words: ["plataforma", "usuarios", "comunidad", "red social", "saas", "suscripcion", "cursos", "dashboard", "foro", "web app", "aplicacion web"],
   },
   {
     id: "mobile",
     title: "App móvil",
     hint: "Android / iOS",
     icon: "smartphone",
-    words: ["app movil", "aplicacion movil", "android", "ios", "celular", "movil"],
+    words: ["app movil", "aplicacion movil", "app para celular", "app nativa", "android", "ios", "play store", "app store"],
   },
   {
     id: "backend",
     title: "Backend y automatización",
     hint: "APIs, bots y tareas",
     icon: "server",
-    words: ["api", "backend", "bot", "automatizar", "automatizacion", "microservicio"],
+    words: ["api", "backend", "bot", "chatbot", "automatizar", "automatizacion", "microservicio"],
   },
 ];
 
@@ -89,7 +90,7 @@ export const SYSTEM_TYPES = [
     example: "Heladería con sabores destacados y botón a WhatsApp",
     surfaces: ["public"],
     level: "simple",
-    words: ["landing", "una sola pagina", "one page", "onepage", "presentacion", "evento", "lanzamiento"],
+    words: ["landing", "landing page", "una sola pagina", "one page", "onepage", "pagina de presentacion", "lanzamiento"],
   },
   {
     id: "multipage",
@@ -99,7 +100,7 @@ export const SYSTEM_TYPES = [
     example: "Web con secciones de sabores, sucursales y contacto",
     surfaces: ["public"],
     level: "simple",
-    words: ["secciones", "paginas", "rutas", "pestana", "sucursal", "institucional", "corporativ", "nosotros"],
+    words: ["varias paginas", "paginas", "secciones", "institucional", "corporativ*", "nosotros", "menu de navegacion"],
   },
   {
     id: "cms-site",
@@ -109,7 +110,7 @@ export const SYSTEM_TYPES = [
     example: "El dueño actualiza los sabores del día desde el panel",
     surfaces: ["public", "admin"],
     level: "medium",
-    words: ["autoadministrable", "editar", "actualizar", "cambiar", "modificar", "precio", "panel", "admin", "cms", "contenido"],
+    words: ["autoadministrable", "autogestionable", "cms", "wordpress", "panel para editar", "panel de administracion", "panel admin", "editar el contenido", "actualizar el contenido", "actualizar los precios", "cambiar los precios"],
   },
   {
     id: "portfolio",
@@ -129,7 +130,7 @@ export const SYSTEM_TYPES = [
     example: "Blog de recetas de helados artesanales",
     surfaces: ["public", "content", "admin"],
     level: "medium",
-    words: ["blog", "noticia", "articulo", "revista", "publicacion", "receta"],
+    words: ["blog", "noticia", "articulo", "revista", "portal de noticias", "recetas"],
   },
 
   // ---------- Vender online ----------
@@ -141,7 +142,7 @@ export const SYSTEM_TYPES = [
     example: "Elegir sabores y tamaño, y enviar el pedido por WhatsApp",
     surfaces: ["public", "store", "admin"],
     level: "simple",
-    words: ["whatsapp", "pedido", "delivery", "catalogo", "menu", "carta"],
+    words: ["pedido", "pedidos por whatsapp", "delivery", "catalogo", "menu digital", "carta digital", "tomar pedidos"],
   },
   {
     id: "ecommerce",
@@ -151,7 +152,7 @@ export const SYSTEM_TYPES = [
     example: "Venta de potes de helado con pago con tarjeta",
     surfaces: ["store", "admin"],
     level: "medium",
-    words: ["tienda", "carrito", "pago", "checkout", "ecommerce", "e-commerce", "mercado pago", "stripe"],
+    words: ["tienda online", "tienda virtual", "carrito", "pago online", "pagos online", "checkout", "ecommerce", "e-commerce", "mercado pago", "stripe", "pasarela de pago"],
   },
   {
     id: "marketplace",
@@ -161,7 +162,7 @@ export const SYSTEM_TYPES = [
     example: "Las heladerías de la ciudad venden en un solo sitio",
     surfaces: ["store", "app", "admin"],
     level: "advanced",
-    words: ["marketplace", "vendedores", "comision", "multivendedor", "varios negocios"],
+    words: ["marketplace", "vendedores", "comision", "multivendedor", "varios negocios", "varias tiendas"],
   },
 
   // ---------- Sistema de gestión ----------
@@ -173,7 +174,7 @@ export const SYSTEM_TYPES = [
     example: "Cobrar cucuruchos y cerrar la caja al final del día",
     surfaces: ["admin"],
     level: "medium",
-    words: ["caja", "cobrar", "punto de venta", "pos", "ticket", "mostrador", "facturacion", "ventas"],
+    words: ["caja", "caja registradora", "cobrar", "punto de venta", "pos", "mostrador", "facturacion", "boleta", "comprobante", "registrar ventas", "control de ventas", "cierre de caja"],
   },
   {
     id: "inventory",
@@ -193,7 +194,7 @@ export const SYSTEM_TYPES = [
     example: "Ventas, stock y reportes de todas las sucursales",
     surfaces: ["admin", "app"],
     level: "advanced",
-    words: ["gestion", "integral", "erp", "negocio", "empleado", "sucursal", "reporte", "administrar"],
+    words: ["gestion integral", "erp", "empleado", "planilla", "sucursal", "reporte", "administrar mi negocio", "administrar el negocio", "gestionar mi negocio", "gestion del negocio"],
   },
   {
     id: "crm",
@@ -203,7 +204,7 @@ export const SYSTEM_TYPES = [
     example: "Club de clientes con puntos por cada compra",
     surfaces: ["admin"],
     level: "medium",
-    words: ["crm", "cliente", "fidelizacion", "puntos", "seguimiento", "prospecto"],
+    words: ["crm", "fidelizacion", "club de clientes", "puntos por compra", "seguimiento de clientes", "cartera de clientes", "gestion de clientes", "prospecto", "leads"],
   },
   {
     id: "records",
@@ -213,7 +214,18 @@ export const SYSTEM_TYPES = [
     example: "Registro de alumnos, pacientes o expedientes",
     surfaces: ["admin"],
     level: "simple",
-    words: ["registro", "alumno", "paciente", "expediente", "matricula", "notas", "biblioteca", "crud"],
+    words: ["registros", "registro de", "alumno", "paciente", "expediente", "matricula", "biblioteca", "crud", "historia clinica"],
+  },
+
+  {
+    id: "helpdesk",
+    family: "management",
+    title: "Mesa de ayuda (tickets de soporte)",
+    summary: "Los clientes o el equipo abren tickets; se asignan, se responden y se cierran con historial.",
+    example: "Reclamos de clientes con estado: abierto, en curso, resuelto",
+    surfaces: ["public", "admin"],
+    level: "medium",
+    words: ["sistema de tickets", "tickets de soporte", "ticket de soporte", "soporte tecnico", "mesa de ayuda", "helpdesk", "help desk", "incidencia", "reclamo", "sistema de soporte"],
   },
 
   // ---------- Reservas y turnos ----------
@@ -225,7 +237,7 @@ export const SYSTEM_TYPES = [
     example: "Reservar una torta helada para retirar el sábado",
     surfaces: ["public", "booking", "admin"],
     level: "medium",
-    words: ["reserva", "turno", "cita", "agenda", "horario", "consulta"],
+    words: ["reserva", "reservar", "turno", "cita", "agenda", "agendar", "consultorio", "barberia", "peluqueria"],
   },
   {
     id: "events",
@@ -235,7 +247,7 @@ export const SYSTEM_TYPES = [
     example: "Inscripciones a un taller de helados artesanales",
     surfaces: ["public", "booking", "admin"],
     level: "medium",
-    words: ["evento", "entrada", "ticket", "inscripcion", "aforo", "taller"],
+    words: ["evento", "venta de entradas", "entradas para", "boleto", "boleteria", "inscripcion", "aforo", "taller", "concierto", "tickets para", "tickets de evento"],
   },
 
   // ---------- Plataforma con usuarios ----------
@@ -247,7 +259,7 @@ export const SYSTEM_TYPES = [
     example: "Heladerías gestionan sus pedidos pagando una suscripción",
     surfaces: ["public", "app", "admin"],
     level: "advanced",
-    words: ["saas", "suscripcion", "cuenta", "usuarios", "web app", "aplicacion web", "plataforma", "login"],
+    words: ["saas", "suscripcion", "web app", "aplicacion web", "multiusuario", "planes de pago"],
   },
   {
     id: "lms",
@@ -257,7 +269,7 @@ export const SYSTEM_TYPES = [
     example: "Curso online de heladería artesanal",
     surfaces: ["public", "app", "admin"],
     level: "advanced",
-    words: ["curso", "clases", "leccion", "aula virtual", "educativ", "lms", "capacitacion"],
+    words: ["curso", "cursos online", "clases online", "leccion", "aula virtual", "educativ*", "lms", "capacitacion"],
   },
   {
     id: "community",
@@ -267,7 +279,7 @@ export const SYSTEM_TYPES = [
     example: "Comunidad que reseña sabores de helado",
     surfaces: ["app", "admin"],
     level: "advanced",
-    words: ["red social", "comunidad", "foro", "perfil", "seguidores", "resena", "comentario"],
+    words: ["red social", "comunidad", "foro", "seguidores", "resena", "perfiles de usuario"],
   },
   {
     id: "dashboard",
@@ -277,7 +289,7 @@ export const SYSTEM_TYPES = [
     example: "Ventas por sabor y por mes en gráficos",
     surfaces: ["app"],
     level: "medium",
-    words: ["dashboard", "grafico", "metrica", "indicador", "estadistica", "kpi", "analitica"],
+    words: ["dashboard", "grafico", "metrica", "indicador", "estadistica", "kpi", "analitica", "panel de datos"],
   },
 
   // ---------- App móvil ----------
@@ -289,7 +301,7 @@ export const SYSTEM_TYPES = [
     example: "App para pedir helados y sumar puntos",
     surfaces: ["mobile", "api", "admin"],
     level: "advanced",
-    words: ["app movil", "aplicacion movil", "android", "ios", "celular", "play store"],
+    words: ["app movil", "aplicacion movil", "app para celular", "app nativa", "android", "ios", "play store", "app store"],
   },
 
   // ---------- Backend y automatización ----------
@@ -301,7 +313,7 @@ export const SYSTEM_TYPES = [
     example: "API de pedidos que usan la web y la app",
     surfaces: ["api"],
     level: "medium",
-    words: ["api", "backend", "rest", "endpoint", "microservicio", "servidor"],
+    words: ["api", "api rest", "backend", "endpoint", "microservicio", "servicio web"],
   },
   {
     id: "bot",
@@ -311,7 +323,7 @@ export const SYSTEM_TYPES = [
     example: "Bot que toma pedidos por WhatsApp",
     surfaces: ["api"],
     level: "medium",
-    words: ["bot", "chatbot", "automatizar", "automatizacion", "telegram", "script"],
+    words: ["bot", "chatbot", "automatizar", "automatizacion", "telegram", "bot de whatsapp", "tarea programada"],
   },
 ];
 
@@ -361,6 +373,49 @@ const FAMILY_DEFAULTS = {
   backend: ["api", "bot"],
 };
 
+/**
+ * Tipos que tiene sentido ofrecer JUNTO a uno detectado (alternativas o el
+ * siguiente escalón). Con una idea clara solo se muestran estos: nada de un
+ * POS para "landing para heladería".
+ */
+const RELATED = {
+  landing: ["multipage", "cms-site", "catalog-orders"],
+  multipage: ["landing", "cms-site", "blog"],
+  "cms-site": ["multipage", "blog", "catalog-orders"],
+  portfolio: ["landing", "multipage", "blog"],
+  blog: ["cms-site", "multipage"],
+  "catalog-orders": ["ecommerce", "landing", "cms-site"],
+  ecommerce: ["catalog-orders", "marketplace", "inventory"],
+  marketplace: ["ecommerce", "saas"],
+  pos: ["inventory", "erp-lite", "crm"],
+  inventory: ["pos", "erp-lite"],
+  "erp-lite": ["pos", "inventory", "crm"],
+  crm: ["erp-lite", "helpdesk", "saas"],
+  records: ["erp-lite", "dashboard"],
+  helpdesk: ["crm", "saas"],
+  booking: ["events", "landing", "crm"],
+  events: ["booking", "landing"],
+  saas: ["dashboard", "marketplace"],
+  lms: ["saas", "community"],
+  community: ["saas", "lms"],
+  dashboard: ["saas", "erp-lite"],
+  "mobile-app": ["api", "saas"],
+  api: ["bot", "mobile-app"],
+  bot: ["api"],
+};
+
+/**
+ * Pistas de familia demasiado genéricas para dar la idea por "clara":
+ * "sistema para heladería" puede ser un POS, reservas o tickets.
+ */
+const WEAK_FAMILY_WORDS = new Set([
+  "sistema", "web", "plataforma", "usuarios", "control de", "gestion",
+  "gestionar", "administrar", "administracion", "app",
+]);
+
+/** Máximo de tipos en la vista enfocada (el resto queda tras "ver todos"). */
+const FOCUS_LIMIT = 5;
+
 const CONTEXT_BOOST = {
   academic: { records: 2, "erp-lite": 1, lms: 1 },
   personal: { landing: 1, portfolio: 1, "catalog-orders": 1 },
@@ -374,25 +429,37 @@ export const getSystemFamily = (id) =>
 export const getTypesOfFamily = (familyId) =>
   SYSTEM_TYPES.filter((t) => t.family === familyId);
 
-/** minúsculas y sin tildes, para comparar pistas. */
+/** minúsculas, sin tildes y con espacios simples, para comparar pistas. */
 const normalize = (text) =>
   String(text || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ");
 
-const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-/** Pistas encontradas en el texto (prefijo de palabra: "pedido" → "pedidos"). */
-function findWords(text, words) {
-  return words.filter((word) =>
-    new RegExp(`(^|[^a-z0-9])${escapeRegExp(word)}`).test(text),
-  );
-}
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
- * Detecta la familia y los tipos más probables a partir de la idea.
- * @returns {{ familyId: string|null, recommended: string[], crossId: string|null, matched: string[] }}
+ * ¿Aparece la pista en el texto? Palabra completa con plural opcional
+ * ("pedido" → "pedidos"), así "pos" no salta con "posible", "bot" con "botón"
+ * ni "rest" con "restaurante". Con "*" final es un prefijo ("corporativ*").
+ */
+function hasWord(text, word) {
+  const isPrefix = word.endsWith("*");
+  const core = escapeRegExp(isPrefix ? word.slice(0, -1) : word);
+  const tail = isPrefix ? "" : "(?:s|es)?(?![a-z0-9])";
+  return new RegExp(`(?:^|[^a-z0-9])${core}${tail}`).test(text);
+}
+
+const findWords = (text, words) => words.filter((word) => hasWord(text, word));
+
+/**
+ * Detecta qué producto describe la idea.
+ * - Idea clara (pistas de un tipo, o de una familia concreta como "tienda"):
+ *   `focused` trae SOLO los tipos que encajan y sus alternativas razonables.
+ * - Idea ambigua ("sistema para heladería") o sin pistas: `focused` = null y se
+ *   muestra el catálogo completo, con la familia probable abierta.
+ * @returns {{ familyId: string|null, recommended: string[], crossId: string|null, matched: string[], focused: string[]|null }}
  */
 export function detectSystemType(idea, context = "startup") {
   const text = normalize(idea);
@@ -401,18 +468,19 @@ export function detectSystemType(idea, context = "startup") {
   const familyHits = Object.fromEntries(
     SYSTEM_FAMILIES.map((f) => [f.id, findWords(text, f.words)]),
   );
-  // "app" a secas (sin "web") suele ser una app de celular
-  if (/(^|[^a-z])app([^a-z]|$)/.test(text) && !/\bweb\b/.test(text)) {
+  // "app" a secas (sin "web") suele ser una app de celular (pista débil)
+  if (hasWord(text, "app") && !hasWord(text, "web")) {
     familyHits.mobile = [...familyHits.mobile, "app"];
   }
 
-  const typeScores = SYSTEM_TYPES.map((type) => {
+  const typeScores = SYSTEM_TYPES.map((type, order) => {
     const hits = findWords(text, type.words);
     return {
       id: type.id,
       family: type.family,
+      order,
       hits,
-      score: hits.length * 2 + (boost[type.id] || 0),
+      score: hits.length ? hits.length * 2 + (boost[type.id] || 0) : 0,
     };
   });
 
@@ -420,48 +488,109 @@ export function detectSystemType(idea, context = "startup") {
     const typeHits = typeScores
       .filter((t) => t.family === f.id)
       .reduce((sum, t) => sum + t.hits.length, 0);
-    return { id: f.id, score: familyHits[f.id].length * 2 + typeHits };
+    return { id: f.id, score: familyHits[f.id].length + typeHits * 2 };
   }).sort((a, b) => b.score - a.score);
 
-  const best = familyScores[0];
-  const familyId = best && best.score > 0 ? best.id : null;
+  const hitTypes = typeScores
+    .filter((t) => t.hits.length > 0)
+    .sort((a, b) => b.score - a.score || a.order - b.order);
+
+  // La familia la decide el tipo más claro; si no hay, la de más pistas
+  const familyId =
+    hitTypes[0]?.family ||
+    (familyScores[0]?.score > 0 ? familyScores[0].id : null);
   if (!familyId) {
-    return { familyId: null, recommended: [], crossId: null, matched: [] };
+    return {
+      familyId: null,
+      recommended: [],
+      crossId: null,
+      matched: [],
+      focused: null,
+    };
   }
 
-  // Primero los tipos con pistas propias; después, el orden de serie de la
-  // familia (el propósito solo reordena, nunca recomienda algo sin relación)
-  const ranked = typeScores
-    .filter((t) => t.family === familyId)
-    .sort((a, b) => b.score - a.score);
-  const withHits = ranked.filter((t) => t.hits.length > 0).map((t) => t.id);
   const defaults = [...(FAMILY_DEFAULTS[familyId] || [])].sort(
     (a, b) => (boost[b] || 0) - (boost[a] || 0),
   );
-  const recommended = [...new Set([...withHits, ...defaults])].slice(0, 3);
+  const familyHitIds = hitTypes
+    .filter((t) => t.family === familyId)
+    .map((t) => t.id);
 
-  // Sugerencia de otra familia: la que tenga pistas propias, o la de serie
-  const cross = typeScores
-    .filter((t) => t.family !== familyId && t.hits.length > 0)
-    .sort((a, b) => b.score - a.score)[0];
-  const crossId = cross?.id || CROSS_SUGGESTION[familyId] || null;
+  const strongFamilyHits = familyHits[familyId].filter(
+    (w) => !WEAK_FAMILY_WORDS.has(w),
+  );
 
-  const matched = [
+  let focused = null;
+  let recommended;
+  if (hitTypes.length) {
+    // Los tipos nombrados en la idea + las alternativas del principal
+    const top = hitTypes.slice(0, 3).map((t) => t.id);
+    focused = [...new Set([...top, ...(RELATED[top[0]] || [])])].slice(
+      0,
+      FOCUS_LIMIT,
+    );
+    recommended = hitTypes.slice(0, 2).map((t) => t.id);
+  } else if (strongFamilyHits.length) {
+    // "página web para...", "tienda para...": su familia y el escalón siguiente
+    focused = [
+      ...new Set([...defaults, CROSS_SUGGESTION[familyId]].filter(Boolean)),
+    ].slice(0, FOCUS_LIMIT);
+    recommended = defaults.slice(0, 1);
+  } else {
+    recommended = [...new Set([...familyHitIds, ...defaults])].slice(0, 3);
+  }
+
+  // Sugerencia de otra familia (solo en la vista completa)
+  const cross = hitTypes.find((t) => t.family !== familyId);
+  const crossId = focused
+    ? null
+    : cross?.id || CROSS_SUGGESTION[familyId] || null;
+
+  // Pistas para mostrar, sin repetir ("landing" sobra si está "landing page")
+  const allMatched = [
     ...new Set([
+      ...hitTypes.slice(0, 2).flatMap((t) => t.hits),
       ...familyHits[familyId],
-      ...ranked.flatMap((t) => t.hits),
     ]),
-  ].slice(0, 3);
+  ].map((w) => w.replace(/\*$/, ""));
+  const matched = allMatched
+    .filter((w) => !allMatched.some((o) => o !== w && o.includes(w)))
+    .slice(0, 3);
 
-  return { familyId, recommended, crossId, matched };
+  return { familyId, recommended, crossId, matched, focused };
 }
+
+/**
+ * Complementos con sentido para un tipo: los que aún no trae y, por ejemplo,
+ * nada de "pedidos online" o "app móvil" para una API o un bot.
+ */
+const COMPLEMENT_EXCLUSIONS = {
+  api: ["online-orders", "client-login", "mobile-version"],
+  bot: ["online-orders", "client-login", "mobile-version"],
+  records: ["online-orders"],
+  helpdesk: ["online-orders"],
+  dashboard: ["online-orders"],
+  portfolio: ["online-orders", "client-login"],
+};
+
+export function getComplementsFor(type) {
+  if (!type) return [];
+  const excluded = COMPLEMENT_EXCLUSIONS[type.id] || [];
+  return SYSTEM_COMPLEMENTS.filter(
+    (c) => !type.surfaces.includes(c.surface) && !excluded.includes(c.id),
+  );
+}
+
+/** ¿El sistema tiene pantallas propias? (una API o un bot no las tiene) */
+export const hasUserInterface = (surfaces = []) =>
+  surfaces.some((s) => s !== "api");
 
 /** Decisión que se guarda en el blueprint. */
 export function buildSystemTypeDecision(typeId, complementIds = []) {
   const type = getSystemType(typeId);
   if (!type) return null;
-  const complements = SYSTEM_COMPLEMENTS.filter(
-    (c) => complementIds.includes(c.id) && !type.surfaces.includes(c.surface),
+  const complements = getComplementsFor(type).filter((c) =>
+    complementIds.includes(c.id),
   );
   const surfaces = [
     ...new Set([...type.surfaces, ...complements.map((c) => c.surface)]),

@@ -27,6 +27,7 @@ import {
   getAiTool,
   toAiToolDecision,
 } from "@/data/aiTools";
+import { getAiMode } from "@/data/devPreferences";
 import { StationShell } from "./StationShell";
 
 // Misma altura que las demás estaciones: el pie queda siempre en su sitio
@@ -233,7 +234,13 @@ export function AiEcosystemStation({ station, onNext }) {
   const isClient = useIsClient();
 
   const [pickedIds, setPickedIds] = useState(null);
-  const [filter, setFilter] = useState("all");
+  // Abre en el tipo de herramienta que el usuario dijo usar en "Tu entorno"
+  const aiKind = useDecisionStore(
+    (s) => getAiMode(s.blueprint.selectedStack?.preferences?.ai)?.kind || null,
+  );
+  const [filter, setFilter] = useState(() =>
+    aiKind && AI_TOOL_KINDS[aiKind] ? aiKind : "all",
+  );
   const [openId, setOpenId] = useState(null);
 
   const selectedIds = pickedIds ?? savedIdsOf(saved);

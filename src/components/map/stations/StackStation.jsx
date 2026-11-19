@@ -7,6 +7,8 @@ import { TechIcon } from "@/components/ui/TechChip";
 import { getTechIcon } from "@/lib/techIcons";
 import { OptionStation } from "./OptionStation";
 import { SelectionCard } from "./SelectionCard";
+import { DevEnvironmentPanel } from "./DevEnvironmentPanel";
+import { getManager, resolvePreferences } from "@/data/devPreferences";
 
 /** Fila de logos grandes del stack (solo las piezas con logo conocido). */
 function StackLogos({ names }) {
@@ -36,10 +38,15 @@ function StackLogos({ names }) {
 
 export function StackStation({ station, data, onNext, onGenerate }) {
   const savedStack = useDecisionStore((s) => s.blueprint.selectedStack);
+  const setCompanion = useDecisionStore((s) => s.setCompanion);
   const isLocked = useDecisionStore((s) => isStepLocked(s, station.stepNumber));
 
   // Solo guardamos los cambios del usuario; el valor efectivo se deriva
   const [languageOverrides, setLanguageOverrides] = useState({});
+  // Preferencias del entorno elegidas a mano (parciales; el resto es de serie)
+  const [chosenPrefs, setChosenPrefs] = useState(
+    () => savedStack?.preferences || {},
+  );
 
   const getLanguage = (stack) =>
     languageOverrides[stack.id] ||
@@ -48,16 +55,47 @@ export function StackStation({ station, data, onNext, onGenerate }) {
     stack.availableLanguages?.[0] ||
     "TypeScript";
 
+  const withLanguage = (stack) =>
+    stack ? { ...stack, selectedLanguage: getLanguage(stack) } : null;
+
+  const changePreference = (patch, message) => {
+    setChosenPrefs((prev) => ({
+      ...prev,
+      ...patch,
+      managers: { ...prev.managers, ...patch.managers },
+    }));
+    if (message) setCompanion("happy", message);
+  };
+
   return (
     <OptionStation
       station={station}
       data={data}
       onNext={onNext}
       onGenerate={onGenerate}
-      toDecision={(stack) => ({
-        ...stack,
-        selectedLanguage: getLanguage(stack),
-      })}
+      toDecision={(stack) => {
+        const full = withLanguage(stack);
+        return { ...full, preferences: resolvePreferences(full, chosenPrefs) };
+      }}
+      belowDeck={(selected, { isLocked: locked }) => {
+        const stack = withLanguage(selected[0]);
+        return (
+          <DevEnvironmentPanel
+            stack={stack}
+            preferences={resolvePreferences(stack, chosenPrefs)}
+            isLocked={locked}
+            onChange={(patch) => {
+              const [eco, id] = Object.entries(patch.managers || {})[0] || [];
+              changePreference(
+                patch,
+                eco
+                  ? `Anotado: usarás ${getManager(eco, id)?.label}. Los comandos del cierre saldrán con ese gestor.`
+                  : null,
+              );
+            }}
+          />
+        );
+      }}
       selectMessage={(stack) =>
         `¿${stack.title} con ${getLanguage(stack)}? Interesante, analicemos sus límites.`
       }

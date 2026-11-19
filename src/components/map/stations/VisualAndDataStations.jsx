@@ -5,13 +5,8 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { OptionStation } from "./OptionStation";
 import { MorphismCard } from "./MorphismCard";
 import { PalettePicker } from "./PalettePicker";
+import { hasUserInterface } from "@/data/systemTypes";
 import {
-  Database,
-  CloudOff,
-  HardDrive,
-  FileText,
-  KeyRound,
-  Layers,
   Kanban,
   Repeat,
   Target,
@@ -29,6 +24,11 @@ import {
 export function MorphismStation({ station, data, onNext, onGenerate }) {
   const saved = useDecisionStore((s) => s.blueprint.selectedStyle);
   const setCompanion = useDecisionStore((s) => s.setCompanion);
+  // Una API o un bot no tienen pantallas: el estilo visual se puede omitir
+  const isHeadless = useDecisionStore((s) => {
+    const surfaces = s.blueprint.selectedSystemType?.surfaces;
+    return Array.isArray(surfaces) && surfaces.length > 0 && !hasUserInterface(surfaces);
+  });
   // Paleta elegida por carta: { [optionId]: índice }
   const [paletteChoice, setPaletteChoice] = useState({});
 
@@ -47,10 +47,18 @@ export function MorphismStation({ station, data, onNext, onGenerate }) {
 
   return (
     <OptionStation
-      station={station}
+      station={isHeadless ? { ...station, skippable: true } : station}
       data={data}
       onNext={onNext}
       onGenerate={onGenerate}
+      afterDeck={
+        isHeadless ? (
+          <p className="text-[11px] text-neutral-400 text-center leading-snug">
+            Tu sistema no tiene pantallas: puedes omitir esta estación o elegir
+            un estilo para tu marca y documentación.
+          </p>
+        ) : null
+      }
       selectMessage={(o) =>
         `Estilo "${o.title}" seleccionado. Abajo tienes 3 paletas pensadas para tu idea: elige la que más te guste.`
       }
@@ -91,48 +99,6 @@ export function MorphismStation({ station, data, onNext, onGenerate }) {
         );
       }}
       rewriteDescription="Se desbloqueará la selección de estilo y paleta. La maquetación, el despliegue y las herramientas calculadas después se descartarán."
-    />
-  );
-}
-
-const DB_TYPES = {
-  none: { label: "Sin base de datos", Icon: CloudOff, color: "text-neutral-300" },
-  relational: { label: "Relacional (SQL)", Icon: Database, color: "text-sky-400" },
-  document: { label: "Documental (NoSQL)", Icon: FileText, color: "text-emerald-400" },
-  "key-value": { label: "Clave-valor", Icon: KeyRound, color: "text-rose-400" },
-  baas: { label: "Backend como servicio", Icon: Layers, color: "text-violet-400" },
-  embedded: { label: "Embebida (archivo local)", Icon: HardDrive, color: "text-amber-400" },
-};
-
-/** Estación 5: decide si hay base de datos y cuál. Condiciona los diagramas. */
-export function DatabaseStation({ station, data, onNext, onGenerate }) {
-  return (
-    <OptionStation
-      station={station}
-      data={data}
-      onNext={onNext}
-      onGenerate={onGenerate}
-      selectMessage={(o) =>
-        o.dbType === "none"
-          ? "Sin base de datos: menos piezas que mantener. Si luego la necesitas, se agrega."
-          : `"${o.title}" anotada. Tus diagramas incluirán el modelo de datos.`
-      }
-      cardProps={(o) => {
-        const meta = DB_TYPES[o.dbType] || DB_TYPES.relational;
-        return {
-          media: (
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center">
-                <meta.Icon className={`w-5 h-5 ${meta.color}`} />
-              </span>
-              <span className="text-[10px] sm:text-[11px] font-mono text-neutral-400">
-                {meta.label}
-              </span>
-            </div>
-          ),
-        };
-      }}
-      rewriteDescription="Se desbloqueará la elección de base de datos. La arquitectura, los diagramas y todo lo calculado después se descartarán."
     />
   );
 }

@@ -6,6 +6,31 @@
 import { contextLabel } from "@/lib/planSummary";
 import { SYSTEM_COMPLEMENTS, describeSurfaces } from "@/data/systemTypes";
 import { PALETTE_ROLES } from "@/lib/palettes";
+import {
+  ECOSYSTEMS,
+  getAiMode,
+  getEditor,
+  getManager,
+  getOperatingSystem,
+} from "@/data/devPreferences";
+
+/** Líneas de "Entorno de desarrollo" a partir de las preferencias del stack. */
+function environmentLines(preferences) {
+  if (!preferences) return [];
+  const managers = Object.entries(preferences.managers || {}).map(
+    ([eco, id]) =>
+      `- **Gestor de paquetes (${ECOSYSTEMS[eco]?.label || eco}):** ${getManager(eco, id)?.label || id}. Úsalo siempre; no mezcles gestores ni generes lockfiles de otro.`,
+  );
+  const os = getOperatingSystem(preferences.os);
+  const editor = getEditor(preferences.editor);
+  const ai = getAiMode(preferences.ai);
+  return [
+    ...managers,
+    os ? `- **Sistema operativo:** ${os.label}. Da los comandos para ${os.shell}.` : null,
+    editor ? `- **Editor:** ${editor.label}` : null,
+    ai ? `- **Trabajo con IA:** ${ai.label}` : null,
+  ];
+}
 
 const asList = (value) =>
   Array.isArray(value) ? value : value ? [value] : [];
@@ -63,10 +88,12 @@ export function buildAgentsMd(blueprint = {}, scaffold = {}) {
         : null,
       stack?.tags?.length ? `- Piezas: ${stack.tags.join(", ")}` : null,
       db?.title ? `- **Base de datos:** ${db.title}${db.summary ? ` — ${db.summary}` : ""}` : null,
+      db?.adminToolLabel ? `- **Administrador de la base:** ${db.adminToolLabel}` : null,
       arch?.title
         ? `- **Arquitectura:** ${arch.title}${arch.summary ? ` — ${arch.summary}` : ""}`
         : null,
     ]),
+    ...section("Entorno de desarrollo", environmentLines(stack?.preferences)),
     ...section(
       "Estructura de carpetas",
       asList(scaffold.folders).map(
@@ -118,8 +145,23 @@ export function buildAgentsMd(blueprint = {}, scaffold = {}) {
             .join(", ")}`
         : null,
     ]),
+    ...section(
+      "Diagramas",
+      asList(scaffold.diagrams)
+        .filter((d) => d?.mermaid)
+        .flatMap((d) => [
+          `### ${d.title}`,
+          "",
+          "```mermaid",
+          String(d.mermaid).replace(/\\n/g, "\n").trim(),
+          "```",
+          "",
+        ]),
+    ),
     ...section("Deploy", [
-      deploy?.title ? `- **${deploy.title}**${deploy.cost ? ` · ${deploy.cost}` : ""}` : null,
+      deploy?.title
+        ? `- **${deploy.title}**${deploy.costTier ? ` (${{ free: "gratis", low: "económico", premium: "profesional" }[deploy.costTier]})` : ""}${deploy.cost ? ` · ${deploy.cost}` : ""}`
+        : null,
       ...asList(deploy?.steps).map((step, i) => `${i + 1}. ${step}`),
     ]),
     ...section("Forma de trabajo", [

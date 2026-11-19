@@ -6,6 +6,7 @@ import {
   CalendarRange,
   Check,
   CheckCircle2,
+  ChevronDown,
   Copy,
   ClipboardList,
   Database,
@@ -27,9 +28,14 @@ import { getStationById, PHASES } from "@/config/stations.config";
 import { SURFACES, SYSTEM_COMPLEMENTS } from "@/data/systemTypes";
 import { getAiTool } from "@/data/aiTools";
 import { TechIcon } from "@/components/ui/TechChip";
-import { DeployProviders } from "@/components/map/stations/DeployStation";
+import {
+  CostTierChip,
+  DeployProviders,
+} from "@/components/map/stations/DeployStation";
 import { AiToolLogo } from "@/components/map/stations/AiEcosystemStation";
 import { LayoutWireframe } from "@/components/map/stations/LayoutWireframe";
+import { MermaidPreviewButton } from "@/components/map/stations/MermaidPreview";
+import { describePreferences } from "@/data/devPreferences";
 import { contextLabel } from "@/lib/planSummary";
 import {
   PALETTE_ROLES,
@@ -582,7 +588,14 @@ export function DatabaseWidget({ blueprint, className }) {
       stationId="database"
       emptyText="Sin base de datos."
       className={className}
-    />
+    >
+      {blueprint.selectedDatabase?.adminToolLabel && (
+        <p className="text-[11px] text-neutral-400">
+          Administrador:{" "}
+          <b className="text-neutral-200">{blueprint.selectedDatabase.adminToolLabel}</b>
+        </p>
+      )}
+    </OptionWidget>
   );
 }
 
@@ -760,33 +773,140 @@ export function WorkPlanWidget({ blueprint, scaffold, isGenerating, className })
 
 // ---------- Diseño ----------
 
-export function DiagramsWidget({ blueprint, className }) {
-  const diagrams = asList(blueprint.selectedDiagrams);
+/** Quita los "\n" literales que a veces devuelve el modelo. */
+const cleanMermaid = (source) =>
+  String(source || "").replace(/\\n/g, "\n").trim();
+
+export function DiagramsWidget({ blueprint, scaffold, isGenerating, className }) {
+  const chosen = asList(blueprint.selectedDiagrams);
+  const fromScaffold = asList(scaffold?.diagrams);
+  // Código del cierre (completo) o, mientras tanto, el ejemplo de la carta
+  const diagrams = chosen.map((d, i) => {
+    const full =
+      fromScaffold.find((s) => s.id && s.id === d.id) ||
+      fromScaffold.find((s) => s.diagramType && s.diagramType === d.diagramType) ||
+      fromScaffold[i];
+    return {
+      key: d.id || `${d.title}-${i}`,
+      title: d.title,
+      category: d.category,
+      mermaid: cleanMermaid(full?.mermaid || d.sampleMermaid),
+      isSample: !full?.mermaid || full.isSample,
+    };
+  });
+  const [openKey, setOpenKey] = useState(null);
+  const { copied, copy } = useCopyKey();
+
   return (
     <BentoCard
       accent="violet"
       icon={Workflow}
       title="Diagramas"
+      label={diagrams.length ? "Toca uno para ver su código Mermaid" : undefined}
       stationId="diagrams"
       className={className}
     >
       {diagrams.length ? (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
-          {diagrams.map((d) => (
-            <li
-              key={d.id || d.title}
-              className="flex items-center justify-between gap-2 rounded-lg bg-neutral-950/50 border border-neutral-800/70 px-2.5 py-1.5"
-            >
-              <span className="text-[11px] text-neutral-200 truncate">{d.title}</span>
-              {d.category && <Chip accent="violet">{d.category}</Chip>}
-            </li>
-          ))}
+        <ul className="flex flex-col gap-1.5">
+          {diagrams.map((d) => {
+            const isOpen = openKey === d.key;
+            return (
+              <li
+                key={d.key}
+                className={`rounded-xl border transition-colors ${
+                  isOpen
+                    ? "bg-neutral-950/80 border-violet-500/40"
+                    : "bg-neutral-950/50 border-neutral-800/70"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenKey(isOpen ? null : d.key)}
+                  aria-expanded={isOpen}
+                  className="w-full flex items-center justify-between gap-2 px-2.5 py-2 text-left cursor-pointer"
+                >
+                  <span className="min-w-0 flex items-center gap-2">
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 shrink-0 text-violet-300 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
+                    <span className="text-[11px] sm:text-xs text-neutral-200 truncate">
+                      {d.title}
+                    </span>
+                  </span>
+                  {d.category && <Chip accent="violet">{d.category}</Chip>}
+                </button>
+
+                {isOpen && (
+                  <div className="px-2.5 pb-2.5 flex flex-col gap-2">
+                    {d.mermaid ? (
+                      <>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-[10px] font-mono text-neutral-500">
+                            {isGenerating && d.isSample
+                              ? "Generando la versión completa…"
+                              : d.isSample
+                                ? "Ejemplo base de la estación Diagramas"
+                                : "Código recomendado para tu proyecto"}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => copy(d.key, d.mermaid)}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-[10px] font-mono text-neutral-300 cursor-pointer"
+                            >
+                              {copied === d.key ? (
+                                <Check className="w-3 h-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                              {copied === d.key ? "Copiado" : "Copiar"}
+                            </button>
+                            <span>
+                              <MermaidPreviewButton
+                                title={d.title}
+                                source={d.mermaid}
+                                label="Ver dibujado"
+                              />
+                            </span>
+                          </span>
+                        </div>
+                        <pre className="max-h-72 overflow-auto rounded-xl bg-neutral-950 border border-neutral-800 p-3 font-mono text-[10px] sm:text-[11px] text-sky-300 whitespace-pre">
+                          {d.mermaid}
+                        </pre>
+                        <span className="text-[10px] text-neutral-500">
+                          Pégalo en mermaid.live, en tu README o en un bloque
+                          ```mermaid de GitHub para verlo dibujado.
+                        </span>
+                      </>
+                    ) : (
+                      <EmptyNote>Este diagrama no trae código todavía.</EmptyNote>
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <EmptyNote>Sin diagramas elegidos.</EmptyNote>
       )}
     </BentoCard>
   );
+}
+
+/** Copiar al portapapeles con aviso "Copiado" por clave. */
+function useCopyKey() {
+  const [copied, setCopied] = useState(null);
+  const copy = async (key, text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied((k) => (k === key ? null : k)), 1500);
+    } catch {
+      setCopied(null);
+    }
+  };
+  return { copied, copy };
 }
 
 /** Muestra de color aproximada de cada lenguaje visual. */
@@ -948,7 +1068,14 @@ export function DeployWidget({ blueprint, className }) {
       icon={Rocket}
       title={deploy?.title || "Deploy"}
       stationId="deploy"
-      actions={deploy?.cost && <Chip accent="emerald">{deploy.cost}</Chip>}
+      actions={
+        (deploy?.cost || deploy?.costTier) && (
+          <span className="flex items-center gap-1.5">
+            <CostTierChip tier={deploy.costTier} />
+            {deploy.cost && <Chip accent="emerald">{deploy.cost}</Chip>}
+          </span>
+        )
+      }
       className={className}
     >
       {deploy ? (
@@ -1006,8 +1133,9 @@ export function AiKitWidget({ blueprint, className }) {
   );
 }
 
-export function CommandsWidget({ scaffold, isGenerating, actions, className }) {
+export function CommandsWidget({ blueprint, scaffold, isGenerating, actions, className }) {
   const commands = asList(scaffold?.commands);
+  const environment = describePreferences(blueprint?.selectedStack?.preferences);
   return (
     <BentoCard
       accent="lime"
@@ -1017,6 +1145,11 @@ export function CommandsWidget({ scaffold, isGenerating, actions, className }) {
       actions={actions}
       className={className}
     >
+      {environment && (
+        <p className="text-[10px] sm:text-[11px] text-neutral-500 mb-2 leading-relaxed">
+          Tu entorno: {environment}
+        </p>
+      )}
       {isGenerating && !scaffold ? (
         <SkeletonLines rows={4} />
       ) : (

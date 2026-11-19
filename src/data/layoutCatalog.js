@@ -136,16 +136,29 @@ export const surfaceLabel = (surface) => SURFACES[surface] || surface;
 /**
  * Superficies con pantallas del proyecto. Sale del tipo de sistema; si un
  * proyecto antiguo no lo tiene, se deduce de la idea.
+ *
+ * Devuelve [] si el usuario eligió un sistema SIN pantallas (API, bot): ahí
+ * no hay layout que elegir.
  */
 export function layoutSurfacesFor(blueprint = {}) {
   let surfaces = blueprint.selectedSystemType?.surfaces;
-  if (!Array.isArray(surfaces) || !surfaces.length) {
+  const isExplicit = Array.isArray(surfaces) && surfaces.length > 0;
+  if (!isExplicit) {
     const detected = detectSystemType(blueprint.idea, blueprint.context);
     surfaces = getSystemType(detected.recommended[0])?.surfaces || ["public"];
   }
   const withLayout = surfaces.filter((s) => SURFACES_WITH_LAYOUT.includes(s));
-  return withLayout.length ? withLayout : ["public"];
+  if (withLayout.length) return withLayout;
+  return isExplicit ? [] : ["public"];
 }
+
+/** Decisión de Layout para un sistema sin pantallas (API, bot). */
+export const NO_LAYOUT_DECISION = Object.freeze({
+  id: "none",
+  title: "Sin interfaz propia",
+  summary: "El sistema no tiene pantallas: lo usan otras apps o se maneja por chat.",
+  selections: [],
+});
 
 /** Decisión que se guarda en el blueprint: un layout por superficie. */
 export function buildLayoutDecision(selections) {

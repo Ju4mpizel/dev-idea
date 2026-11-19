@@ -314,6 +314,14 @@ export const STATION_CATEGORIES = {
           { name: "CI/CD", desc: "Cada push prueba y despliega automáticamente (GitHub Actions)." },
         ],
       },
+      {
+        group: "Franjas de costo",
+        items: [
+          { name: "Gratis", desc: "$0 / mes con planes gratuitos (con límites de uso)." },
+          { name: "Económico", desc: "≈ US$5-25 / mes: VPS o PaaS de pago, sin dormirse." },
+          { name: "Profesional", desc: "US$50+ / mes: cloud con backups, escalado y soporte." },
+        ],
+      },
     ],
   },
 

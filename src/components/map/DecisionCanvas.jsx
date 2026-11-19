@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { getStation } from "@/config/stations.config";
 import { normalizeStepResponse } from "@/lib/stepContracts";
+import { layoutSurfacesFor } from "@/data/layoutCatalog";
+import { recommendDataStorage } from "@/data/databases";
 import {
   claimIdeaRun,
   fetchTestProject,
@@ -21,10 +23,10 @@ import { DiagramsStation } from "./stations/DiagramsStation";
 import { DeployStation } from "./stations/DeployStation";
 import { AiEcosystemStation } from "./stations/AiEcosystemStation";
 import {
-  DatabaseStation,
   MethodologyStation,
   MorphismStation,
 } from "./stations/VisualAndDataStations";
+import { DatabaseStation } from "./stations/DatabaseStation";
 import { OptionStation } from "./stations/OptionStation";
 import { BlueprintShowcase } from "../workspace/BlueprintShowcase";
 
@@ -167,6 +169,46 @@ export function DecisionCanvas({ step: currentStep }) {
     // Estaciones de catálogo fijo: se resuelven al instante, sin Gemini
     if (targetStation?.local) {
       const data = normalizeStepResponse(targetStation.id, {}).data;
+      setStepOptions(targetStation.id, data);
+      setCompanion(data.companionMood, data.companionComment);
+      goToStep(targetStep);
+      return;
+    }
+
+    // Base de datos: primero el interruptor "¿guardará datos?" (sin IA). Solo
+    // se genera cuando la estación manda su `databasePreference`.
+    if (targetStation?.id === "database" && !extraFields?.databasePreference) {
+      const storage = recommendDataStorage({
+        ...useDecisionStore.getState().blueprint,
+        ...(extraFields || {}),
+      });
+      const data = {
+        companionMood: "curious",
+        companionComment: `${storage.reason} ¿Lo confirmas?`,
+        options: [],
+        needsSetup: true,
+      };
+      setStepOptions(targetStation.id, data);
+      setCompanion(data.companionMood, data.companionComment);
+      goToStep(targetStep);
+      return;
+    }
+
+    // Sistema sin pantallas (API, bot): no hay layout que pedirle a la IA
+    if (
+      targetStation?.id === "layout" &&
+      layoutSurfacesFor({
+        ...useDecisionStore.getState().blueprint,
+        ...(extraFields || {}),
+      }).length === 0
+    ) {
+      const data = {
+        companionMood: "thinking",
+        companionComment:
+          "Tu sistema no tiene pantallas propias, así que aquí no hay layout que elegir. Confirma y seguimos.",
+        options: [],
+        headless: true,
+      };
       setStepOptions(targetStation.id, data);
       setCompanion(data.companionMood, data.companionComment);
       goToStep(targetStep);
@@ -320,6 +362,10 @@ export function DecisionCanvas({ step: currentStep }) {
           requestStepAndNavigate(currentStep + 1, extraFields)
         }
         onGenerate={() => requestStepAndNavigate(currentStep, {}, true)}
+        // Genera con datos que la estación junta antes (p. ej. la base favorita)
+        onGenerateWith={(extraFields) =>
+          requestStepAndNavigate(currentStep, extraFields, true)
+        }
       />
     </div>
   );

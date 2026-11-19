@@ -139,14 +139,68 @@ function DeploySteps({ steps = [] }) {
   );
 }
 
+/** Franjas de costo: gratis, económico y profesional (clases completas). */
+export const COST_TIER_META = {
+  free: {
+    label: "Gratis",
+    hint: "$0 / mes",
+    chip: "bg-emerald-500/10 border-emerald-500/40 text-emerald-300",
+  },
+  low: {
+    label: "Económico",
+    hint: "≈ US$5-25 / mes",
+    chip: "bg-sky-500/10 border-sky-500/40 text-sky-300",
+  },
+  premium: {
+    label: "Profesional",
+    hint: "US$50+ / mes",
+    chip: "bg-violet-500/10 border-violet-500/40 text-violet-300",
+  },
+};
+const TIER_ORDER = ["free", "low", "premium"];
+
+export function CostTierChip({ tier }) {
+  const meta = COST_TIER_META[tier];
+  if (!meta) return null;
+  return (
+    <span
+      className={`shrink-0 px-1.5 py-0.5 rounded-md border text-[9px] sm:text-[10px] font-mono uppercase tracking-wider ${meta.chip}`}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
 /** Estación de deploy: cada plan muestra en grande dónde vivirá el proyecto. */
 export function DeployStation({ station, data, onNext, onGenerate }) {
+  // Mazo ordenado de lo gratis a lo profesional
+  const options = data?.options || [];
+  const sorted = [...options].sort(
+    (a, b) => TIER_ORDER.indexOf(a.costTier) - TIER_ORDER.indexOf(b.costTier),
+  );
+  const tiers = TIER_ORDER.filter((t) => options.some((o) => o.costTier === t));
+
   return (
     <OptionStation
       station={station}
-      data={data}
+      data={data ? { ...data, options: sorted } : data}
       onNext={onNext}
       onGenerate={onGenerate}
+      afterDeck={
+        tiers.length > 1 ? (
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            {tiers.map((t) => (
+              <span
+                key={t}
+                className="flex items-center gap-1 text-[10px] text-neutral-500"
+              >
+                <CostTierChip tier={t} />
+                {COST_TIER_META[t].hint}
+              </span>
+            ))}
+          </div>
+        ) : null
+      }
       selectMessage={(o) => {
         const main = o.providers?.find((p) => p.role !== "repo")?.name;
         return main
@@ -167,9 +221,10 @@ export function DeployStation({ station, data, onNext, onGenerate }) {
           isDimmed={isDimmed}
           media={<DeployProviders providers={option.providers} />}
           footer={
-            option.cost ? (
-              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono text-emerald-300">
+            option.cost || option.costTier ? (
+              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono text-emerald-300 min-w-0">
                 <Wallet className="w-3.5 h-3.5 shrink-0" />
+                <CostTierChip tier={option.costTier} />
                 <span className="truncate">{option.cost}</span>
               </div>
             ) : null
