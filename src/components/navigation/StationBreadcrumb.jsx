@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import {
   stationsInMode,
+  stationNumberInMode,
   LAST_STEP,
   PHASES,
   getPhase,
@@ -310,7 +311,7 @@ export function StationBreadcrumb() {
                             <Lock className="w-3 h-3 text-neutral-700" />
                           ) : (
                             <span className="font-mono text-xs font-bold">
-                              {station.stepNumber}
+                              {stationNumberInMode(station, mode)}
                             </span>
                           )}
                         </motion.button>

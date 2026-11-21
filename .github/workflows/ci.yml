@@ -1,0 +1,53 @@
+# Integración continua de Dev.Idea: en cada push a main y en cada pull request
+# se revisa el código (lint), se corren las pruebas con cobertura y se compila
+# la app. Vercel despliega por su cuenta; esto asegura que lo que llega a main
+# está probado.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, pruebas y build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Usa la versión de pnpm declarada en package.json ("packageManager")
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Pruebas unitarias y de integración (con cobertura)
+        run: pnpm test:coverage
+
+      - name: Guardar el reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: coverage/
+          retention-days: 14
+
+      # El build no llama a Supabase ni a Gemini: bastan valores de ejemplo
+      - name: Build de producción
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://ejemplo.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: clave-de-ejemplo

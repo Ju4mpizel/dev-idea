@@ -28,8 +28,11 @@ import {
   getStationById,
   MODES,
   PHASES,
+  isStationInMode,
   resolveMode,
+  stationNumberInMode,
 } from "@/config/stations.config";
+import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { SURFACES, SYSTEM_COMPLEMENTS } from "@/data/systemTypes";
 import { getAiTool } from "@/data/aiTools";
 import { TechIcon } from "@/components/ui/TechChip";
@@ -191,6 +194,8 @@ export function BentoCard({
 }) {
   const a = ACCENTS[accent] || ACCENTS.sky;
   const station = stationId ? getStationById(stationId) : null;
+  // Número según el modo del mapa; fuera del modo, lo armó el cierre
+  const mode = useDecisionStore((st) => st.blueprint.mode);
   const phase = station ? PHASES[station.phase] : null;
 
   return (
@@ -220,7 +225,11 @@ export function BentoCard({
                 />
               )}
               {label ||
-                (station ? `Estación ${station.stepNumber}` : "Blueprint")}
+                (!station
+                  ? "Blueprint"
+                  : isStationInMode(station, mode)
+                    ? `Estación ${stationNumberInMode(station, mode)}`
+                    : "Generado al cierre")}
             </span>
             <h3 className="text-sm font-semibold text-neutral-100 leading-snug break-words">
               {title}

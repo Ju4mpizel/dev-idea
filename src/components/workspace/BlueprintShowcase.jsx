@@ -4,7 +4,12 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Copy, Download, FileText } from "lucide-react";
 import { TopBarControls } from "@/components/navigation/TopBarControls";
-import { LAST_STEP, PHASES, isStationInMode } from "@/config/stations.config";
+import {
+  LAST_STEP,
+  PHASES,
+  isStationInMode,
+  stationNumberInMode,
+} from "@/config/stations.config";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { buildPlanEntries, buildPlanMarkdown } from "@/lib/planSummary";
 import { buildAgentsMd } from "@/lib/agentsMd";
@@ -144,7 +149,7 @@ export function BlueprintShowcase({ data, blueprint }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400">
-            Estación {LAST_STEP} · ¡A Trabajar!
+            Estación {stationNumberInMode(LAST_STEP, blueprint?.mode)} · ¡A Trabajar!
           </span>
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-0.5">
             Plano técnico de {blueprint?.selectedName || "tu proyecto"}

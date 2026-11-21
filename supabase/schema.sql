@@ -299,3 +299,27 @@ REVOKE ALL ON FUNCTION public.use_idea_generation(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.idea_quota() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_idea_run(TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.use_idea_generation(UUID) TO authenticated;
+
+-- Devuelve una generación cuando Gemini falla o el usuario cancela
+CREATE OR REPLACE FUNCTION public.refund_idea_generation(p_run UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'No autenticado' USING ERRCODE = '28000';
+  END IF;
+
+  -- Solo el dueño, y nunca por debajo de 0
+  UPDATE public.idea_runs
+  SET generations = generations - 1
+  WHERE id = p_run AND user_id = auth.uid() AND generations > 0;
+
+  RETURN FOUND;
+END;
+$;
+
+REVOKE ALL ON FUNCTION public.refund_idea_generation(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.refund_idea_generation(UUID) TO authenticated;

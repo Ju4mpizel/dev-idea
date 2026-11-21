@@ -26,7 +26,7 @@ const hasWord = (text, word) =>
 
 /** Pistas de que es un proyecto de software (alcanza con una). */
 const SOFTWARE_WORDS = [
-  "app", "aplicacion", "aplicativo", "sistema", "software", "web", "pagina web",
+  "app", "aplicacion", "aplicativo", "sistema", "software", "web", "pagina", "pagina web",
   "sitio", "sitio web", "landing", "plataforma", "programa", "api", "bot",
   "chatbot", "backend", "frontend", "dashboard", "base de datos", "crud",
   "ecommerce", "e-commerce", "tienda online", "tienda virtual", "saas", "login",

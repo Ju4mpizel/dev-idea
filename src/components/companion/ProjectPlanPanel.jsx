@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { PHASES, getPhase } from "@/config/stations.config";
+import { PHASES, getPhase, stationNumberInMode } from "@/config/stations.config";
 import {
   buildPlanEntries,
   buildPlanMarkdown,
@@ -199,7 +199,7 @@ function PlanContent({ onClose }) {
                     className={`w-1.5 h-1.5 rounded-full shrink-0 opacity-50 ${phase.dot}`}
                   />
                   <span className="text-[10px] font-mono w-5 shrink-0">
-                    {station.stepNumber}
+                    {stationNumberInMode(station, useDecisionStore.getState().blueprint.mode)}
                   </span>
                   <span className="text-[11px] truncate">{station.title}</span>
                   <CircleDashed className="w-3 h-3 ml-auto shrink-0" />
@@ -268,7 +268,7 @@ function PlanEntry({ entry, isOpen, isCurrent, onToggle, onGoTo }) {
         <span
           className={`shrink-0 w-6 h-6 rounded-lg text-[10px] font-mono font-bold flex items-center justify-center text-neutral-950 ${phase.dot} ${isSkipped ? "opacity-40" : ""}`}
         >
-          {station.stepNumber}
+          {stationNumberInMode(station, useDecisionStore.getState().blueprint.mode)}
         </span>
         <span className="flex-1 min-w-0 flex flex-col gap-1">
           <span className="flex items-center gap-1.5">

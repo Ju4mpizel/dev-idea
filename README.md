@@ -22,6 +22,10 @@ Convierte una idea difusa en un plano técnico listo para programar: requisitos,
 [![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)](https://motion.dev)
 [![Zustand](https://img.shields.io/badge/Zustand-443e38?style=for-the-badge&logo=react&logoColor=white)](https://github.com/pmndrs/zustand)
 
+[![CI](https://github.com/Ju4mpizel/dev-idea/actions/workflows/ci.yml/badge.svg)](https://github.com/Ju4mpizel/dev-idea/actions/workflows/ci.yml)
+![Pruebas](https://img.shields.io/badge/pruebas-125_aprobadas-2ea44f)
+![Cobertura](https://img.shields.io/badge/cobertura-85%25_l%C3%ADneas-2ea44f)
+
 <br />
 
 [¿Qué es?](#que-es) ·
@@ -29,6 +33,7 @@ Convierte una idea difusa en un plano técnico listo para programar: requisitos,
 [Estaciones](#estaciones) ·
 [Cierre](#cierre) ·
 [Funcionalidades](#funcionalidades) ·
+[Pruebas](#pruebas) ·
 [Inicio rápido](#inicio-rapido) ·
 [Estructura](#estructura)
 
@@ -177,6 +182,28 @@ La última estación reúne todo en un **bento** organizado por fases (Definici�
 
 ---
 
+<a id="pruebas"></a>
+
+## 🧪 Pruebas
+
+| Tipo | Herramienta | Alcance |
+|------|-------------|---------|
+| **Unitarias** | Vitest | Detección del tipo de sistema, filtro de ideas, modos, contratos con la IA, prompts, comandos y bases de datos. |
+| **Integración** | Vitest + Supabase y Gemini simulados | Rutas API reales: sesión, cupo de ideas, filtro, validación de entradas y devolución de generaciones. |
+| **Funcionales** | Casos manuales con evidencia | Flujos completos en la app desplegada (CP-01…CP-20). |
+| **Rendimiento** | Lighthouse | Rendimiento, accesibilidad, buenas prácticas y SEO. |
+
+**125 pruebas automatizadas** (100 % aprobadas) con **85 % de cobertura de líneas**. GitHub Actions corre lint, pruebas y build en cada push.
+
+```bash
+pnpm test            # todas las pruebas
+pnpm test:coverage   # con reporte de cobertura (coverage/index.html)
+```
+
+El plan, los casos, los resultados y el registro de errores están en [`docs/pruebas/`](docs/pruebas/README.md).
+
+---
+
 <a id="inicio-rapido"></a>
 
 ## 🚀 Inicio Rápido
@@ -222,6 +249,7 @@ DEV_TOOLS_EMAILS=tu@correo.com
 | [`20261119_limite_ideas.sql`](supabase/migrations/20261119_limite_ideas.sql) | Cupo de ideas (tabla `idea_runs` y funciones SQL). |
 | [`20261120_modos.sql`](supabase/migrations/20261120_modos.sql) | Columna `mode` de los modos Rápido / Estándar / Completo. |
 | [`20261121_cupo_8_horas.sql`](supabase/migrations/20261121_cupo_8_horas.sql) | Cupo de ideas: de 2 cada 3 horas a 2 cada 8 horas. |
+| [`20261122_devolver_generacion.sql`](supabase/migrations/20261122_devolver_generacion.sql) | Devuelve al cupo las generaciones que fallan o se cancelan. |
 
 > ⚠️ Corre cada migración **antes** de desplegar el código que la usa: el autoguardado escribe esas columnas.
 
@@ -277,6 +305,10 @@ src/
 supabase/
 ├── schema.sql                 # Esquema completo
 └── migrations/                # Cambios para bases existentes
+tests/
+├── unit/                      # Pruebas unitarias (Vitest)
+└── integration/               # Rutas API con Supabase y Gemini simulados
+docs/pruebas/                  # Plan, casos, resultados y registro de errores
 ```
 
 **Añadir una estación:** regístrala en `stations.config.js` (y en los modos donde corresponda), añade su prompt en `prompts.js`, su esquema en `stepSchemas.js`, su guía en `stationGuides.js` y, si necesita columna propia, una migración en `supabase/migrations/`. Si sus cartas no necesitan contenido especial, `OptionStation` la dibuja sola.

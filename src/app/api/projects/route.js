@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { getRequestUser, isUuid, serverError } from "@/lib/supabaseServer";
+import {
+  getRequestUser,
+  ownedIdeaRunId,
+  readJsonBody,
+  serverError,
+} from "@/lib/supabaseServer";
 import {
   LAST_STEP,
   blueprintToDbRow,
@@ -9,7 +14,8 @@ import {
 const clampStep = (step) =>
   Math.min(Math.max(Number(step) || 0, 0), LAST_STEP);
 
-const toIdeaRunId = (value) => (isUuid(value) ? value : null);
+// Un mapa completo (decisiones + cartas de 15 estaciones) ronda 100-250 KB
+const MAX_BODY_BYTES = 512 * 1024;
 
 // GET: Obtiene proyectos del usuario autenticado
 export async function GET(req) {
@@ -50,7 +56,9 @@ export async function POST(req) {
       );
     }
 
-    const body = await req.json();
+    const parsed = await readJsonBody(req, MAX_BODY_BYTES);
+    if (parsed.response) return parsed.response;
+    const { body } = parsed;
     const {
       blueprint,
       generatedOptions,
@@ -80,7 +88,8 @@ export async function POST(req) {
           title,
           status,
           current_step: clampStep(currentStep),
-          idea_run_id: toIdeaRunId(ideaRunId),
+          // Solo un ticket propio (nunca el de otra cuenta)
+          idea_run_id: await ownedIdeaRunId(supabase, ideaRunId),
         },
       ])
       .select("id")

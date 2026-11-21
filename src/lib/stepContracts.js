@@ -203,9 +203,13 @@ function normalizeOption(raw, stationId) {
 
 /** Franja de un plan sin costTier (proyectos anteriores): se deduce del costo. */
 function inferCostTier(cost = "") {
-  // Montos en dólares del texto ("$0 / mes", "≈ US$12 / mes", "US$80/mes")
-  const amounts = (cost.match(/\$\s*\d+(?:[.,]\d+)?/g) || []).map((m) =>
-    Number(m.replace(/[^\d.,]/g, "").replace(",", ".")),
+  // Montos de DINERO del texto: con la moneda antes ("$0", "US$12", "€60") o
+  // después ("12 €", "20 USD", "100 dólares"). Las otras cifras ("100 GB",
+  // "1000 peticiones") no cuentan.
+  const MONEY =
+    /(?:US\$|\$|€|USD\s*|EUR\s*)(\d+(?:[.,]\d+)?)|(\d+(?:[.,]\d+)?)\s*(?:€|USD|EUR|d[oó]lares|euros)/gi;
+  const amounts = [...cost.matchAll(MONEY)].map((m) =>
+    Number((m[1] ?? m[2]).replace(",", ".")),
   );
   const max = amounts.length ? Math.max(...amounts) : 0;
   if (max === 0) return "free";

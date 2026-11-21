@@ -16,7 +16,7 @@ import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
 import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
-import { getStation } from "@/config/stations.config";
+import { getStation, stationNumberInMode } from "@/config/stations.config";
 import { supabase } from "@/lib/supabaseClient";
 import { signOut } from "@/services/projectService";
 import { LogOut } from "lucide-react";
@@ -74,6 +74,7 @@ export default function HomePage() {
 
 function AppShell() {
   const currentStep = useDecisionStore((state) => state.currentStep);
+  const mode = useDecisionStore((state) => state.blueprint.mode);
   const isRouteMapOpen = useDecisionStore((state) => state.isRouteMapOpen);
   const currentUser = useDecisionStore((state) => state.currentUser);
   const cloudProjectId = useDecisionStore((state) => state.cloudProjectId);
@@ -301,7 +302,7 @@ function AppShell() {
                 className="pointer-events-none select-none text-center"
               >
                 <span className="block text-[10px] sm:text-xs font-mono uppercase tracking-[0.3em] text-neutral-600">
-                  Estación {currentStation.stepNumber}
+                  Estación {stationNumberInMode(currentStation, mode)}
                 </span>
                 <span className="block text-4xl sm:text-6xl font-black uppercase text-neutral-800/90 leading-none">
                   {currentStation.navLabel}

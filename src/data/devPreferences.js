@@ -200,7 +200,9 @@ const NPM_BUILTINS = new Set([
  * init") o correr un binario ya instalado ("npx prisma migrate dev").
  * "npx create-vite" es lo mismo que "<gestor> create vite" (vale en todos).
  */
-function toDlx(args) {
+function toDlx(rawArgs) {
+  // "-y" / "--yes" solo confirman la descarga en npx: los otros gestores no los usan
+  const args = rawArgs.filter((a) => a !== "-y" && a !== "--yes");
   const [pkg = "", ...rest] = args;
   if (pkg.startsWith("create-")) {
     return { action: "create", args: [pkg.slice("create-".length), ...rest] };

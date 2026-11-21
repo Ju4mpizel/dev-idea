@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
-import { getRequestUser, isUuid, serverError } from "@/lib/supabaseServer";
+import {
+  getRequestUser,
+  invalidId,
+  isUuid,
+  ownedIdeaRunId,
+  readJsonBody,
+  serverError,
+} from "@/lib/supabaseServer";
 import {
   LAST_STEP,
   blueprintToDbRow,
@@ -9,7 +16,8 @@ import {
 const clampStep = (step) =>
   Math.min(Math.max(Number(step) || 0, 0), LAST_STEP);
 
-const toIdeaRunId = (value) => (isUuid(value) ? value : null);
+// Un mapa completo (decisiones + cartas de 15 estaciones) ronda 100-250 KB
+const MAX_BODY_BYTES = 512 * 1024;
 
 // PUT: Actualiza el proyecto y su blueprint
 export async function PUT(req, { params }) {
@@ -21,6 +29,7 @@ export async function PUT(req, { params }) {
         { status: 400 },
       );
     }
+    if (!isUuid(id)) return invalidId();
 
     const { user, supabase } = await getRequestUser(req);
 
@@ -28,7 +37,9 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: "No autorizado." }, { status: 401 });
     }
 
-    const body = await req.json();
+    const parsed = await readJsonBody(req, MAX_BODY_BYTES);
+    if (parsed.response) return parsed.response;
+    const { body } = parsed;
     const {
       blueprint,
       generatedOptions,
@@ -36,6 +47,9 @@ export async function PUT(req, { params }) {
       isCompleted = false,
       ideaRunId,
     } = body;
+
+    // Solo un ticket propio (nunca el de otra cuenta)
+    const ownRunId = await ownedIdeaRunId(supabase, ideaRunId);
 
     const title =
       blueprint?.selectedName ||
@@ -50,7 +64,7 @@ export async function PUT(req, { params }) {
         status,
         current_step: clampStep(currentStep),
         // Solo se escribe si llega un ticket válido (nunca se borra el vínculo)
-        ...(toIdeaRunId(ideaRunId) ? { idea_run_id: ideaRunId } : {}),
+        ...(ownRunId ? { idea_run_id: ownRunId } : {}),
       })
       .eq("id", id)
       .select("id");
@@ -106,6 +120,7 @@ export async function DELETE(req, { params }) {
         { status: 400 },
       );
     }
+    if (!isUuid(id)) return invalidId();
 
     const { user, supabase } = await getRequestUser(req);
 

@@ -414,6 +414,22 @@ export function nextStepInMode(step, mode) {
   );
 }
 
+/**
+ * Número que ve el usuario: la posición de la estación en el recorrido de su
+ * modo (en Rápido: 0, 1, 2… sin huecos). En Completo coincide con stepNumber.
+ * Acepta el número de paso, el id o el objeto de la estación.
+ */
+export function stationNumberInMode(stationRef, mode) {
+  const step =
+    typeof stationRef === "number"
+      ? stationRef
+      : typeof stationRef === "string"
+        ? STATIONS.find((s) => s.id === stationRef)?.stepNumber
+        : stationRef?.stepNumber;
+  const index = stationsInMode(mode).findIndex((s) => s.stepNumber === step);
+  return index >= 0 ? index : step;
+}
+
 /** Paso anterior del modo antes de `step` (mínimo 0). */
 export function prevStepInMode(step, mode) {
   const before = stationsInMode(mode).filter((s) => s.stepNumber < Number(step));

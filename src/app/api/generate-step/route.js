@@ -78,6 +78,20 @@ function resolveStation(stepId) {
   return station && station.stepNumber > 0 ? station : null;
 }
 
+/**
+ * Devuelve al ticket la generación descontada. Si la función SQL aún no
+ * existe (migración 20261122 sin correr) solo se registra: nunca rompe la
+ * respuesta.
+ */
+async function refundGeneration(supabase, runId) {
+  try {
+    const { error } = await supabase.rpc("refund_idea_generation", { p_run: runId });
+    if (error) console.warn("[API generate-step] No se pudo devolver la generación:", error.message);
+  } catch (err) {
+    console.warn("[API generate-step] No se pudo devolver la generación:", err?.message);
+  }
+}
+
 export async function POST(request) {
   // 1. Solo usuarios con sesión (cada llamada gasta créditos de Gemini)
   const { user, supabase } = await getRequestUser(request);
@@ -112,6 +126,8 @@ export async function POST(request) {
   // 3. Cupo: cada generación gasta una del ticket de la idea. La idea y el
   //    contexto salen del ticket (no del navegador), así no se recicla una idea
   //    para otra. Las cuentas sin límite no usan ticket.
+  // Ticket del que se descontó esta generación (para devolverla si falla)
+  let chargedRun = null;
   if (!isUnlimitedUser(user)) {
     if (!isUuid(ideaRunId)) {
       return fail(
@@ -134,6 +150,7 @@ export async function POST(request) {
         "IDEA_GENERATIONS_LIMIT",
       );
     }
+    chargedRun = ideaRunId;
     safeBlueprint.idea = run.idea;
     safeBlueprint.context = run.context;
   }
@@ -176,10 +193,17 @@ export async function POST(request) {
       },
     );
 
+    // El usuario canceló (botón Pausar) mientras se generaba: nadie recibe
+    // estas cartas, así que la generación vuelve a su cupo
+    if (request.signal?.aborted && chargedRun) {
+      await refundGeneration(supabase, chargedRun);
+    }
     return NextResponse.json({ success: true, data });
   } catch (error) {
     // El detalle técnico queda en el log; al navegador, un mensaje genérico
     console.error("[API generate-step] Error:", error);
+    // Un fallo nuestro (o una cancelación) no le cuesta cupo al usuario
+    if (chargedRun) await refundGeneration(supabase, chargedRun);
     const isInvalidOutput = error instanceof InvalidModelOutputError;
     return fail(
       isInvalidOutput ? 502 : 503,

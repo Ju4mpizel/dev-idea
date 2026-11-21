@@ -66,6 +66,57 @@ const UUID_RE =
 export const isUuid = (value) =>
   typeof value === "string" && UUID_RE.test(value);
 
+/**
+ * Lee el cuerpo JSON con un tope de tamaño (evita guardar payloads gigantes).
+ * @returns {Promise<{ body: object } | { response: NextResponse }>}
+ */
+export async function readJsonBody(req, maxBytes) {
+  const raw = await req.text().catch(() => "");
+  if (raw.length > maxBytes) {
+    return {
+      response: NextResponse.json(
+        { error: "La petición es demasiado grande.", code: "PAYLOAD_TOO_LARGE" },
+        { status: 413 },
+      ),
+    };
+  }
+  try {
+    const body = JSON.parse(raw || "{}");
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error();
+    return { body };
+  } catch {
+    return {
+      response: NextResponse.json(
+        { error: "Cuerpo de la petición inválido.", code: "INVALID_BODY" },
+        { status: 400 },
+      ),
+    };
+  }
+}
+
+/**
+ * Ticket de idea solo si existe y es DEL USUARIO (la política RLS de
+ * idea_runs solo deja leer los propios). Si no, null: nunca se vincula un
+ * proyecto al ticket de otra persona.
+ */
+export async function ownedIdeaRunId(supabase, value) {
+  if (!isUuid(value)) return null;
+  const { data, error } = await supabase
+    .from("idea_runs")
+    .select("id")
+    .eq("id", value)
+    .maybeSingle();
+  return !error && data?.id ? data.id : null;
+}
+
+/** Respuesta 400 para un id de proyecto que no es UUID. */
+export function invalidId() {
+  return NextResponse.json(
+    { error: "El id del proyecto no es válido.", code: "INVALID_ID" },
+    { status: 400 },
+  );
+}
+
 /** Respuesta 401 uniforme. */
 export function unauthorized(message = "Inicia sesión para continuar.") {
   return NextResponse.json(

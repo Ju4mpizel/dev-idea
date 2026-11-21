@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
+import { stationNumberInMode } from "@/config/stations.config";
 import { useStationNavigation } from "@/hooks/useStationNavigation";
 import { TopBarControls } from "@/components/navigation/TopBarControls";
 import { ConfirmModal } from "@/components/modals/ConfirmModal";
@@ -51,6 +52,10 @@ export function StationShell({
   const simulateFromStep = useDecisionStore((s) => s.simulateFromStep);
   const navigation = useStationNavigation(stepNumber);
   const { highestStep, returnToFlow, rewriteFromHere } = navigation;
+  // Números según el modo (en Rápido no hay saltos: 0, 1, 2…)
+  const mode = useDecisionStore((s) => s.blueprint.mode);
+  const shownNumber = stationNumberInMode(stepNumber, mode);
+  const shownHighest = stationNumberInMode(highestStep, mode);
   const isLockedHistory = navigation.isLockedHistory && !forceEditable;
   const [confirmRewriteOpen, setConfirmRewriteOpen] = useState(false);
 
@@ -78,7 +83,7 @@ export function StationShell({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 min-w-0">
           <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-500 flex items-center gap-1.5 min-w-0">
             <span className="truncate">
-              Estación {stepNumber} · {station.title}
+              Estación {shownNumber} · {station.title}
             </span>
             {isLockedHistory && (
               <span className="shrink-0 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono flex items-center gap-1">
@@ -190,7 +195,7 @@ export function StationShell({
           >
             <span>
               {isLockedHistory
-                ? `Volver al Flujo (Fase ${highestStep})`
+                ? `Volver al Flujo (Fase ${shownHighest})`
                 : confirmLabel}
             </span>
             <ArrowRight className="w-4 h-4" />
@@ -206,8 +211,8 @@ export function StationShell({
         tag={isTestProject ? "Proyecto de prueba" : "Reescritura de Flujo"}
         title={
           isTestProject
-            ? `¿Simular desde la Estación ${stepNumber}?`
-            : rewriteTitle || `¿Reescribir desde la Estación ${stepNumber}?`
+            ? `¿Simular desde la Estación ${shownNumber}?`
+            : rewriteTitle || `¿Reescribir desde la Estación ${shownNumber}?`
         }
         description={
           isTestProject

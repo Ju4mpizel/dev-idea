@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
-import { getStation } from "@/config/stations.config";
+import { getStation, stationNumberInMode } from "@/config/stations.config";
 import { getStationCategories } from "@/data/stationCategories";
 import { getLevelStyle } from "@/components/map/stations/levelStyles";
 import { X, Layers } from "lucide-react";
@@ -20,6 +20,7 @@ export function StationCategoriesPanel() {
   const close = useDecisionStore((s) => s.closeCategories);
   const panelLayer = useAnimatingLayer();
   const currentStep = useDecisionStore((s) => s.currentStep);
+  const mode = useDecisionStore((s) => s.blueprint.mode);
 
   const station = getStation(currentStep);
   const categories = station ? getStationCategories(station.id) : null;
@@ -53,7 +54,7 @@ export function StationCategoriesPanel() {
             <div className="flex items-start justify-between gap-2 px-4 pt-4 pb-3 border-b border-neutral-800">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-violet-300 flex items-center gap-1.5">
-                  <Layers className="w-3 h-3" /> Estación {station.stepNumber}{" "}
+                  <Layers className="w-3 h-3" /> Estación {stationNumberInMode(station, mode)}{" "}
                   · {station.navLabel}
                 </span>
                 <h3 className="text-sm font-bold text-white mt-0.5">
