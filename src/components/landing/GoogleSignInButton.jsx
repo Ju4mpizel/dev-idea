@@ -137,6 +137,9 @@ export function GoogleSignInButton({ fallback = null, onError }) {
       <div
         ref={containerRef}
         aria-busy={status !== "ready"}
+        // El iframe de Google hereda `color-scheme: dark` de la página y el
+        // navegador le pinta un fondo blanco opaco: en "light" queda transparente
+        style={{ colorScheme: "light" }}
         className={`transition-opacity ${status === "ready" ? "opacity-100" : "opacity-0"} ${
           status === "signing" ? "pointer-events-none" : ""
         }`}
