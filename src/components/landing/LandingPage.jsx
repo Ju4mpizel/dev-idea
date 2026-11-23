@@ -8,6 +8,7 @@ import { StrobiAvatar } from "@/components/companion/StrobiAvatar";
 import { CompanionBubble } from "@/components/companion/CompanionBubble";
 import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
 import { signInWithGoogle } from "@/services/projectService";
+import { GoogleSignInButton } from "./GoogleSignInButton";
 
 const FEATURES = [
   {
@@ -119,24 +120,30 @@ export function LandingPage() {
           className={`flex flex-col items-center gap-2.5 ${introClass(intro, "intro-rise")}`}
           style={introDelay(intro, 1450)}
         >
-          <button
-            type="button"
-            onClick={handleSignIn}
-            disabled={isSigningIn}
-            className="flex items-center justify-center gap-2.5 px-5 sm:px-6 py-3 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 text-sm font-semibold shadow-[0_0_30px_rgba(255,255,255,0.12)] transition-all active:scale-95 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="w-4 h-4 shrink-0"
-              aria-hidden="true"
-              fill="currentColor"
-            >
-              <path d={siGoogle.path} />
-            </svg>
-            {isSigningIn
-              ? "Abriendo Google..."
-              : "Iniciar sesión con Google para comenzar"}
-          </button>
+          <GoogleSignInButton
+            onError={setError}
+            // Respaldo: login por redirección (sin client ID o si Google no carga)
+            fallback={
+              <button
+                type="button"
+                onClick={handleSignIn}
+                disabled={isSigningIn}
+                className="flex items-center justify-center gap-2.5 px-5 sm:px-6 py-3 rounded-xl bg-white text-neutral-950 hover:bg-neutral-200 text-sm font-semibold shadow-[0_0_30px_rgba(255,255,255,0.12)] transition-all active:scale-95 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4 shrink-0"
+                  aria-hidden="true"
+                  fill="currentColor"
+                >
+                  <path d={siGoogle.path} />
+                </svg>
+                {isSigningIn
+                  ? "Abriendo Google..."
+                  : "Iniciar sesión con Google para comenzar"}
+              </button>
+            }
+          />
           <p className="text-[10px] sm:text-[11px] font-mono text-neutral-500">
             Gratis · 2 ideas cada 8 horas · Tus mapas se guardan en tu cuenta
           </p>
