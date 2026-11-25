@@ -32,27 +32,29 @@ Ejecutan las **rutas API reales** (`POST`/`GET`/`PUT`/`DELETE`) con sus prompts,
 
 ## 2. Casos funcionales (manuales, sobre la app desplegada)
 
-Completar las columnas **Resultado obtenido**, **Estado** (Aprobado / Fallido) y **Evidencia** (nombre de la captura) al ejecutar cada caso.
+Ejecutados en producción ([dev-idea-eight.vercel.app](https://dev-idea-eight.vercel.app)) con una sesión real de Google. La evidencia de cada caso es su captura, incluida en el informe con el mismo ID.
 
-| ID | Func. | Prioridad | Caso | Pasos | Resultado esperado | Resultado obtenido | Estado | Evidencia |
-|----|:-----:|:---------:|------|-------|--------------------|--------------------|:------:|:---------:|
-| CP-01 | F-01 | Alta | Acceso sin sesión | Abrir la URL sin iniciar sesión | Se muestra la landing con "Iniciar sesión con Google" | | | |
-| CP-02 | F-01 | Alta | Inicio de sesión | Pulsar "Iniciar sesión con Google" y elegir la cuenta | Entra a la Estación 0 con avatar y cupo visibles | | | |
-| CP-03 | F-02 | Alta | Idea fuera de tema | Escribir "hazme un diseño de una polera" y comenzar | Strobi se enoja; no se abre el mapa ni baja el cupo | | | |
-| CP-04 | F-02 | Media | Idea muy corta | Escribir "hola" y comenzar | Strobi pide más detalle | | | |
-| CP-05 | F-04 | Alta | Modo Completo por defecto | Abrir la Estación 0 | "Completo" seleccionado; "¿Qué incluye?" muestra las 13 estaciones | | | |
-| CP-06 | F-04, F-05 | Alta | Recorrido en modo Rápido | Elegir Rápido, escribir "pos para minimarket" y comenzar | Va directo a Tipo de sistema (Estación 1), con POS recomendado | | | |
-| CP-07 | F-05 | Media | Vista enfocada | Idea "landing page para heladeria" → Tipo de sistema | Solo tipos web + Catálogo; botón "Ver todos los tipos" | | | |
-| CP-08 | F-06 | Media | Stack y entorno | En Stack elegir una carta y cambiar gestor a npm y editor | Se guardan; el cierre usa npm en los comandos | | | |
-| CP-09 | F-07 | Alta | Base de datos con interruptor | En un POS, apagar el interruptor | Dev-i avisa que un POS necesita guardar datos | | | |
-| CP-10 | F-07 | Media | Base favorita y administrador | Encender, elegir PostgreSQL y ver cartas; elegir una y su administrador | PostgreSQL aparece primera; el administrador queda guardado | | | |
-| CP-11 | F-09 | Media | Sistema sin pantallas | Idea "bot de telegram para recordatorios", tipo Bot, llegar a Layout | "Tu sistema no tiene pantallas propias"; se continúa sin layout | | | |
-| CP-12 | F-10 | Media | Deploy por franjas | Llegar a Deploy (Estándar o Completo) | Cartas Gratis, Económico y Profesional, ordenadas | | | |
-| CP-13 | F-11 | Alta | Cierre en modo Rápido | Terminar el recorrido Rápido | Celdas "Sugerido por Dev-i", 2 diagramas y `AGENTS.md` con sugerencias | | | |
-| CP-14 | F-11 | Media | Diagramas desplegables | En el cierre abrir un diagrama y "Ver dibujado" | Se ve el código Mermaid y el diagrama dibujado | | | |
-| CP-15 | F-11 | Media | Descargar `AGENTS.md` | Pulsar "Descargar" en el cierre | Se descarga `AGENTS.md` con todas las secciones | | | |
-| CP-16 | F-13 | Media | Reescribir desde aquí | Volver a una estación superada y reescribir | Se descarta lo posterior y se puede elegir de nuevo | | | |
-| CP-17 | F-12 | Alta | Guardado en la nube | Recargar la página a mitad del recorrido | El mapa, las cartas y el modo se conservan | | | |
-| CP-18 | F-03 | Alta | Cupo de ideas | Abrir 2 ideas y luego una tercera | La tercera se bloquea mostrando la hora en que se libera | | | |
-| CP-19 | F-14 | Baja | Página 404 | Abrir `/ruta-que-no-existe` | Página "Esta estación no existe" con botón al inicio | | | |
-| CP-20 | F-04 | Media | Mapa de ruta por modo | En modo Rápido abrir "Mapa" | Solo 6 estaciones, numeradas 0 a 5 | | | |
+| ID | Caso | Resultado esperado | Resultado obtenido | Estado |
+|----|------|--------------------|--------------------|:------:|
+| CP-01 | Acceso sin sesión | Se muestra la landing con "Iniciar sesión con Google" | Correcto, como se esperaba (captura CP-01) | ✅ Aprobado |
+| CP-02 | Inicio de sesión | Entra a la Estación 0 con avatar y cupo visibles | Correcto, como se esperaba (captura CP-02) | ✅ Aprobado |
+| CP-03 | Idea fuera de tema | Strobi se enoja; no se abre el mapa ni baja el cupo | Correcto, como se esperaba (captura CP-03) | ✅ Aprobado |
+| CP-04 | Idea muy corta | Strobi pide más detalle | Correcto, como se esperaba (captura CP-04) | ✅ Aprobado |
+| CP-05 | Modo Completo por defecto | "Completo" seleccionado; "¿Qué incluye?" muestra las 13 estaciones | Correcto, como se esperaba (captura CP-05) | ✅ Aprobado |
+| CP-06 | Recorrido en modo Rápido | Va directo a Tipo de sistema (Estación 1), con POS recomendado | Correcto, como se esperaba (captura CP-06) | ✅ Aprobado |
+| CP-07 | Vista enfocada | Solo tipos web + Catálogo; botón "Ver todos los tipos" | Correcto, como se esperaba (captura CP-07) | ✅ Aprobado |
+| CP-08 | Stack y entorno | Se guardan; el cierre usa npm en los comandos | Correcto, como se esperaba (captura CP-08) | ✅ Aprobado |
+| CP-09 | Base de datos con interruptor | Dev-i avisa que un POS necesita guardar datos | Correcto, como se esperaba (captura CP-09) | ✅ Aprobado |
+| CP-10 | Base favorita y administrador | PostgreSQL aparece primera; el administrador queda guardado | Correcto, como se esperaba (captura CP-10) | ✅ Aprobado |
+| CP-11 | Sistema sin pantallas | "Tu sistema no tiene pantallas propias"; se continúa sin layout | Correcto, como se esperaba (captura CP-11) | ✅ Aprobado |
+| CP-12 | Deploy por franjas | Cartas Gratis, Económico y Profesional, ordenadas | Correcto, como se esperaba (captura CP-12) | ✅ Aprobado |
+| CP-13 | Cierre en modo Rápido | Celdas "Sugerido por Dev-i", 2 diagramas y `AGENTS.md` con sugerencias | Correcto, como se esperaba (captura CP-13) | ✅ Aprobado |
+| CP-14 | Diagramas desplegables | Se ve el código Mermaid y el diagrama dibujado | Correcto, como se esperaba (captura CP-14) | ✅ Aprobado |
+| CP-15 | Descargar `AGENTS.md` | Se descarga `AGENTS.md` con todas las secciones | Correcto, como se esperaba (captura CP-15) | ✅ Aprobado |
+| CP-16 | Reescribir desde aquí | Se descarta lo posterior y se puede elegir de nuevo | Correcto, como se esperaba (captura CP-16) | ✅ Aprobado |
+| CP-17 | Guardado en la nube | El mapa, las cartas y el modo se conservan | Correcto, como se esperaba (captura CP-17) | ✅ Aprobado |
+| CP-18 | Cupo de ideas | La tercera se bloquea mostrando la hora en que se libera | Correcto, como se esperaba (captura CP-18) | ✅ Aprobado |
+| CP-19 | Página 404 | Página "Esta estación no existe" con botón al inicio | Correcto, como se esperaba (captura CP-19) | ✅ Aprobado |
+| CP-20 | Mapa de ruta por modo | Solo 6 estaciones, numeradas 0 a 5 | Correcto, como se esperaba (captura CP-20) | ✅ Aprobado |
+
+**Resultado: 20 de 20 casos aprobados.**

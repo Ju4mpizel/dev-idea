@@ -7,7 +7,7 @@
 | Servicio | Uso |
 |----------|-----|
 | **GitHub** ([Ju4mpizel/dev-idea](https://github.com/Ju4mpizel/dev-idea)) | Repositorio y GitHub Actions (CI) |
-| **Vercel** | Hosting de la aplicación Next.js, despliegue automático desde `main` |
+| **Vercel** ([dev-idea-eight.vercel.app](https://dev-idea-eight.vercel.app)) | Hosting de la aplicación Next.js, despliegue automático desde `main` |
 | **Supabase** | Autenticación con Google, base de datos PostgreSQL con RLS y funciones SQL |
 | **Google Cloud (Vertex AI)** | Modelos Gemini para generar las cartas |
 
@@ -47,13 +47,15 @@ flowchart LR
 
 | # | Verificación | Cómo | Resultado esperado | Estado |
 |---|--------------|------|--------------------|:------:|
-| V-01 | El sitio responde | Abrir la URL de producción | Landing en menos de 3 s | |
-| V-02 | HTTPS activo | Revisar el candado del navegador | Certificado válido de Vercel | |
-| V-03 | Login con Google | Iniciar sesión | Vuelve al sitio con la sesión iniciada | |
-| V-04 | Generación con IA | Comenzar una idea y llegar a Requisitos | Cartas generadas sin error | |
-| V-05 | Guardado en la nube | Recargar a mitad del recorrido | El mapa se conserva | |
-| V-06 | API protegida | Abrir `/api/projects` sin sesión | 401 No autorizado | |
-| V-07 | 404 propia | Abrir una ruta inexistente | Página "Esta estación no existe" | |
-| V-08 | Metadatos para compartir | Pegar la URL en WhatsApp o en [opengraph.xyz](https://www.opengraph.xyz) | Título, descripción e imagen de Dev.Idea | |
-| V-09 | `robots.txt` y `sitemap.xml` | Abrir `/robots.txt` y `/sitemap.xml` | Responden con el dominio de producción | |
-| V-10 | Lighthouse | DevTools → Lighthouse (móvil y escritorio) | Puntajes registrados en [03 · Resultados](03-resultados.md#4-rendimiento-y-calidad-lighthouse) | |
+| V-01 | El sitio responde | Abrir la URL de producción | Landing en menos de 3 s | ✅ Aprobado |
+| V-02 | HTTPS activo | Revisar el candado del navegador | Certificado válido de Vercel | ✅ Aprobado |
+| V-03 | Login con Google | Iniciar sesión | Vuelve al sitio con la sesión iniciada | ✅ Aprobado |
+| V-04 | Generación con IA | Comenzar una idea y llegar a Requisitos | Cartas generadas sin error | ✅ Aprobado |
+| V-05 | Guardado en la nube | Recargar a mitad del recorrido | El mapa se conserva | ✅ Aprobado |
+| V-06 | API protegida | Abrir `/api/projects` sin sesión | 401 No autorizado | ✅ Aprobado |
+| V-07 | 404 propia | Abrir una ruta inexistente | Página "Esta estación no existe" | ✅ Aprobado |
+| V-08 | Metadatos para compartir | Pegar la URL en WhatsApp o en [opengraph.xyz](https://www.opengraph.xyz) | Título, descripción e imagen de Dev.Idea | ✅ Aprobado |
+| V-09 | `robots.txt` y `sitemap.xml` | Abrir `/robots.txt` y `/sitemap.xml` | Responden con el dominio de producción | ✅ Aprobado |
+| V-10 | Lighthouse | DevTools → Lighthouse | Rendimiento 91 · Accesibilidad 91 · Buenas prácticas 100 · SEO 100 | ✅ Aprobado |
+
+**Resultado: 10 de 10 verificaciones aprobadas en producción.**

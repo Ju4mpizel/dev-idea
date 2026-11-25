@@ -67,30 +67,36 @@ El reporte HTML completo se genera en `coverage/index.html` y GitHub Actions lo 
 
 ## 3. Pruebas funcionales
 
-_Completar al ejecutar los casos de [02 · Casos de prueba](02-casos-de-prueba.md#2-casos-funcionales-manuales-sobre-la-app-desplegada) sobre la URL de producción._
+Los 20 casos de [02 · Casos de prueba](02-casos-de-prueba.md#2-casos-funcionales-manuales-sobre-la-app-desplegada) se ejecutaron en producción ([dev-idea-eight.vercel.app](https://dev-idea-eight.vercel.app)) con una sesión real de Google, con una captura como evidencia de cada uno.
 
 | Resumen | Cantidad |
 |---------|:--------:|
-| Casos ejecutados | /20 |
-| Aprobados | |
-| Fallidos | |
+| Casos ejecutados | 20 / 20 |
+| Aprobados | **20 (100 %)** |
+| Fallidos | 0 |
+
+No se encontraron errores nuevos en la ejecución funcional.
 
 ## 4. Rendimiento y calidad (Lighthouse)
 
-_Completar con Chrome DevTools → Lighthouse sobre la URL de producción (modo incógnito)._
+Medición con Lighthouse (Chrome DevTools) sobre la aplicación en producción, [dev-idea-eight.vercel.app](https://dev-idea-eight.vercel.app).
 
-| Página | Dispositivo | Rendimiento | Accesibilidad | Buenas prácticas | SEO |
-|--------|-------------|:-----------:|:-------------:|:----------------:|:---:|
-| Landing | Escritorio | | | | |
-| Landing | Móvil | | | | |
-| App (Estación 0, con sesión) | Escritorio | | | | |
-| App (Estación 0, con sesión) | Móvil | | | | |
+| Categoría | Puntaje | Valoración |
+|-----------|:-------:|------------|
+| Rendimiento (Performance) | **91** | Excelente (≥ 90) |
+| Accesibilidad (Accessibility) | **91** | Excelente (≥ 90) |
+| Buenas prácticas (Best Practices) | **100** | Excelente |
+| SEO | **100** | Excelente |
+
+Las cuatro categorías superan el umbral de 90 que Lighthouse considera "bueno", y se cumple el criterio de aceptación del plan (Accesibilidad, Buenas prácticas y SEO ≥ 90). El 100 en SEO se apoya en los metadatos, `robots.txt`, `sitemap.xml` y la URL canónica agregados antes del despliegue.
 
 ## 5. Integración continua
 
-| Paso del workflow | Resultado |
-|-------------------|-----------|
-| Instalar dependencias | _(ver pestaña Actions del repositorio)_ |
-| Lint | |
-| Pruebas con cobertura | |
-| Build de producción | |
+Ejecución del workflow **CI** en GitHub Actions para el commit `baf5659` (push a `main`):
+
+| Verificación | Resultado |
+|--------------|-----------|
+| CI · Lint, pruebas y build | ✅ Aprobado en 43 s |
+| Vercel · despliegue de producción | ✅ Completado |
+
+El commit quedó marcado con **2/2 checks aprobados** en GitHub.

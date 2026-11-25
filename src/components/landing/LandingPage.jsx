@@ -32,7 +32,7 @@ const FEATURES = [
  * Portada para visitantes sin sesión: Dev-i da la bienvenida y el único paso
  * es iniciar sesión con Google (requisito para generar con IA).
  */
-export function LandingPage() {
+export function LandingPage({ onSignIn = signInWithGoogle }) {
   const intro = useIntro();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState(null);
@@ -41,8 +41,9 @@ export function LandingPage() {
     setIsSigningIn(true);
     setError(null);
     try {
-      // Redirige a Google; al volver, la puerta de sesión abre la Estación 0
-      await signInWithGoogle();
+      // Dev-i cubre la portada y redirige a Google; al volver da la bienvenida
+      // y abre la Estación 0
+      await onSignIn();
     } catch (err) {
       console.error("[Login]", err);
       setError("No se pudo abrir el inicio de sesión. Intenta de nuevo.");

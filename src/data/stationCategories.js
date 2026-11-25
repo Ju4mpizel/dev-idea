@@ -9,6 +9,8 @@
 import { SYSTEM_FAMILIES, getTypesOfFamily } from "./systemTypes";
 import { getSurfaceLayouts, surfaceLabel } from "./layoutCatalog";
 import { LAYOUT_SURFACE_IDS } from "@/lib/stepSchemas";
+import { ECOSYSTEMS, EDITORS, AI_MODES } from "./devPreferences";
+import { DATABASES, ADMIN_TOOLS } from "./databases";
 
 export const STATION_CATEGORIES = {
   // Catálogo fijo de la estación "Tipo de sistema" (sale de src/data/systemTypes.js)
@@ -94,9 +96,9 @@ export const STATION_CATEGORIES = {
   stack: {
     title: "Niveles de stack",
     levels: {
-      simple: "Ágil / Directo: pocas piezas, configuración mínima y despliegue en minutos. Incluye la demo HTML + CSS, Next.js + Supabase, Firebase o el clásico PHP/Django + MySQL. Ideal para un primer proyecto o un MVP.",
-      medium: "Pragmático: frontend y backend separados (SPA + API). Más control y orden para proyectos que van a crecer o tienen varios desarrolladores.",
-      advanced: "Enterprise: tipado estricto, arquitectura formal y herramientas corporativas (Java/Spring, .NET). Más curva de aprendizaje, muy valorado en empresas y en la universidad.",
+      simple: "Ágil / Directo: pocas piezas, configuración mínima y despliegue en minutos (HTML + CSS, Next.js, Expo, FastAPI...). Ideal para un primer proyecto o un MVP.",
+      medium: "Pragmático: frontend y backend separados (SPA + API, app + API propia). Más control y orden para proyectos que van a crecer o tienen varios desarrolladores.",
+      advanced: "Enterprise: tipado estricto, arquitectura formal y herramientas corporativas (Java/Spring, .NET, nativo). Más curva de aprendizaje, muy valorado en empresas y en la universidad.",
     },
     catalog: [
       {
@@ -105,9 +107,36 @@ export const STATION_CATEGORIES = {
           { name: "Frontend", desc: "Lo que ve el usuario: HTML/CSS, React, Vue, Angular." },
           { name: "Backend", desc: "Lógica y seguridad en el servidor: Node, Django, Laravel, Spring." },
           { name: "Full-stack", desc: "Un solo framework hace ambos: Next.js, Laravel, Django." },
-          { name: "Base de datos", desc: "Dónde viven los datos: MySQL, PostgreSQL, MongoDB." },
-          { name: "BaaS", desc: "Backend ya hecho (BD + login + API): Supabase, Firebase." },
           { name: "ORM", desc: "Traduce tablas a objetos: Prisma, Eloquent, Hibernate." },
+          { name: "Base de datos", desc: "No va aquí: se decide en la estación siguiente." },
+        ],
+      },
+      {
+        group: "Según tu tipo de producto",
+        items: [
+          { name: "Web o sistema de gestión", desc: "Next.js, Laravel, Django, React + API." },
+          { name: "Sitio de contenido", desc: "HTML, Astro, Next.js o un CMS; sin stacks enterprise." },
+          { name: "App móvil", desc: "Expo (React Native), Flutter, PWA o nativo (Kotlin, Swift)." },
+          { name: "API o bot", desc: "Node (Express, NestJS), FastAPI, Go o Spring Boot." },
+        ],
+      },
+      {
+        group: "Tu entorno · gestor de paquetes",
+        items: Object.values(ECOSYSTEMS).map((eco) => ({
+          name: eco.label,
+          desc: eco.managers.map((m) => m.label).join(" · "),
+        })),
+      },
+      {
+        group: "Tu entorno · editor y uso de IA",
+        items: [
+          { name: "Editores", desc: EDITORS.map((e) => e.label).join(" · ") },
+          ...AI_MODES.map((mode) => ({
+            name: mode.label,
+            desc: mode.kind
+              ? "Se anota en el AGENTS.md y filtra la galería del Ecosistema de IA."
+              : "El plano no asume ninguna herramienta de IA.",
+          })),
         ],
       },
       {
@@ -150,12 +179,19 @@ export const STATION_CATEGORIES = {
         ],
       },
       {
-        group: "Herramientas",
+        group: "Antes de las cartas",
         items: [
-          { name: "MySQL Workbench", desc: "Diseña tablas y relaciones de MySQL de forma visual." },
-          { name: "pgAdmin / DBeaver", desc: "Clientes gráficos para PostgreSQL y otras bases." },
-          { name: "dbdiagram.io", desc: "Dibuja el modelo entidad-relación escribiendo código." },
+          { name: "¿Guardará datos?", desc: "El interruptor: viene sugerido según tu tipo de sistema." },
+          { name: "Favorita", desc: "Opcional: la base que ya conoces aparece primera." },
+          { name: "Administrador", desc: "Después de elegir la carta: el programa para ver tus datos." },
         ],
+      },
+      {
+        group: "Bases populares y sus administradores",
+        items: DATABASES.map((db) => ({
+          name: db.label,
+          desc: db.admins.map((id) => ADMIN_TOOLS[id]?.label).filter(Boolean).join(" · "),
+        })),
       },
     ],
   },
@@ -236,7 +272,8 @@ export const STATION_CATEGORIES = {
       {
         group: "Datos",
         items: [
-          { name: "Entidad-Relación (ERD)", desc: "Tablas, campos y relaciones. Solo si hay base de datos." },
+          { name: "Entidad-Relación (ERD)", desc: "Tablas, campos y relaciones. Solo con una base relacional." },
+          { name: "Colecciones (NoSQL)", desc: "Documentos y sus referencias, para MongoDB o Firestore." },
           { name: "Flujo de datos (DFD)", desc: "Cómo entran, se transforman y salen los datos." },
         ],
       },
@@ -312,6 +349,7 @@ export const STATION_CATEGORIES = {
           { name: "Contenedores", desc: "Empaquetas la app con Docker y la ejecutas donde sea." },
           { name: "VPS", desc: "Un servidor virtual que administras tú." },
           { name: "CI/CD", desc: "Cada push prueba y despliega automáticamente (GitHub Actions)." },
+          { name: "Tiendas de apps", desc: "Para apps móviles: Google Play y App Store (con EAS o Codemagic)." },
         ],
       },
       {

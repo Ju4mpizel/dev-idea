@@ -25,6 +25,14 @@ export function useIntro() {
   return active;
 }
 
+/**
+ * Vuelve a habilitar la entrada: al cerrar sesión la portada se dibuja de
+ * nuevo, como si se abriera la página por primera vez.
+ */
+export function resetIntro() {
+  introPlayed = false;
+}
+
 /** Clases de una pieza de la entrada ("" si no toca). */
 export const introClass = (active, kind) => (active ? `intro ${kind}` : "");
 

@@ -14,11 +14,18 @@ import { DecisionCanvas } from "@/components/map/DecisionCanvas";
 import { StationBreadcrumb } from "@/components/navigation/StationBreadcrumb";
 import { useDecisionStore } from "@/hooks/useDecisionStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { useIntro, introClass, introDelay } from "@/hooks/useIntro";
+import { useIntro, introClass, introDelay, resetIntro } from "@/hooks/useIntro";
 import { useAnimatingLayer } from "@/hooks/useAnimatingLayer";
 import { getStation, stationNumberInMode } from "@/config/stations.config";
 import { supabase } from "@/lib/supabaseClient";
-import { signOut } from "@/services/projectService";
+import { signInWithGoogle, signOut } from "@/services/projectService";
+import { AuthTransition } from "@/components/auth/AuthTransition";
+import {
+  clearLoginTransition,
+  hasLoginTransition,
+  markLoginTransition,
+  wait,
+} from "@/lib/authTransition";
 import { LogOut } from "lucide-react";
 import { LandingPage } from "@/components/landing/LandingPage";
 
@@ -36,14 +43,68 @@ export default function HomePage() {
   const currentUser = useDecisionStore((state) => state.currentUser);
   const setCurrentUser = useDecisionStore((state) => state.setCurrentUser);
   const [authReady, setAuthReady] = useState(false);
+  // Transición de sesión con Dev-i: { kind: "login"|"welcome"|"logout", hold, ... }
+  // `hold` = la pantalla ya cubre todo y no se dibuja nada debajo.
+  const [transition, setTransition] = useState(null);
+
+  // Iniciar sesión: Dev-i cubre la portada y luego vamos a Google
+  const handleSignIn = async () => {
+    setTransition({ kind: "login", hold: false, duration: 900 });
+    markLoginTransition();
+    await wait(700);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setTransition(null);
+      throw err;
+    }
+  };
+
+  // Cerrar sesión: Dev-i cubre la app, se cierra la sesión y aparece la portada
+  const handleSignOut = async (signOutAndReset) => {
+    setTransition({ kind: "logout", hold: false, duration: LOGOUT_MS });
+    await wait(500);
+    setTransition((t) => (t ? { ...t, hold: true } : t));
+    const startedAt = Date.now();
+    try {
+      await signOutAndReset();
+    } catch (err) {
+      console.error(err);
+    }
+    await wait(Math.max(LOGOUT_MS - 500 - (Date.now() - startedAt), 200));
+    resetIntro();
+    setTransition(null);
+  };
 
   useEffect(() => {
+    let isFirstEvent = true;
+    let welcomeTimer;
+
     // INITIAL_SESSION llega enseguida (sesión guardada o null) y luego cada cambio
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user || null);
+      const user = session?.user || null;
+      setCurrentUser(user);
       setAuthReady(true);
+
+      // ¿Volvemos de Google con sesión? Dev-i da la bienvenida y abre la
+      // Estación 0. Si el login se canceló, se ve la portada sin más.
+      if (isFirstEvent) {
+        isFirstEvent = false;
+        if (hasLoginTransition()) {
+          clearLoginTransition();
+          if (user) {
+            setTransition({
+              kind: "welcome",
+              hold: true,
+              name: firstName(user),
+              duration: WELCOME_MS,
+            });
+            welcomeTimer = setTimeout(() => setTransition(null), WELCOME_MS);
+          }
+        }
+      }
     });
 
     // Valida el token con Supabase: si fue revocado, se cierra la sesión local
@@ -53,26 +114,55 @@ export default function HomePage() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(welcomeTimer);
+    };
   }, [setCurrentUser]);
 
-  if (!authReady) {
-    return (
+  let content = null;
+  if (transition?.hold) {
+    // La transición cubre la pantalla: debajo no se monta nada, así la
+    // Estación 0 o la portada entran con su animación al retirarse
+    content = <main className="min-h-[100dvh] w-full bg-neutral-950" />;
+  } else if (!authReady) {
+    content = (
       <main className="min-h-[100dvh] w-full grid place-items-center bg-neutral-950">
-        <DevIdeaLogo
-          variant="icon"
-          height={40}
-          className="text-neutral-700 animate-pulse"
-          aria-label="Cargando Dev.Idea"
-        />
+        {/* Aparece con retraso: si la sesión llega rápido (o vuelve de Google
+            con bienvenida) el logo de carga no alcanza a parpadear */}
+        <div className="intro intro-fade" style={{ "--d": "400ms" }}>
+          <DevIdeaLogo
+            variant="icon"
+            height={40}
+            className="text-neutral-700 animate-pulse"
+            aria-label="Cargando Dev.Idea"
+          />
+        </div>
       </main>
     );
+  } else if (currentUser) {
+    content = <AppShell onSignOut={handleSignOut} />;
+  } else {
+    content = <LandingPage onSignIn={handleSignIn} />;
   }
 
-  return currentUser ? <AppShell /> : <LandingPage />;
+  return (
+    <>
+      {content}
+      <AuthTransition transition={transition} />
+    </>
+  );
 }
 
-function AppShell() {
+const WELCOME_MS = 1400;
+const LOGOUT_MS = 1300;
+
+const firstName = (user) =>
+  (user?.user_metadata?.full_name || user?.user_metadata?.name || "")
+    .trim()
+    .split(/\s+/)[0] || null;
+
+function AppShell({ onSignOut }) {
   const currentStep = useDecisionStore((state) => state.currentStep);
   const mode = useDecisionStore((state) => state.blueprint.mode);
   const isRouteMapOpen = useDecisionStore((state) => state.isRouteMapOpen);
@@ -111,16 +201,13 @@ function AppShell() {
     return () => window.removeEventListener("keydown", onKey);
   }, [infoStationId, isPlanPanelOpen, closeStationInfo, closePlan]);
 
-  // Al cerrar sesión la puerta vuelve a la portada
-  const handleSignOut = async () => {
-    try {
+  // Al cerrar sesión, Dev-i se despide y la puerta vuelve a la portada
+  const handleSignOut = () =>
+    onSignOut(async () => {
       await signOut();
       setCloudProjectId(null);
       setIdeaQuota(null);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    });
 
   // Paneles laterales (Dev-i / mapa a la derecha, categorías a la izquierda):
   // al abrirse, el contenido se desliza y les deja sitio (animación de empuje).
