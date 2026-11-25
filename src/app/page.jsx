@@ -78,33 +78,57 @@ export default function HomePage() {
 
   useEffect(() => {
     let isFirstEvent = true;
-    let welcomeTimer;
+    let hadUser = false;
+    const timers = [];
+
+    // Bienvenida de Dev-i: cubre la pantalla y al retirarse entra la Estación 0
+    // con su animación. `fromLanding`: la portada sigue visible mientras la
+    // cubre el fundido (login con el botón emergente, sin recargar la página).
+    const welcome = (user, { fromLanding }) => {
+      setTransition({
+        kind: "welcome",
+        hold: !fromLanding,
+        keepLanding: fromLanding,
+        name: firstName(user),
+        duration: WELCOME_MS,
+      });
+      if (fromLanding) {
+        timers.push(
+          setTimeout(
+            () => setTransition((t) => (t ? { ...t, hold: true, keepLanding: false } : t)),
+            COVER_MS,
+          ),
+        );
+      }
+      timers.push(
+        setTimeout(() => {
+          resetIntro();
+          setTransition(null);
+        }, WELCOME_MS),
+      );
+    };
 
     // INITIAL_SESSION llega enseguida (sesión guardada o null) y luego cada cambio
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       const user = session?.user || null;
       setCurrentUser(user);
       setAuthReady(true);
 
-      // ¿Volvemos de Google con sesión? Dev-i da la bienvenida y abre la
-      // Estación 0. Si el login se canceló, se ve la portada sin más.
       if (isFirstEvent) {
+        // ¿Volvemos de la redirección de Google con sesión? Bienvenida. Si el
+        // login se canceló, se ve la portada sin más.
         isFirstEvent = false;
         if (hasLoginTransition()) {
           clearLoginTransition();
-          if (user) {
-            setTransition({
-              kind: "welcome",
-              hold: true,
-              name: firstName(user),
-              duration: WELCOME_MS,
-            });
-            welcomeTimer = setTimeout(() => setTransition(null), WELCOME_MS);
-          }
+          if (user) welcome(user, { fromLanding: false });
         }
+      } else if (event === "SIGNED_IN" && user && !hadUser) {
+        // Login con el botón de Google (ventana emergente): sin recarga
+        welcome(user, { fromLanding: true });
       }
+      hadUser = Boolean(user);
     });
 
     // Valida el token con Supabase: si fue revocado, se cierra la sesión local
@@ -116,12 +140,15 @@ export default function HomePage() {
 
     return () => {
       subscription.unsubscribe();
-      clearTimeout(welcomeTimer);
+      timers.forEach(clearTimeout);
     };
   }, [setCurrentUser]);
 
   let content = null;
-  if (transition?.hold) {
+  if (transition?.keepLanding) {
+    // Mientras el fundido cubre la portada, esta sigue en su sitio
+    content = <LandingPage onSignIn={handleSignIn} />;
+  } else if (transition?.hold) {
     // La transición cubre la pantalla: debajo no se monta nada, así la
     // Estación 0 o la portada entran con su animación al retirarse
     content = <main className="min-h-[100dvh] w-full bg-neutral-950" />;
@@ -155,6 +182,8 @@ export default function HomePage() {
 }
 
 const WELCOME_MS = 1400;
+// Lo que tarda el fundido en cubrir la página (AuthTransition: 0.45 s)
+const COVER_MS = 480;
 const LOGOUT_MS = 1300;
 
 const firstName = (user) =>
